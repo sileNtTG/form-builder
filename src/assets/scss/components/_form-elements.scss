@@ -1,0 +1,169 @@
+@use "../abstracts" as *;
+
+.draggable-element {
+  cursor: move;
+  padding: $spacing-sm;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius;
+  @include transition;
+  margin-bottom: $spacing-sm;
+  background-color: $white;
+
+  &:hover {
+    border-color: $primary;
+    box-shadow: $shadow-sm;
+  }
+
+  &.is-dragging {
+    opacity: 0.5;
+    box-shadow: $shadow-md;
+  }
+
+  .icon {
+    margin-right: $spacing-sm;
+    color: $gray-500;
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .label {
+    font-weight: 500;
+  }
+}
+
+// Canvas drop area
+.canvas-drop-area {
+  min-height: $canvas-min-height;
+  padding: $spacing-md;
+  background-color: $gray-100;
+  border: 2px dashed $gray-300;
+  border-radius: $border-radius;
+  @include transition;
+
+  &.is-over {
+    background-color: rgba($primary, 0.05);
+    border-color: $primary;
+  }
+
+  &.empty {
+    @include flex(column, center, center);
+    text-align: center;
+    color: $gray-500;
+    padding: $spacing-xl;
+
+    svg {
+      width: 3rem;
+      height: 3rem;
+      margin-bottom: $spacing-md;
+      color: $gray-300;
+    }
+
+    p {
+      @include text-regular;
+      margin-bottom: $spacing-sm;
+    }
+  }
+}
+
+// Form elements in the builder
+.builder-form-element {
+  position: relative;
+  background-color: $white;
+  padding: $spacing-md;
+  border-radius: $border-radius;
+  box-shadow: $shadow;
+  margin-bottom: $spacing-md;
+  border: 2px solid transparent;
+  @include transition;
+
+  &:hover {
+    .builder-form-element__controls {
+      opacity: 1;
+    }
+  }
+
+  &.selected {
+    border-color: $primary;
+    box-shadow: 0 0 0 2px rgba($primary, 0.3);
+  }
+
+  &__controls {
+    position: absolute;
+    top: $spacing-xs;
+    right: $spacing-xs;
+    @include flex(row, flex-end, center);
+    opacity: 0;
+    @include transition;
+    gap: $spacing-xs;
+
+    button {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background-color: $white;
+      border: 1px solid $gray-200;
+      @include flex-center;
+      cursor: pointer;
+      padding: 0;
+
+      &:hover {
+        background-color: $gray-100;
+        border-color: $gray-300;
+      }
+
+      svg {
+        width: 14px;
+        height: 14px;
+        color: $gray-600;
+      }
+
+      &.btn-delete:hover {
+        background-color: $danger;
+        border-color: $danger;
+
+        svg {
+          color: $white;
+        }
+      }
+
+      &.btn-duplicate:hover {
+        background-color: $primary;
+        border-color: $primary;
+
+        svg {
+          color: $white;
+        }
+      }
+    }
+  }
+
+  // Drag handle
+  &__handle {
+    cursor: move;
+    padding: $spacing-xs;
+    color: $gray-400;
+    @include transition;
+
+    &:hover {
+      color: $gray-600;
+    }
+
+    svg {
+      width: 1rem;
+      height: 1rem;
+    }
+  }
+
+  // Label area
+  &__label {
+    font-weight: 500;
+    margin-bottom: $spacing-xs;
+    color: $gray-700;
+
+    &.required::after {
+      content: "*";
+      color: $danger;
+      margin-left: $spacing-xs;
+    }
+  }
+}

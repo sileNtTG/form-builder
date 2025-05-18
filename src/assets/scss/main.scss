@@ -1,0 +1,52 @@
+/*
+ * Main SCSS entry point - Only includes global styles
+ * Component-specific styles are now directly in their respective .vue files
+ */
+
+// Core dependencies
+// @use "sass:color"; -- already imported in vite.config.ts
+@use "sass:map";
+
+// Base styles and utilities
+@use "abstracts" as *;
+@use "base/base";
+
+// Global layout utilities
+// @use "layout/grid"; // Removed, as utilities moved to base and specific layouts are in components
+// @use "layout/forms"; // Removed, as styles moved to base and components
+
+// Global component styles
+// @use "components/buttons"; -- Styles moved to Button.vue component
+// @use "components/panels"; -- Styles moved to ElementPanel.vue and PropertyPanel.vue
+@use "components/form-elements";
+
+/* Custom scrollbar for panels */
+.panel-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.panel-scroll::-webkit-scrollbar-track {
+  background: rgba(75, 85, 99, 0.2);
+  border-radius: 10px;
+}
+
+.panel-scroll::-webkit-scrollbar-thumb {
+  background: rgba(107, 114, 128, 0.8);
+  border-radius: 10px;
+}
+
+.panel-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.8);
+}
+
+/* Animation for menu transitions */
+.collapse-enter-active,
+.collapse-leave-active {
+  transition: max-height 0.3s ease;
+  overflow: hidden;
+}
+
+.collapse-enter-from,
+.collapse-leave-to {
+  max-height: 0;
+}

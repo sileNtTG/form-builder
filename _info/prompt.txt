@@ -1,0 +1,27 @@
+Form Builder Application
+
+Create a professional form builder application using Vue 3 with the following requirements:
+
+1. Users should be able to visually construct custom forms through an intuitive drag-and-drop interface
+2. Support for complex forms with multiple steps and dependencies between fields
+3. Various input types should be supported (text fields, checkboxes, selects, etc.)
+4. All form configurations should be stored as JSON for easy backend integration
+5. The application should focus on user experience with a visual building block approach
+6. Implement a three-panel layout:
+   - Element panel with available form components
+   - Canvas for form construction
+   - Property panel for configuring selected elements
+7. Form should support conditional logic between elements
+8. Include a file upload system with validation and preview capabilities
+9. Implement CRUD operations for managing forms
+10. Develop a preview mode for testing forms
+
+Tech Stack:
+- Vue 3 with Composition API
+- TypeScript
+- Pinia for state management
+- Tailwind CSS for styling
+- Vue Router for navigation
+- Axios for API communication
+
+The system should be extensible, maintainable, and focus on a good user experience. 

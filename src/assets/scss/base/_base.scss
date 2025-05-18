@@ -1,0 +1,270 @@
+@use "../abstracts" as *;
+@use "../abstracts/themes" as themes; // Import the themes
+@use "sass:string"; // Add string module
+
+// Base HTML and Body styles
+html {
+  font-size: 16px; // Base font size
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  height: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  @include themes.apply-theme(dark); // Apply dark theme by default
+
+  &[data-theme="light"] {
+    @include themes.apply-theme(light);
+  }
+
+  font-family: $font-primary, sans-serif; // Apply the Inter font
+  color: var(--theme-text); // Use CSS var for text color
+  background-color: var(--theme-bg); // Use CSS var for background color
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+// Headings - ensure they inherit the primary font as well
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: $font-primary, sans-serif;
+  font-weight: 600; // Adjust as needed
+  line-height: 1.2;
+  margin-top: 0;
+  margin-bottom: $spacing-md;
+  color: var(--theme-text); // Use CSS var
+}
+
+// Basic reset for links
+a {
+  color: var(--theme-primary-light);
+  text-decoration: none;
+  &:hover {
+    text-decoration: underline;
+    color: var(--theme-link-hover); // Use the new CSS variable
+  }
+}
+
+// Form container
+.form {
+  width: 100%;
+
+  // Form groups
+  &__group {
+    margin-bottom: $spacing-md;
+
+    label {
+      display: block;
+      margin-bottom: $spacing-xs;
+      font-weight: $font-weight-medium;
+      color: var(--theme-text-secondary); // Use themed text color
+    }
+
+    &.required label::after {
+      content: "*";
+      color: var(--theme-danger); // Use themed danger color
+      margin-left: $spacing-xs;
+    }
+
+    &.inline {
+      @include flex(row, flex-start, center);
+
+      label {
+        margin-bottom: 0;
+        margin-right: $spacing-md;
+      }
+    }
+  }
+
+  // Inputs
+  &__input {
+    width: 100%;
+    max-width: fit-content;
+    padding: $spacing-sm $spacing-md;
+    border: 1px solid var(--theme-border-input);
+    border-radius: $border-radius;
+    background-color: var(--theme-bg-input);
+    font-size: $font-size-base;
+    line-height: 1.5;
+    color: var(--theme-text);
+    @include transition;
+
+    &:focus {
+      outline: none;
+      border-color: var(--theme-primary);
+      box-shadow: 0 0 0 2px rgba(var(--theme-primary-rgb), 0.3);
+    }
+
+    &.error {
+      border-color: var(--theme-danger);
+      &:focus {
+        box-shadow: 0 0 0 2px rgba(var(--theme-danger-rgb), 0.2); // Assuming danger-rgb exists
+      }
+    }
+
+    &::placeholder {
+      color: var(--theme-text-muted);
+    }
+
+    &:disabled {
+      background-color: var(--theme-bg-alt);
+      color: var(--theme-text-disabled);
+      cursor: not-allowed;
+    }
+  }
+
+  // Select
+  &__select {
+    width: 100%;
+    padding: $spacing-sm $spacing-md;
+    border: 1px solid var(--theme-border-input);
+    border-radius: $border-radius;
+    background-color: var(--theme-bg-input);
+    font-size: $font-size-base;
+    line-height: 1.5;
+    color: var(--theme-text);
+    @include transition;
+    appearance: none;
+    $stroke-color-hex: string.slice(
+      "#{$text-muted}",
+      2
+    ); // Temporary variable for sliced color
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23#{$stroke-color-hex}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-position: right $spacing-sm center;
+    background-repeat: no-repeat;
+    padding-right: $spacing-xl;
+
+    &:focus {
+      outline: none;
+      border-color: var(--theme-primary);
+      box-shadow: 0 0 0 2px rgba(var(--theme-primary-rgb), 0.3);
+    }
+
+    &.error {
+      border-color: var(--theme-danger);
+    }
+
+    &:disabled {
+      background-color: var(--theme-bg-alt);
+      cursor: not-allowed;
+    }
+  }
+
+  // Checkbox and radio
+  &__checkbox,
+  &__radio {
+    @include flex(row, flex-start, center);
+    cursor: pointer;
+    margin-bottom: $spacing-xs;
+
+    input {
+      margin-right: $spacing-sm;
+      accent-color: var(--theme-primary);
+      // Further custom styling for checkbox/radio may be needed
+    }
+
+    label {
+      margin-bottom: 0;
+      font-weight: $font-weight-regular;
+      color: var(--theme-text-secondary);
+    }
+  }
+
+  // Help text
+  &__help {
+    display: block;
+    margin-top: $spacing-xs;
+    font-size: $font-size-sm;
+    color: var(--theme-text-muted);
+  }
+
+  // Error message
+  &__error {
+    display: block;
+    margin-top: $spacing-xs;
+    font-size: $font-size-sm;
+    color: var(--theme-danger);
+  }
+}
+
+// Container
+.container {
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 $spacing-md;
+
+  @include respond-to("sm") {
+    max-width: 640px;
+  }
+
+  @include respond-to("md") {
+    max-width: 768px;
+  }
+
+  @include respond-to("lg") {
+    max-width: 1024px;
+  }
+
+  @include respond-to("xl") {
+    max-width: 1280px;
+  }
+}
+
+// Simple grid system
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 (-$spacing-sm); // Assumes $spacing-sm is defined
+}
+
+.col {
+  padding: 0 $spacing-sm; // Assumes $spacing-sm is defined
+  flex: 1;
+
+  &-1 {
+    flex: 0 0 8.333%;
+  }
+  &-2 {
+    flex: 0 0 16.666%;
+  }
+  &-3 {
+    flex: 0 0 25%;
+  }
+  &-4 {
+    flex: 0 0 33.333%;
+  }
+  &-5 {
+    flex: 0 0 41.666%;
+  }
+  &-6 {
+    flex: 0 0 50%;
+  }
+  &-7 {
+    flex: 0 0 58.333%;
+  }
+  &-8 {
+    flex: 0 0 66.666%;
+  }
+  &-9 {
+    flex: 0 0 75%;
+  }
+  &-10 {
+    flex: 0 0 83.333%;
+  }
+  &-11 {
+    flex: 0 0 91.666%;
+  }
+  &-12 {
+    flex: 0 0 100%;
+  }
+}

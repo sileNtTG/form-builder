@@ -1,0 +1,87 @@
+@use "sass:color";
+
+// Layout
+$sidebar-width: 20rem;
+$sidebar-width-collapsed: 3rem;
+$canvas-min-height: 50vh;
+$border-radius: 6px;
+$border-radius-sm: 3px;
+$border-radius-lg: 12px;
+
+// Spacing
+$spacing-xs: 0.25rem;
+$spacing-sm: 0.5rem;
+$spacing-md: 1rem;
+$spacing-lg: 1.5rem;
+$spacing-xl: 2rem;
+
+// New Core Colors (Vue Docs Inspired Dark Theme)
+$primary: #41b883; // Vue Green
+$primary-light: color.adjust($primary, $lightness: 15%);
+$primary-dark: color.adjust($primary, $lightness: -10%);
+
+$secondary: #8b5cf6; // Purple Accent (was $accent)
+$secondary-light: color.adjust($secondary, $lightness: 15%);
+$secondary-dark: color.adjust($secondary, $lightness: -10%);
+
+$accent: #10b981; // Teal/Green Accent (was $secondary)
+$accent-light: color.adjust($accent, $lightness: 15%);
+$accent-dark: color.adjust($accent, $lightness: -10%);
+
+$success: #22c55e;
+$warning: #f59e0b;
+$danger: #ef4444;
+$danger-dark: color.adjust($danger, $lightness: -10%);
+
+// Grays & UI Text/Backgrounds (Dark Theme Focused)
+$white: #ffffff;
+$black: #000000;
+
+$gray-100: #f8f9fa; // Very light gray (for light theme if ever needed)
+$gray-200: #e9ecef;
+$gray-300: #dee2e6;
+$gray-400: #ced4da;
+$gray-500: #adb5bd;
+$gray-600: #6c757d; // Muted text for dark bg, placeholder
+$gray-700: #495057; // Borders on dark bg
+$gray-800: #343a40; // Surface/panel bg on dark
+$gray-900: #212529; // Main dark bg
+
+// Base UI Colors (Derived from new palette)
+$bg-main: #202124; // Main content area background
+$bg-sidebar: #2f3136; // Sidebar, distinct panels
+$bg-surface: #2f3136; // Cards, panels, popovers
+$bg-alt: #3a3c40; // Hover states, slightly lighter surfaces
+$bg-input: $gray-800; // Input backgrounds
+
+$text-primary: #e0e0e0; // Primary text on dark backgrounds
+$text-secondary: #b0b0b0; // Slightly more muted than primary
+$text-muted: #9e9e9e; // Muted text, placeholders, icons
+$text-disabled: $gray-600;
+$text-inverse: $gray-900; // Text for light surfaces (e.g., on a white button)
+
+$border-color: $gray-700; // Default border color
+$border-color-input: $gray-600;
+
+// Button specific hover variables
+$button-default-bg-hover-dark: color.adjust(
+  $gray-800,
+  $lightness: 10%
+); // Lighter for dark theme default button
+$button-default-bg-hover-light: color.adjust(
+  $gray-200,
+  $lightness: -5%
+); // Darker for light theme default button
+
+// Shadows (keep as is for now, may need adjustment for dark theme)
+$shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.07);
+$shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.08);
+$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+  0 2px 4px -1px rgba(0, 0, 0, 0.08);
+$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.12),
+  0 4px 6px -2px rgba(0, 0, 0, 0.08);
+
+// Transitions (keep as is)
+$transition-fast: 150ms ease;
+$transition-normal: 300ms ease;
+$transition-slow: 500ms ease;

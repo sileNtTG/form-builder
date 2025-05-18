@@ -1,0 +1,52 @@
+@use "sass:map";
+@use "sass:color";
+@use "sass:math";
+@use "variables" as *;
+
+// Helper functions
+
+// Convert px to rem
+@function rem($pixels) {
+  @return math.div($pixels, 16) * 1rem;
+}
+
+// Darken color by percentage
+@function darken-custom($color, $percentage) {
+  @return color.adjust($color, $lightness: -$percentage);
+}
+
+// Lighten color by percentage
+@function lighten-custom($color, $percentage) {
+  @return color.adjust($color, $lightness: $percentage);
+}
+
+// Set color contrast
+@function color-contrast($color) {
+  $luminance: (
+      0.2126 * color.red($color) + 0.7152 * color.green($color) + 0.0722 *
+        color.blue($color)
+    ) / 255;
+
+  @if $luminance > 0.5 {
+    @return $gray-900;
+  } @else {
+    @return $white;
+  }
+}
+
+// Z-index management
+$z-indexes: (
+  "dropdown": 1000,
+  "modal": 1050,
+  "popover": 1060,
+  "tooltip": 1070,
+);
+
+@function z($key) {
+  @if map.has-key($z-indexes, $key) {
+    @return map.get($z-indexes, $key);
+  }
+
+  @warn "Unknown z-index key: #{$key}";
+  @return 0;
+}
