@@ -156,12 +156,10 @@ const onDragStart = (event: DragEvent, elementType: string) => {
 .panel-elements {
   width: auto;
   max-width: 500px;
-  // box-shadow: $shadow-lg; // Already on .panel
-  // background-color: $bg-darker; // Already on .panel
-  // border-radius: $border-radius; // Already on .panel
   height: 100%;
   display: flex;
   flex-direction: column;
+  padding: $spacing-lg;
 
   // Element panel header specifics (if any, beyond .panel__header)
   &__header {
@@ -204,7 +202,6 @@ const onDragStart = (event: DragEvent, elementType: string) => {
 
   &__grid {
     // Previously panel-elements__grid, makes sense to keep it specific
-    padding: $spacing-md;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: $spacing-md;

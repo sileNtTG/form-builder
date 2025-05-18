@@ -112,33 +112,40 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       return null;
     },
 
-    updateElement(id: string, updates: Partial<FormElement>) {
-      const index = this.elements.findIndex((el: FormElement) => el.id === id);
-      if (index !== -1) {
-        this.elements[index] = { ...this.elements[index], ...updates };
-      }
-    },
-
-    updateElementPosition(id: string, x: number, y: number) {
-      const index = this.elements.findIndex((el: FormElement) => el.id === id);
+    updateElement(elementId: string, updates: Partial<FormElement>) {
+      const index = this.elements.findIndex((el) => el.id === elementId);
       if (index !== -1) {
         this.elements[index] = {
           ...this.elements[index],
-          x,
-          y,
-        };
+          ...updates,
+        } as FormElement;
+        if (this.selectedElementId === elementId) {
+          // selectedElement is computed, so updating elements[index] and selectedElementId is enough
+          // If selectedElementId itself needs to trigger re-computation of selectedElement, ensure it does.
+        }
       }
     },
 
-    removeElement(id: string) {
-      this.elements = this.elements.filter((el: FormElement) => el.id !== id);
-      if (this.selectedElementId === id) {
+    updateElementPosition(elementId: string, x: number, y: number) {
+      const element = this.elements.find((el) => el.id === elementId);
+      if (element) {
+        element.x = x;
+        element.y = y;
+        // No need to update selectedElement directly, it's computed from selectedElementId
+        // If the currently selected element is moved, its details in PropertyPanel will update
+        // because PropertyPanel watches selectedElement, which recomputes if its source (elements array) changes.
+      }
+    },
+
+    removeElement(elementId: string) {
+      this.elements = this.elements.filter((el) => el.id !== elementId);
+      if (this.selectedElementId === elementId) {
         this.selectedElementId = null;
       }
     },
 
-    selectElement(id: string | null) {
-      this.selectedElementId = id;
+    selectElement(elementId: string | null) {
+      this.selectedElementId = elementId;
     },
 
     async saveForm() {

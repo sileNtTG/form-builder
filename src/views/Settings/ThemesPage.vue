@@ -54,6 +54,7 @@ const selectTheme = (themeName: "light" | "dark") => {
 
 <style lang="scss" scoped>
 @use "../../assets/scss/abstracts" as *; // For SASS variables
+@use "sass:math"; // Add sass:math for math.div
 
 .themes-page {
   padding: $spacing-xl;
@@ -120,7 +121,7 @@ const selectTheme = (themeName: "light" | "dark") => {
     .preview__surface,
     .preview__primary {
       flex: 1;
-      border-radius: $border-radius-sm / 2;
+      border-radius: math.div($border-radius-sm, 2);
     }
   }
 

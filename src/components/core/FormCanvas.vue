@@ -1,11 +1,17 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watchEffect } from "vue";
 import { useFormBuilderStore } from "../../stores/formBuilder";
-import { VueFlow, type Node, type XYPosition } from "@vue-flow/core";
+import {
+  VueFlow,
+  type Node,
+  type XYPosition,
+  type NodeComponent,
+} from "@vue-flow/core";
 import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";
 import { MiniMap } from "@vue-flow/minimap";
 import type { FormElement } from "../../models/FormElement";
+import TextInputNode from "../elements/TextInput.vue";
 
 import "@vue-flow/core/dist/style.css";
 import "@vue-flow/core/dist/theme-default.css";
@@ -22,15 +28,21 @@ interface NodeData {
 
 // Register node types
 const nodeTypes = {
-  // Add your node types here
+  input: TextInputNode as NodeComponent,
+  // Add other types here as their components are created/adapted
 };
 
 // Update nodes when store changes
 onMounted(() => {
-  updateNodes();
+  // Initial update
+  // updateNodes(); // watchEffect will run this immediately anyway
 
-  // Watch for changes (simplified)
-  setInterval(updateNodes, 1000);
+  // Watch for changes using watchEffect
+  watchEffect(() => {
+    updateNodes();
+  });
+
+  // setInterval(updateNodes, 1000); // Remove this problematic interval
 });
 
 // Function to update nodes from store
@@ -71,6 +83,23 @@ const onDrop = (event: DragEvent) => {
 const onDragOver = (event: DragEvent) => {
   event.preventDefault();
 };
+
+const handleNodesDragStop = ({ nodes: draggedNodes }: { nodes: Node[] }) => {
+  draggedNodes.forEach((node) => {
+    // Ensure position is defined and is an object with x and y
+    if (
+      node.position &&
+      typeof node.position.x === "number" &&
+      typeof node.position.y === "number"
+    ) {
+      formBuilderStore.updateElementPosition(
+        node.id,
+        node.position.x,
+        node.position.y
+      );
+    }
+  });
+};
 </script>
 
 <template>
@@ -85,7 +114,7 @@ const onDragOver = (event: DragEvent) => {
       :elementsSelectable="true"
       @dragover="onDragOver"
       @drop="onDrop"
-      @nodesDragStop="updateNodes"
+      @nodes-drag-stop="handleNodesDragStop"
     >
       <Background :pattern-color="'var(--theme-border)'" :gap="8" />
       <Controls />
