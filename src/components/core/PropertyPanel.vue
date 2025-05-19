@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useFormBuilderStore } from "../../stores/formBuilder";
+import Button from "../../components/common/Button.vue";
 
 const formBuilderStore = useFormBuilderStore();
 const selectedElement = computed(() => formBuilderStore.selectedElement);
 
-// Update element property
 const updateProperty = (property: string, value: any) => {
   if (!selectedElement.value) return;
 
@@ -13,7 +13,6 @@ const updateProperty = (property: string, value: any) => {
   formBuilderStore.updateElement(selectedElement.value.id, updates);
 };
 
-// Wrapper for input event to safely access value
 const handleInputValue = (event: Event, propertyName: string) => {
   const target = event.target as HTMLInputElement | null;
   if (target) {
@@ -21,7 +20,6 @@ const handleInputValue = (event: Event, propertyName: string) => {
   }
 };
 
-// Wrapper for number input event
 const handleNumberInputValue = (event: Event, propertyName: string) => {
   const target = event.target as HTMLInputElement | null;
   if (target) {
@@ -32,7 +30,6 @@ const handleNumberInputValue = (event: Event, propertyName: string) => {
   }
 };
 
-// Wrapper for checkbox change event to safely access checked state
 const handleCheckboxChange = (event: Event, propertyName: string) => {
   const target = event.target as HTMLInputElement | null;
   if (target) {
@@ -68,11 +65,9 @@ const handleCheckboxChange = (event: Event, propertyName: string) => {
     </h2>
 
     <div v-if="selectedElement" class="panel-properties__body panel-scroll">
-      <!-- Common properties -->
       <div class="property-group">
         <h3 class="property-group__title">General</h3>
         <div class="property-group__fields">
-          <!-- Label -->
           <div class="form__group">
             <label class="form__label">Label</label>
             <input
@@ -83,7 +78,6 @@ const handleCheckboxChange = (event: Event, propertyName: string) => {
             />
           </div>
 
-          <!-- Required -->
           <div class="form__checkbox">
             <input
               type="checkbox"
@@ -96,11 +90,9 @@ const handleCheckboxChange = (event: Event, propertyName: string) => {
         </div>
       </div>
 
-      <!-- Type-specific properties -->
       <div class="property-group" v-if="selectedElement.type === 'input'">
         <h3 class="property-group__title">Text Input Properties</h3>
         <div class="property-group__fields">
-          <!-- Placeholder -->
           <div class="form__group">
             <label class="form__label">Placeholder</label>
             <input
@@ -111,7 +103,6 @@ const handleCheckboxChange = (event: Event, propertyName: string) => {
             />
           </div>
 
-          <!-- Min/Max Length -->
           <div class="property-group__fields-row">
             <div class="form__group">
               <label class="form__label">Min Length</label>
@@ -135,7 +126,6 @@ const handleCheckboxChange = (event: Event, propertyName: string) => {
         </div>
       </div>
 
-      <!-- Layout properties -->
       <div class="property-group">
         <h3 class="property-group__title">Layout</h3>
         <div class="property-group__fields-row">
@@ -160,14 +150,14 @@ const handleCheckboxChange = (event: Event, propertyName: string) => {
         </div>
       </div>
 
-      <!-- Delete button -->
       <div class="panel-properties__actions">
-        <button
+        <Button
+          variant="danger"
+          :fullWidth="true"
           @click="formBuilderStore.removeElement(selectedElement.id)"
-          class="btn btn--danger btn--full"
         >
           Delete Element
-        </button>
+        </Button>
       </div>
     </div>
 

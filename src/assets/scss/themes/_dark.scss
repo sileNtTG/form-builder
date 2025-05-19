@@ -1,0 +1,137 @@
+@use "sass:color";
+@use "sass:string";
+@use "../abstracts/variables" as base; // To access base colors, semantic colors, etc.
+
+// ==========================================================================
+// DARK THEME PALETTE
+// ==========================================================================
+
+$bg-main-dark: base.$gray-900;
+$bg-surface-dark: base.$gray-800;
+$bg-sidebar-dark: base.$gray-800;
+$bg-alt-dark: base.$gray-700;
+$bg-hover-dark: color.adjust($bg-surface-dark, $lightness: 7%);
+$bg-input-dark: base.$gray-700;
+
+$text-primary-dark: base.$gray-100;
+$text-secondary-dark: base.$gray-400;
+$text-muted-dark: base.$gray-500;
+$text-disabled-dark: base.$gray-600;
+$text-inverse-dark: base.$gray-900;
+$text-code-dark: base.$vue-green-lighter;
+
+$border-color-dark: base.$gray-700;
+$border-input-dark: base.$gray-600;
+$select-arrow-color-dark: $text-muted-dark;
+$select-arrow-bg-dark: $bg-input-dark;
+$select-arrow-hover-bg-dark: color.adjust($bg-input-dark, $lightness: 8%);
+
+$button-default-bg-hover-dark: color.adjust($bg-surface-dark, $lightness: 10%);
+
+// ==========================================================================
+// DARK THEME MAP
+// ==========================================================================
+
+$dark-theme-variables: (
+  "text": $text-primary-dark,
+  "text-secondary": $text-secondary-dark,
+  "text-muted": $text-muted-dark,
+  "text-disabled": $text-disabled-dark,
+  "text-inverse": $text-inverse-dark,
+  "text-code": $text-code-dark,
+  "bg": $bg-main-dark,
+  "bg-surface": $bg-surface-dark,
+  "bg-alt": $bg-alt-dark,
+  "bg-hover": $bg-hover-dark,
+  "bg-input": $bg-input-dark,
+  "sidebar-bg": $bg-sidebar-dark,
+  "panel-bg": $bg-surface-dark,
+  "item-bg": $bg-alt-dark,
+  "item-hover-bg": color.adjust($bg-alt-dark, $lightness: 7%),
+  "border": $border-color-dark,
+  "border-input": $border-input-dark,
+  "select-arrow-color": $select-arrow-color-dark,
+  "select-arrow-bg": $select-arrow-bg-dark,
+  "select-arrow-hover-bg": $select-arrow-hover-bg-dark,
+  "button-default-bg": base.$gray-800,
+  "button-default-text": $text-primary-dark,
+  "button-default-border": base.$gray-700,
+  "button-default-hover-bg": $button-default-bg-hover-dark,
+  "primary": base.$primary,
+  "primary-rgb":
+    string.unquote(
+      "#{color.channel(base.$primary, 'red')}, #{color.channel(base.$primary, 'green')}, #{color.channel(base.$primary, 'blue')}"
+    ),
+  "primary-light": base.$primary-light,
+  "primary-dark": base.$primary-dark,
+  "primary-contrast": $text-inverse-dark,
+  "secondary": base.$secondary,
+  "secondary-rgb":
+    string.unquote(
+      "#{color.channel(base.$secondary, 'red')}, #{color.channel(base.$secondary, 'green')}, #{color.channel(base.$secondary, 'blue')}"
+    ),
+  "secondary-light": base.$secondary-light,
+  "secondary-dark": base.$secondary-dark,
+  "secondary-contrast": $text-inverse-dark,
+  "accent": base.$accent,
+  "accent-rgb":
+    string.unquote(
+      "#{color.channel(base.$accent, 'red')}, #{color.channel(base.$accent, 'green')}, #{color.channel(base.$accent, 'blue')}"
+    ),
+  "accent-light": base.$accent-light,
+  "accent-dark": base.$accent-dark,
+  "accent-contrast": $text-inverse-dark,
+  "danger": base.$danger,
+  "danger-rgb":
+    string.unquote(
+      "#{color.channel(base.$danger, 'red')}, #{color.channel(base.$danger, 'green')}, #{color.channel(base.$danger, 'blue')}"
+    ),
+  "danger-light": base.$danger-light,
+  "danger-dark": base.$danger-dark,
+  "danger-contrast": base.$white,
+  "warning": base.$warning,
+  "warning-rgb":
+    string.unquote(
+      "#{color.channel(base.$warning, 'red')}, #{color.channel(base.$warning, 'green')}, #{color.channel(base.$warning, 'blue')}"
+    ),
+  "warning-light": base.$warning-light,
+  "warning-dark": base.$warning-dark,
+  "warning-contrast": base.$gray-900,
+  "success": base.$success,
+  "success-rgb":
+    string.unquote(
+      "#{color.channel(base.$success, 'red')}, #{color.channel(base.$success, 'green')}, #{color.channel(base.$success, 'blue')}"
+    ),
+  "success-light": base.$success-light,
+  "success-dark": base.$success-dark,
+  "success-contrast": $text-inverse-dark,
+  "info": base.$info,
+  "info-rgb":
+    string.unquote(
+      "#{color.channel(base.$info, 'red')}, #{color.channel(base.$info, 'green')}, #{color.channel(base.$info, 'blue')}"
+    ),
+  "info-light": base.$info-light,
+  "info-dark": base.$info-dark,
+  "info-contrast": $text-inverse-dark,
+  "link": base.$primary-light,
+  "link-hover": base.$primary,
+  "shadow-color-rgb": base.$shadow-color-rgb-dark,
+
+  // Sidebar specific colors - Dark Theme
+  "sidebar-heading-text": base.$vue-green,
+  "sidebar-toggle-icon": base.$vue-green,
+  "sidebar-section-text": base.$vue-green,
+  "sidebar-section-icon": base.$vue-green,
+  "sidebar-item-text": $text-primary-dark,
+  "sidebar-item-icon": $text-muted-dark,
+  "sidebar-item-hover-text": $text-primary-dark,
+  "sidebar-item-hover-icon": $text-muted-dark,
+  "sidebar-item-active-bg": base.$primary-dark,
+  "sidebar-item-active-text": $text-inverse-dark,
+  "sidebar-item-active-icon": $text-inverse-dark,
+
+  // Element Panel specific
+  "element-icon-bg": base.$gray-600,
+  // Lighter background for icon circle in dark theme
+  "element-icon-color": base.$primary-light,
+);

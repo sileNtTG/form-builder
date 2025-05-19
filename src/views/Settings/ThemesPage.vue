@@ -8,7 +8,6 @@ const emit = defineEmits<{
 interface ThemeOption {
   id: "light" | "dark";
   displayName: string;
-  // Potentially add a preview color or icon here later
 }
 
 const availableThemes: ThemeOption[] = [
@@ -41,7 +40,6 @@ const selectTheme = (themeName: "light" | "dark") => {
         tabindex="0"
       >
         <span class="theme-tile__name">{{ theme.displayName }}</span>
-        <!-- We can add a visual preview of the theme here later -->
         <div class="theme-tile__preview">
           <div class="preview__bg"></div>
           <div class="preview__surface"></div>
@@ -53,7 +51,9 @@ const selectTheme = (themeName: "light" | "dark") => {
 </template>
 
 <style lang="scss" scoped>
-@use "../../assets/scss/abstracts" as *; // For SASS variables
+@use "../../assets/scss/abstracts" as *; // For SASS variables like spacing, radius, base colors
+@use "../../assets/scss/themes/dark" as dark_theme; // For dark theme specific palette variables
+@use "../../assets/scss/themes/light" as light_theme; // For light theme specific palette variables
 @use "sass:math"; // Add sass:math for math.div
 
 .themes-page {
@@ -63,7 +63,7 @@ const selectTheme = (themeName: "light" | "dark") => {
   align-items: center;
 
   &__title {
-    @include heading-2; // Assuming you have a heading-2 mixin
+    @include heading-2;
     color: var(--theme-text);
     margin-bottom: $spacing-xl;
   }
@@ -73,14 +73,14 @@ const selectTheme = (themeName: "light" | "dark") => {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: $spacing-lg;
     width: 100%;
-    max-width: 600px; // Adjust as needed
+    max-width: 600px;
   }
 }
 
 .theme-tile {
   padding: $spacing-lg;
   border: 2px solid var(--theme-border);
-  border-radius: $border-radius-lg; // Assuming a larger radius for tiles
+  border-radius: $border-radius-lg;
   cursor: pointer;
   text-align: center;
   background-color: var(--theme-bg-surface);
@@ -89,12 +89,12 @@ const selectTheme = (themeName: "light" | "dark") => {
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  min-height: 150px; // Ensure tiles have some height
+  min-height: 150px;
 
   &:hover,
   &:focus {
     border-color: var(--theme-primary);
-    box-shadow: $shadow-lg; // Use a larger shadow on hover/focus
+    box-shadow: $shadow-lg;
     transform: translateY(-2px);
   }
 
@@ -105,17 +105,15 @@ const selectTheme = (themeName: "light" | "dark") => {
     margin-bottom: $spacing-md;
   }
 
-  // Basic preview styles - these should be themed per tile ideally
-  // For simplicity, just showing structural elements
   &__preview {
     display: flex;
     gap: $spacing-xs;
     width: 80%;
-    height: 40px; // Example height
+    height: 40px;
     border: 1px solid var(--theme-border);
     border-radius: $border-radius-sm;
     padding: $spacing-xs;
-    background-color: var(--theme-bg); // Preview background
+    background-color: var(--theme-bg);
 
     .preview__bg,
     .preview__surface,
@@ -125,32 +123,28 @@ const selectTheme = (themeName: "light" | "dark") => {
     }
   }
 
-  // Specific preview colors for dark tile
   &--dark {
     .preview__bg {
-      background-color: $bg-main;
-    } // from _variables for dark
+      background-color: dark_theme.$bg-main-dark;
+    }
     .preview__surface {
-      background-color: $bg-surface;
+      background-color: dark_theme.$bg-surface-dark;
     }
     .preview__primary {
       background-color: $primary;
     }
   }
 
-  // Specific preview colors for light tile
   &--light {
-    // These should use light theme variable equivalents defined in _variables.scss or _themes.scss
-    // Example: use light theme's actual colors for preview
     .preview__bg {
-      background-color: $white;
-    } // Using a SASS var for white
+      background-color: light_theme.$bg-main-light;
+    }
     .preview__surface {
-      background-color: $gray-100;
-    } // SASS var for light gray
+      background-color: light_theme.$bg-surface-light;
+    }
     .preview__primary {
       background-color: $primary;
-    } // Primary is often the same
+    }
   }
 }
 </style>

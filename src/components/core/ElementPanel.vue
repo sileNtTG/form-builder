@@ -108,7 +108,7 @@ const onDragStart = (event: DragEvent, elementType: string) => {
 /* Component-specific styles for ElementPanel, including .panel and .panel-elements styles */
 
 .panel {
-  background-color: var(--theme-panel-bg); // Use CSS var
+  background-color: var(--theme-panel-bg);
   border-radius: $border-radius;
   box-shadow: 0 10px 15px -3px rgba(var(--theme-shadow-color-rgb), 0.12),
     0 4px 6px -2px rgba(var(--theme-shadow-color-rgb), 0.08);
@@ -118,14 +118,14 @@ const onDragStart = (event: DragEvent, elementType: string) => {
   // Panel header (generic part, can be specialized or used as is)
   &__header {
     padding: $spacing-lg;
-    border-bottom: 1px solid var(--theme-border); // Use CSS var
+    border-bottom: 1px solid var(--theme-border);
     @include flex-between;
 
     h2,
     h3 {
       margin: 0;
       @include heading-3;
-      color: var(--theme-text); // Use CSS var
+      color: var(--theme-text);
     }
 
     .actions {
@@ -142,7 +142,7 @@ const onDragStart = (event: DragEvent, elementType: string) => {
   // Panel footer (generic part)
   &__footer {
     padding: $spacing-md;
-    border-top: 1px solid var(--theme-border); // Use CSS var
+    border-top: 1px solid var(--theme-border);
     @include flex-between;
   }
 }
@@ -163,17 +163,15 @@ const onDragStart = (event: DragEvent, elementType: string) => {
 
   // Element panel header specifics (if any, beyond .panel__header)
   &__header {
-    // display: flex; // from .panel__header > @include flex-between if that's kept general
-    // justify-content: space-between;
-    // align-items: center;
-    // padding: $spacing-sm; // from .panel__header
-    // border-bottom: 1px solid $gray-700; // from .panel__header
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: $spacing-md;
   }
 
   &__title {
-    // @include heading-3; // from .panel__header h3
-    // color: $text-light; // from .panel__header h3
-    // margin: 0; // from .panel__header h3
+    @include heading-3;
+    margin: 0;
     display: flex;
     align-items: center;
   }
@@ -182,26 +180,24 @@ const onDragStart = (event: DragEvent, elementType: string) => {
     height: 1rem;
     width: 1rem;
     margin-right: $spacing-sm;
-    color: var(--theme-primary-light); // Use CSS var
+    color: var(--theme-primary-light);
   }
 
   &__badge {
     font-size: 0.75rem;
     padding: $spacing-xs $spacing-sm;
     border-radius: 9999px;
-    background-color: var(--theme-primary); // Use CSS var
-    color: var(--theme-text-inverse); // Use CSS var for text on primary bg
+    background-color: var(--theme-primary);
+    color: var(--theme-text-inverse);
   }
 
   // Element panel body specifics
   &__body {
     flex: 1;
     overflow-y: auto; // This should be panel-scroll if scrollbar styles are desired
-    // padding: $spacing-md; // from .panel__body
   }
 
   &__grid {
-    // Previously panel-elements__grid, makes sense to keep it specific
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: $spacing-md;
@@ -209,11 +205,9 @@ const onDragStart = (event: DragEvent, elementType: string) => {
 
   // Element panel footer specifics (if any, beyond .panel__footer)
   &__footer {
-    // padding: $spacing-sm; // from .panel__footer
     text-align: center;
     font-size: 0.75rem;
-    color: var(--theme-text-muted); // Explicitly set muted color
-    // border-top: 1px solid $gray-700; // from .panel__footer
+    color: var(--theme-text-muted);
   }
 }
 
@@ -222,10 +216,10 @@ const onDragStart = (event: DragEvent, elementType: string) => {
   position: relative;
   min-width: 120px;
   padding: $spacing-md;
-  background-color: var(--theme-item-bg); // Use CSS var
+  background-color: var(--theme-item-bg);
   border-radius: $border-radius;
   cursor: move;
-  border: 1px solid var(--theme-border); // Use CSS var
+  border: 1px solid var(--theme-border);
   @include transition;
   display: flex;
   flex-direction: column;
@@ -233,14 +227,14 @@ const onDragStart = (event: DragEvent, elementType: string) => {
   color: var(--theme-text);
 
   &:hover {
-    background-color: var(--theme-item-hover-bg); // Use CSS var
+    background-color: var(--theme-item-hover-bg);
     border-color: var(--theme-primary);
   }
 
   &.dragging {
     opacity: 0.5;
     border: 1px dashed var(--theme-primary);
-    box-shadow: 0 0 10px rgba(var(--theme-primary-rgb), 0.5); // Corrected usage
+    box-shadow: 0 0 10px rgba(var(--theme-primary-rgb), 0.5);
   }
 
   &__content {
@@ -250,26 +244,33 @@ const onDragStart = (event: DragEvent, elementType: string) => {
   &__label {
     font-weight: $font-weight-medium;
     font-size: $font-size-base;
-    // color: $text-light; // Inherited or set explicitly
   }
 
   &__description {
     font-size: $font-size-sm;
-    color: var(--theme-text-muted); // Use CSS var
+    color: var(--theme-text-muted);
   }
 }
 
 .element-icon {
   padding: $spacing-sm;
-  background-color: var(--theme-bg-alt); // Use CSS var
+  background-color: var(--theme-element-icon-bg);
   border-radius: 50%;
-  color: var(--theme-primary-light); // Use CSS var
+  color: var(--theme-element-icon-color);
   margin-bottom: $spacing-md;
   width: 2.5rem;
   height: 2.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
+
+  // Make the span a flex container too to center its v-html content
+  span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0; // Helps with vertical alignment of SVGs
+  }
 
   &__svg {
     height: 1rem;

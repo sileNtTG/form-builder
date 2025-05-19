@@ -1,36 +1,59 @@
 <script setup lang="ts">
-// Import necessary components
-import { ref } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import FormCanvas from "../components/core/FormCanvas.vue";
 import ElementPanel from "../components/core/ElementPanel.vue";
 import PropertyPanel from "../components/core/PropertyPanel.vue";
 import Sidebar from "../components/core/Sidebar.vue";
+import { useFormBuilderStore } from "../stores/formBuilder";
 
-// Sidebar state
+const formBuilderStore = useFormBuilderStore();
+
 const sidebarOpen = ref(true);
 
-// Handle sidebar toggle event
 const handleSidebarToggle = (isOpen: boolean) => {
   sidebarOpen.value = isOpen;
 };
+
+const handleKeyDown = (event: KeyboardEvent) => {
+  if (
+    formBuilderStore.selectedElementId &&
+    (event.key === "Delete" || event.key === "Backspace")
+  ) {
+    if (event.key === "Backspace" && !isInputFocused()) {
+      event.preventDefault();
+    }
+    formBuilderStore.removeElement(formBuilderStore.selectedElementId);
+  }
+};
+
+const isInputFocused = () => {
+  return (
+    document.activeElement &&
+    (document.activeElement.tagName === "INPUT" ||
+      document.activeElement.tagName === "TEXTAREA")
+  );
+};
+
+onMounted(() => {
+  window.addEventListener("keydown", handleKeyDown);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("keydown", handleKeyDown);
+});
 </script>
 
 <template>
   <div class="app-layout">
-    <!-- Sidebar component -->
     <Sidebar :initial-open="sidebarOpen" @toggle="handleSidebarToggle" />
 
-    <!-- Main area with Canvas -->
     <div class="app-layout__main">
-      <!-- Full-screen Canvas -->
       <FormCanvas />
 
-      <!-- Property Panel as overlay on the right -->
       <div class="property-panel-overlay">
         <PropertyPanel />
       </div>
 
-      <!-- Element Panel as overlay at the bottom -->
       <div class="element-panel-overlay">
         <ElementPanel />
       </div>
@@ -91,33 +114,4 @@ const handleSidebarToggle = (isOpen: boolean) => {
   transform: translateX(-50%);
   z-index: 20;
 }
-
-/*
-.element-item {
-  user-select: none;
-  position: relative;
-  min-width: 120px;
-  padding: $spacing-sm;
-  background-color: $bg-light; // This was causing an error and is redundant
-  border-radius: $border-radius;
-  cursor: move;
-  border: 1px solid transparent;
-  @include transition;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  color: $text-light;
-
-  &:hover {
-    background-color: $bg-lighter;
-    border-color: $primary;
-  }
-
-  &.dragging {
-    opacity: 0.5;
-    border: 1px dashed $primary;
-    box-shadow: 0 0 10px rgba($primary, 0.5);
-  }
-}
-*/
 </style>

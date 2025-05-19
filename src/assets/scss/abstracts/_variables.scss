@@ -1,87 +1,169 @@
 @use "sass:color";
+@use "sass:string";
 
-// Layout
-$sidebar-width: 20rem;
-$sidebar-width-collapsed: 3rem;
-$canvas-min-height: 50vh;
-$border-radius: 6px;
-$border-radius-sm: 3px;
-$border-radius-lg: 12px;
+// ==========================================================================
+// ABSTRACTS: VARIABLES
+// ==========================================================================
+// Global SASS variables: color palettes, typography, spacing, visual effects.
 
-// Spacing
-$spacing-xs: 0.25rem;
-$spacing-sm: 0.5rem;
-$spacing-md: 1rem;
-$spacing-lg: 1.5rem;
-$spacing-xl: 2rem;
+// --------------------------------------------------------------------------
+// #BASE COLORS
+// --------------------------------------------------------------------------
 
-// New Core Colors (Vue Docs Inspired Dark Theme)
-$primary: #41b883; // Vue Green
-$primary-light: color.adjust($primary, $lightness: 15%);
-$primary-dark: color.adjust($primary, $lightness: -10%);
-
-$secondary: #8b5cf6; // Purple Accent (was $accent)
-$secondary-light: color.adjust($secondary, $lightness: 15%);
-$secondary-dark: color.adjust($secondary, $lightness: -10%);
-
-$accent: #10b981; // Teal/Green Accent (was $secondary)
-$accent-light: color.adjust($accent, $lightness: 15%);
-$accent-dark: color.adjust($accent, $lightness: -10%);
-
-$success: #22c55e;
-$warning: #f59e0b;
-$danger: #ef4444;
-$danger-dark: color.adjust($danger, $lightness: -10%);
-
-// Grays & UI Text/Backgrounds (Dark Theme Focused)
 $white: #ffffff;
 $black: #000000;
 
-$gray-100: #f8f9fa; // Very light gray (for light theme if ever needed)
-$gray-200: #e9ecef;
-$gray-300: #dee2e6;
-$gray-400: #ced4da;
-$gray-500: #adb5bd;
-$gray-600: #6c757d; // Muted text for dark bg, placeholder
-$gray-700: #495057; // Borders on dark bg
-$gray-800: #343a40; // Surface/panel bg on dark
-$gray-900: #212529; // Main dark bg
+$gray-50: #f9fafb;
+$gray-100: #f3f4f6;
+$gray-200: #e5e7eb;
+$gray-300: #d1d5db;
+$gray-400: #9ca3af;
+$gray-500: #6b7280;
+$gray-600: #4b5563;
+$gray-700: #374151;
+$gray-800: #1f2937;
+$gray-900: #111827;
 
-// Base UI Colors (Derived from new palette)
-$bg-main: #202124; // Main content area background
-$bg-sidebar: #2f3136; // Sidebar, distinct panels
-$bg-surface: #2f3136; // Cards, panels, popovers
-$bg-alt: #3a3c40; // Hover states, slightly lighter surfaces
-$bg-input: $gray-800; // Input backgrounds
+// --------------------------------------------------------------------------
+// #BRAND & ACCENT COLORS (VUE-INSPIRED PALETTE)
+// --------------------------------------------------------------------------
+// Core brand colors and their variations.
 
-$text-primary: #e0e0e0; // Primary text on dark backgrounds
-$text-secondary: #b0b0b0; // Slightly more muted than primary
-$text-muted: #9e9e9e; // Muted text, placeholders, icons
-$text-disabled: $gray-600;
-$text-inverse: $gray-900; // Text for light surfaces (e.g., on a white button)
+$vue-green: #41b883;
+$vue-green-light: color.adjust($vue-green, $lightness: 15%);
+$vue-green-dark: color.adjust($vue-green, $lightness: -10%);
+$vue-green-lighter: #7fecb9; // Used for dark theme code text
 
-$border-color: $gray-700; // Default border color
-$border-color-input: $gray-600;
+$vue-blue: #3b82f6;
+$vue-blue-light: color.adjust($vue-blue, $lightness: 15%);
+$vue-blue-dark: color.adjust($vue-blue, $lightness: -10%);
+$vue-blue-darker: $gray-800; // Used for dark theme bg & light theme code text
 
-// Button specific hover variables
-$button-default-bg-hover-dark: color.adjust(
-  $gray-800,
-  $lightness: 10%
-); // Lighter for dark theme default button
-$button-default-bg-hover-light: color.adjust(
-  $gray-200,
-  $lightness: -5%
-); // Darker for light theme default button
+// Semantic Colors
+$primary: $vue-green;
+$primary-light: $vue-green-light;
+$primary-dark: $vue-green-dark;
 
-// Shadows (keep as is for now, may need adjustment for dark theme)
-$shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.07);
-$shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.08);
-$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
-  0 2px 4px -1px rgba(0, 0, 0, 0.08);
-$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.12),
-  0 4px 6px -2px rgba(0, 0, 0, 0.08);
+$secondary: $vue-blue;
+$secondary-light: $vue-blue-light;
+$secondary-dark: $vue-blue-dark;
 
-// Transitions (keep as is)
+$accent: #10b981; // Teal/Green
+$accent-light: color.adjust($accent, $lightness: 15%);
+$accent-dark: color.adjust($accent, $lightness: -10%);
+
+// Status Colors
+$danger: #ef4444;
+$danger-light: color.adjust($danger, $lightness: 10%);
+$danger-dark: color.adjust($danger, $lightness: -10%);
+
+$warning: #f59e0b;
+$warning-light: color.adjust($warning, $lightness: 10%);
+$warning-dark: color.adjust($warning, $lightness: -10%);
+
+$success: #22c55e;
+$success-light: color.adjust($success, $lightness: 10%);
+$success-dark: color.adjust($success, $lightness: -10%);
+
+$info: $vue-blue;
+$info-light: $vue-blue-light;
+$info-dark: $vue-blue-dark;
+
+// --------------------------------------------------------------------------
+// #TYPOGRAPHY
+// --------------------------------------------------------------------------
+
+// Font Families
+$font-primary: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+  Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+$font-secondary: "Roboto", sans-serif; // Example, if an alternative is needed
+$font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier,
+  monospace;
+
+// Font Sizes
+$font-size-xs: 0.75rem;
+$font-size-sm: 0.875rem;
+$font-size-base: 1rem;
+$font-size-md: 1rem; // Alias for base
+$font-size-lg: 1.125rem;
+$font-size-xl: 1.25rem;
+$font-size-2xl: 1.5rem;
+$font-size-3xl: 1.875rem;
+$font-size-4xl: 2.25rem;
+
+// Font Weights
+$font-weight-light: 300;
+$font-weight-regular: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+$font-weight-extrabold: 800;
+
+// --------------------------------------------------------------------------
+// #SPACING & SIZING
+// --------------------------------------------------------------------------
+
+$spacing-unit: 0.25rem; // Base unit: 4px
+
+// Spacing scale
+$spacing-xs: $spacing-unit * 2; // 0.5rem
+$spacing-sm: $spacing-unit * 3; // 0.75rem
+$spacing-md: $spacing-unit * 4; // 1rem
+$spacing-lg: $spacing-unit * 6; // 1.5rem
+$spacing-xl: $spacing-unit * 8; // 2rem
+$spacing-2xl: $spacing-unit * 12; // 3rem
+
+// Layout specific
+$sidebar-width: 20rem;
+$sidebar-width-collapsed: 3rem;
+$canvas-min-height: 50vh;
+
+// --------------------------------------------------------------------------
+// #BORDERS
+// --------------------------------------------------------------------------
+
+$border-radius-none: 0;
+$border-radius-sm: 0.25rem;
+$border-radius: 0.375rem; // default
+$border-radius-md: 0.5rem;
+$border-radius-lg: 0.75rem;
+$border-radius-xl: 1rem;
+$border-radius-full: 9999px; // Pill shape
+
+// --------------------------------------------------------------------------
+// #VISUAL EFFECTS
+// --------------------------------------------------------------------------
+
+// Shadow base colors (RGB values for rgba theme variable)
+$shadow-color-rgb-dark: string.unquote(
+  "#{color.channel($black, 'red')}, #{color.channel($black, 'green')}, #{color.channel($black, 'blue')}"
+);
+$shadow-color-rgb-light: string.unquote(
+  "#{color.channel($gray-500, 'red')}, #{color.channel($gray-500, 'green')}, #{color.channel($gray-500, 'blue')}"
+);
+
+// Shadows (using CSS custom property for themeable color)
+$shadow-sm: 0 1px 2px 0 rgba(var(--theme-shadow-color-rgb), 0.05);
+$shadow: 0 1px 3px 0 rgba(var(--theme-shadow-color-rgb), 0.1),
+  0 1px 2px 0 rgba(var(--theme-shadow-color-rgb), 0.06);
+$shadow-md: 0 4px 6px -1px rgba(var(--theme-shadow-color-rgb), 0.1),
+  0 2px 4px -1px rgba(var(--theme-shadow-color-rgb), 0.06);
+$shadow-lg: 0 10px 15px -3px rgba(var(--theme-shadow-color-rgb), 0.1),
+  0 4px 6px -2px rgba(var(--theme-shadow-color-rgb), 0.05);
+$shadow-xl: 0 20px 25px -5px rgba(var(--theme-shadow-color-rgb), 0.1),
+  0 10px 10px -5px rgba(var(--theme-shadow-color-rgb), 0.04);
+$shadow-inner: inset 0 2px 4px 0 rgba(var(--theme-shadow-color-rgb), 0.06);
+
+// Z-index stack
+$z-index-dropdown: 1000;
+$z-index-sticky: 1020;
+$z-index-fixed: 1030;
+$z-index-modal-backdrop: 1040;
+$z-index-modal: 1050;
+$z-index-popover: 1060;
+$z-index-tooltip: 1070;
+
+// Transitions
 $transition-fast: 150ms ease;
 $transition-normal: 300ms ease;
 $transition-slow: 500ms ease;

@@ -44,7 +44,6 @@ const setTheme = (themeName: "light" | "dark") => {
 
 <style lang="scss">
 @use "assets/scss/abstracts" as *; // Ensure variables and mixins are available
-@use "assets/scss/base/base"; // Ensure base styles with theme variables are applied
 // App-wide standard layout styles
 .app {
   min-height: 100vh;

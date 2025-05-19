@@ -28,7 +28,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
     },
 
     createAndAddElement(elementType: string, x: number, y: number) {
-      const baseElement = {
+      const baseElementProps = {
         id: uuidv4(),
         label: `New ${
           elementType.charAt(0).toUpperCase() + elementType.slice(1)
@@ -37,8 +37,6 @@ export const useFormBuilderStore = defineStore("formBuilder", {
         order: this.elements.length + 1,
         x,
         y,
-        width: 300,
-        height: 70,
       };
 
       let newElement: FormElement | null = null;
@@ -46,60 +44,75 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       switch (elementType) {
         case "input":
           newElement = {
-            ...baseElement,
+            ...baseElementProps,
             type: "input",
             placeholder: "Enter text",
+            width: 250,
+            height: 48,
           } as FormElement;
           break;
         case "textarea":
           newElement = {
-            ...baseElement,
+            ...baseElementProps,
             type: "textarea",
             placeholder: "Enter text",
             rows: 4,
+            width: 300,
+            height: 120,
           } as FormElement;
           break;
         case "checkbox":
           newElement = {
-            ...baseElement,
+            ...baseElementProps,
             type: "checkbox",
             checked: false,
+            width: 200,
+            height: 40,
           } as FormElement;
           break;
         case "select":
           newElement = {
-            ...baseElement,
+            ...baseElementProps,
             type: "select",
             options: [
               { value: "option1", label: "Option 1" },
               { value: "option2", label: "Option 2" },
             ],
             multiple: false,
+            width: 250,
+            height: 48,
           } as FormElement;
           break;
         case "number":
           newElement = {
-            ...baseElement,
+            ...baseElementProps,
             type: "number",
             min: 0,
             max: 100,
+            width: 150,
+            height: 48,
           } as FormElement;
           break;
         case "date":
           newElement = {
-            ...baseElement,
+            ...baseElementProps,
             type: "date",
+            width: 200,
+            height: 48,
           } as FormElement;
           break;
         case "file":
           newElement = {
-            ...baseElement,
+            ...baseElementProps,
             type: "file",
             accept: "*/*",
             multiple: false,
+            width: 300,
+            height: 48,
           } as FormElement;
           break;
         default:
+          console.warn(`Unknown element type: ${elementType}`);
           return null;
       }
 

@@ -6,7 +6,6 @@ const props = defineProps<{
   element?: TextInputElement;
   modelValue?: string;
   inPreview?: boolean;
-  // Node props from Vue Flow
   id?: string;
   selected?: boolean;
   data?: {
@@ -21,7 +20,6 @@ const emit = defineEmits<{
   (e: "select"): void;
 }>();
 
-// Handle either direct element or element from data
 const localElement = computed(() => props.data?.element || props.element);
 const localInPreview = computed(() => props.data?.inPreview || props.inPreview);
 
@@ -76,8 +74,6 @@ const handleClick = () => {
 </template>
 
 <style lang="scss" scoped>
-// Using scoped styles for component-specific styling
-
 .form-element {
   margin-bottom: $spacing-md;
   position: relative;
@@ -112,41 +108,6 @@ const handleClick = () => {
       cursor: pointer;
       pointer-events: none;
       opacity: 0.7;
-    }
-  }
-
-  &__handle {
-    cursor: move;
-    @include flex-center;
-    position: absolute;
-    top: $spacing-xs;
-    right: $spacing-xs;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background-color: var(--theme-bg-alt);
-
-    &:hover {
-      background-color: var(--theme-item-hover-bg);
-    }
-  }
-
-  &__controls {
-    @include flex-between;
-    margin-top: $spacing-sm;
-
-    button {
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: var(--theme-text-muted);
-      padding: $spacing-xs;
-      border-radius: $border-radius-sm;
-
-      &:hover {
-        background-color: var(--theme-item-hover-bg);
-        color: var(--theme-text);
-      }
     }
   }
 

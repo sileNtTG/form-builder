@@ -1,24 +1,17 @@
 /*
- * Main SCSS entry point - Only includes global styles
- * Component-specific styles are now directly in their respective .vue files
+ * Main SCSS entry point.
+ * Component-specific styles are in their respective .vue files.
  */
 
-// Core dependencies
-// @use "sass:color"; -- already imported in vite.config.ts
+// Core SASS modules (if not globally available via Vite config)
 @use "sass:map";
 
 // Base styles and utilities
 @use "abstracts" as *;
-@use "base/base";
+@use "base/base"; // Imports global resets, HTML element styles, base form styles
 
-// Global layout utilities
-// @use "layout/grid"; // Removed, as utilities moved to base and specific layouts are in components
-// @use "layout/forms"; // Removed, as styles moved to base and components
-
-// Global component styles
-// @use "components/buttons"; -- Styles moved to Button.vue component
-// @use "components/panels"; -- Styles moved to ElementPanel.vue and PropertyPanel.vue
-@use "components/form-elements";
+// Global component styles (styles that are truly global and not component-specific)
+@use "components/form-elements"; // Styles for .builder-form-element on the canvas
 
 /* Custom scrollbar for panels */
 .panel-scroll::-webkit-scrollbar {
@@ -26,23 +19,23 @@
 }
 
 .panel-scroll::-webkit-scrollbar-track {
-  background: rgba(75, 85, 99, 0.2);
+  background: rgba(var(--theme-shadow-color-rgb), 0.1); // Themed track
   border-radius: 10px;
 }
 
 .panel-scroll::-webkit-scrollbar-thumb {
-  background: rgba(107, 114, 128, 0.8);
+  background: var(--theme-text-muted); // Themed thumb
   border-radius: 10px;
 }
 
 .panel-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(156, 163, 175, 0.8);
+  background: var(--theme-text-secondary); // Themed thumb hover
 }
 
-/* Animation for menu transitions */
+/* Animation for menu transitions (Vue <transition name="collapse">) */
 .collapse-enter-active,
 .collapse-leave-active {
-  transition: max-height 0.3s ease;
+  transition: max-height $transition-normal ease; // Use SASS variable for duration
   overflow: hidden;
 }
 

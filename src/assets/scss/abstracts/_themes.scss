@@ -1,124 +1,12 @@
 @use "sass:color"; // Make color functions available
 @use "sass:map";
-@use "variables" as vars; // Use a namespace to avoid conflicts if needed
+@use "../themes/dark" as dark_theme;
+@use "../themes/light" as light_theme;
 
+// Define a new map that references the detailed theme maps
 $themes: (
-  dark: (
-    // Base Colors
-    "primary": vars.$primary,
-    "primary-rgb":
-      "#{color.channel(vars.$primary, 'red')}, #{color.channel(vars.$primary, 'green')}, #{color.channel(vars.$primary, 'blue')}",
-    "primary-light": vars.$primary-light,
-    "primary-dark": vars.$primary-dark,
-    "link-hover": color.adjust(vars.$primary-light, $lightness: 10%),
-    "secondary": vars.$secondary,
-    "secondary-light": vars.$secondary-light,
-    "secondary-dark": vars.$secondary-dark,
-    "accent": vars.$accent,
-    "accent-light": vars.$accent-light,
-    "accent-dark": vars.$accent-dark,
-    "success": vars.$success,
-    "warning": vars.$warning,
-    "danger": vars.$danger,
-    "danger-dark": vars.$danger-dark,
-    "danger-rgb":
-      "#{color.channel(vars.$danger, 'red')}, #{color.channel(vars.$danger, 'green')}, #{color.channel(vars.$danger, 'blue')}",
-
-    // Text Colors
-    "text": vars.$text-primary,
-    "text-secondary": vars.$text-secondary,
-    "text-muted": vars.$text-muted,
-    "text-disabled": vars.$text-disabled,
-    "text-inverse": vars.$text-inverse,
-
-    // For light elements on dark bg
-    // Background Colors
-    "bg": vars.$bg-main,
-    "bg-alt": vars.$bg-alt,
-    "bg-surface": vars.$bg-surface,
-    // For cards, panels, etc.
-    "bg-input": vars.$bg-input,
-
-    // Border & Shadow Colors
-    "border": vars.$border-color,
-    "border-input": vars.$border-color-input,
-    "shadow-color-rgb": "0, 0, 0",
-
-    // For box-shadows
-    // Specific UI elements
-    "sidebar-bg": vars.$bg-sidebar,
-    "sidebar-text": vars.$text-primary,
-    "sidebar-border": vars.$border-color,
-    "panel-bg": vars.$bg-surface,
-    "item-bg": vars.$bg-main,
-    // e.g. .element-item
-    "item-hover-bg": vars.$bg-alt,
-    "button-default-bg": vars.$gray-800,
-    "button-default-text": vars.$text-primary,
-    "button-default-border": vars.$gray-700,
-    "button-default-hover-bg": vars.$button-default-bg-hover-dark,
-  ),
-  light: (
-    // Base Colors
-    "primary": vars.$primary,
-    "primary-rgb":
-      "#{color.channel(vars.$primary, 'red')}, #{color.channel(vars.$primary, 'green')}, #{color.channel(vars.$primary, 'blue')}",
-    "primary-light": color.adjust(vars.$primary, $lightness: -10%),
-    // Darker for light bg accents
-    "primary-dark": color.adjust(vars.$primary, $lightness: -20%),
-    "link-hover":
-      color.adjust(
-        color.adjust(vars.$primary, $lightness: -10%),
-        $lightness: -10%
-      ),
-    "secondary": vars.$secondary,
-    "secondary-light": color.adjust(vars.$secondary, $lightness: 25%),
-    "secondary-dark": color.adjust(vars.$secondary, $lightness: -10%),
-    "accent": vars.$accent,
-    "accent-light": color.adjust(vars.$accent, $lightness: 25%),
-    "accent-dark": color.adjust(vars.$accent, $lightness: -10%),
-    "success": vars.$success,
-    "warning": vars.$warning,
-    "danger": vars.$danger,
-    "danger-dark": vars.$danger-dark,
-    "danger-rgb":
-      "#{color.channel(vars.$danger, 'red')}, #{color.channel(vars.$danger, 'green')}, #{color.channel(vars.$danger, 'blue')}",
-
-    // Text Colors
-    "text": vars.$gray-900,
-    "text-secondary": vars.$gray-800,
-    "text-muted": vars.$gray-600,
-    "text-disabled": vars.$gray-500,
-    "text-inverse": vars.$white,
-
-    // For dark elements on light bg
-    // Background Colors
-    "bg": vars.$white,
-    // Main background
-    "bg-alt": vars.$gray-100,
-    // Alternate, e.g. for some sections
-    "bg-surface": vars.$white,
-    // For cards, panels
-    "bg-input": vars.$white,
-
-    // Border & Shadow Colors
-    "border": vars.$gray-300,
-    "border-input": vars.$gray-400,
-    "shadow-color-rgb": "0, 0, 0",
-
-    // Specific UI elements
-    "sidebar-bg": vars.$gray-800,
-    // Dark sidebar for contrast, or could be light
-    "sidebar-text": vars.$gray-100,
-    "sidebar-border": vars.$gray-700,
-    "panel-bg": vars.$white,
-    "item-bg": vars.$gray-100,
-    "item-hover-bg": vars.$gray-200,
-    "button-default-bg": vars.$gray-200,
-    "button-default-text": vars.$gray-900,
-    "button-default-border": vars.$gray-400,
-    "button-default-hover-bg": vars.$button-default-bg-hover-light,
-  ),
+  "dark": dark_theme.$dark-theme-variables,
+  "light": light_theme.$light-theme-variables,
 );
 
 @mixin apply-theme($theme-name) {
@@ -128,6 +16,6 @@ $themes: (
       --theme-#{$key}: #{$value};
     }
   } @else {
-    @warn "Theme `#{$theme-name}` not found.";
+    @warn "Theme `#{$theme-name}` not found. Available: #{map.keys($themes)}";
   }
 }

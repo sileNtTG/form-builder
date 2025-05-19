@@ -10,7 +10,6 @@ const formId = route.params.id as string;
   <div class="container mx-auto p-4">
     <h1 class="text-2xl font-bold mb-4">Form Preview</h1>
     <div class="bg-white p-6 rounded shadow">
-      <!-- Form preview will be rendered here -->
       <p class="text-center text-gray-500">Form ID: {{ formId }}</p>
     </div>
   </div>

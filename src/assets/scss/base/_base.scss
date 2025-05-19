@@ -1,10 +1,24 @@
-@use "../abstracts" as *;
-@use "../abstracts/themes" as themes; // Import the themes
-@use "sass:string"; // Add string module
+// ==========================================================================
+// BASE STYLES
+// ==========================================================================
+// Foundational styles for HTML elements, global resets, BEM form controls, layout utilities.
 
-// Base HTML and Body styles
+@use "sass:math";
+@use "../abstracts" as *;
+@use "../abstracts/themes" as themes;
+
+// --------------------------------------------------------------------------
+// #GLOBAL RESETS & DEFAULTS
+// --------------------------------------------------------------------------
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 html {
-  font-size: 16px; // Base font size
+  font-size: 16px; // Base for REM calculations
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -14,23 +28,25 @@ html {
 }
 
 body {
-  @include themes.apply-theme(dark); // Apply dark theme by default
+  @include themes.apply-theme(dark); // Default theme
 
   &[data-theme="light"] {
     @include themes.apply-theme(light);
   }
 
-  font-family: $font-primary, sans-serif; // Apply the Inter font
-  color: var(--theme-text); // Use CSS var for text color
-  background-color: var(--theme-bg); // Use CSS var for background color
+  font-family: $font-primary, sans-serif;
+  color: var(--theme-text);
+  background-color: var(--theme-bg);
   margin: 0;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  box-sizing: border-box;
 }
 
-// Headings - ensure they inherit the primary font as well
+// --------------------------------------------------------------------------
+// #BASE TYPOGRAPHY
+// --------------------------------------------------------------------------
+
 h1,
 h2,
 h3,
@@ -38,28 +54,61 @@ h4,
 h5,
 h6 {
   font-family: $font-primary, sans-serif;
-  font-weight: 600; // Adjust as needed
+  font-weight: $font-weight-semibold;
   line-height: 1.2;
   margin-top: 0;
   margin-bottom: $spacing-md;
-  color: var(--theme-text); // Use CSS var
+  color: var(--theme-text);
 }
 
-// Basic reset for links
+h1 {
+  font-size: $font-size-3xl;
+}
+h2 {
+  font-size: $font-size-2xl;
+}
+h3 {
+  font-size: $font-size-xl;
+}
+h4 {
+  font-size: $font-size-lg;
+}
+h5 {
+  font-size: $font-size-base;
+}
+h6 {
+  font-size: $font-size-sm;
+}
+
+p {
+  margin-top: 0;
+  margin-bottom: $spacing-md;
+  line-height: 1.6;
+}
+
+// --------------------------------------------------------------------------
+// #LINK STYLES
+// --------------------------------------------------------------------------
+
 a {
-  color: var(--theme-primary-light);
+  color: var(--theme-link);
   text-decoration: none;
-  &:hover {
+  @include transition;
+
+  &:hover,
+  &:focus {
     text-decoration: underline;
-    color: var(--theme-link-hover); // Use the new CSS variable
+    color: var(--theme-link-hover);
   }
 }
 
-// Form container
+// --------------------------------------------------------------------------
+// #FORM ELEMENTS (Global BEM-style form controls)
+// --------------------------------------------------------------------------
+
 .form {
   width: 100%;
 
-  // Form groups
   &__group {
     margin-bottom: $spacing-md;
 
@@ -67,16 +116,16 @@ a {
       display: block;
       margin-bottom: $spacing-xs;
       font-weight: $font-weight-medium;
-      color: var(--theme-text-secondary); // Use themed text color
+      color: var(--theme-text-secondary);
     }
 
-    &.required label::after {
+    &--required label::after {
       content: "*";
-      color: var(--theme-danger); // Use themed danger color
+      color: var(--theme-danger);
       margin-left: $spacing-xs;
     }
 
-    &.inline {
+    &--inline {
       @include flex(row, flex-start, center);
 
       label {
@@ -86,18 +135,25 @@ a {
     }
   }
 
-  // Inputs
-  &__input {
+  &__input,
+  &__select,
+  &__textarea {
+    display: block;
     width: 100%;
-    max-width: fit-content;
     padding: $spacing-sm $spacing-md;
     border: 1px solid var(--theme-border-input);
     border-radius: $border-radius;
     background-color: var(--theme-bg-input);
+    font-family: inherit;
     font-size: $font-size-base;
     line-height: 1.5;
     color: var(--theme-text);
-    @include transition;
+    @include transition(
+      $property: (
+        border-color,
+        box-shadow,
+      )
+    );
 
     &:focus {
       outline: none;
@@ -105,72 +161,59 @@ a {
       box-shadow: 0 0 0 2px rgba(var(--theme-primary-rgb), 0.3);
     }
 
+    &--error,
     &.error {
       border-color: var(--theme-danger);
       &:focus {
-        box-shadow: 0 0 0 2px rgba(var(--theme-danger-rgb), 0.2); // Assuming danger-rgb exists
+        box-shadow: 0 0 0 2px rgba(var(--theme-danger-rgb), 0.2);
       }
     }
 
     &::placeholder {
       color: var(--theme-text-muted);
+      opacity: 1; // Ensure placeholder visibility
     }
 
     &:disabled {
       background-color: var(--theme-bg-alt);
       color: var(--theme-text-disabled);
       cursor: not-allowed;
+      border-color: var(--theme-border);
     }
   }
 
-  // Select
   &__select {
-    width: 100%;
-    padding: $spacing-sm $spacing-md;
-    border: 1px solid var(--theme-border-input);
-    border-radius: $border-radius;
-    background-color: var(--theme-bg-input);
-    font-size: $font-size-base;
-    line-height: 1.5;
-    color: var(--theme-text);
-    @include transition;
     appearance: none;
-    $stroke-color-hex: string.slice(
-      "#{$text-muted}",
-      2
-    ); // Temporary variable for sliced color
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23#{$stroke-color-hex}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-    background-position: right $spacing-sm center;
-    background-repeat: no-repeat;
-    padding-right: $spacing-xl;
-
-    &:focus {
-      outline: none;
-      border-color: var(--theme-primary);
-      box-shadow: 0 0 0 2px rgba(var(--theme-primary-rgb), 0.3);
-    }
-
-    &.error {
-      border-color: var(--theme-danger);
-    }
-
-    &:disabled {
-      background-color: var(--theme-bg-alt);
-      cursor: not-allowed;
-    }
+    // Themeable select arrow using mask-image and a CSS variable for color
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    -webkit-mask-position: right $spacing-sm center;
+    mask-position: right $spacing-sm center;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: 1em;
+    mask-size: 1em;
+    background-color: var(--theme-select-arrow-color);
+    padding-right: $spacing-xl; // Space for arrow
   }
 
-  // Checkbox and radio
+  &__textarea {
+    min-height: 8rem;
+    resize: vertical;
+  }
+
   &__checkbox,
   &__radio {
     @include flex(row, flex-start, center);
     cursor: pointer;
     margin-bottom: $spacing-xs;
+    position: relative; // For advanced custom styling if needed
 
     input {
       margin-right: $spacing-sm;
       accent-color: var(--theme-primary);
-      // Further custom styling for checkbox/radio may be needed
+      // Basic styling for native controls. For full custom styling,
+      // hide input and style pseudo-elements.
     }
 
     label {
@@ -180,7 +223,6 @@ a {
     }
   }
 
-  // Help text
   &__help {
     display: block;
     margin-top: $spacing-xs;
@@ -188,7 +230,6 @@ a {
     color: var(--theme-text-muted);
   }
 
-  // Error message
   &__error {
     display: block;
     margin-top: $spacing-xs;
@@ -197,74 +238,52 @@ a {
   }
 }
 
-// Container
+// --------------------------------------------------------------------------
+// #LAYOUT UTILITIES
+// --------------------------------------------------------------------------
+
 .container {
   width: 100%;
-  margin: 0 auto;
-  padding: 0 $spacing-md;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: $spacing-md;
+  padding-right: $spacing-md;
 
+  // Optional max-widths for breakpoints
   @include respond-to("sm") {
     max-width: 640px;
   }
-
   @include respond-to("md") {
     max-width: 768px;
   }
-
   @include respond-to("lg") {
     max-width: 1024px;
   }
-
   @include respond-to("xl") {
     max-width: 1280px;
   }
 }
 
-// Simple grid system
+// Optional simple Flexbox Grid System
 .row {
   display: flex;
   flex-wrap: wrap;
-  margin: 0 (-$spacing-sm); // Assumes $spacing-sm is defined
+  margin-left: -$spacing-sm; // Gutters via negative margin
+  margin-right: -$spacing-sm;
 }
 
 .col {
-  padding: 0 $spacing-sm; // Assumes $spacing-sm is defined
-  flex: 1;
+  padding-left: $spacing-sm;
+  padding-right: $spacing-sm;
+  flex-basis: 0;
+  flex-grow: 1;
+  max-width: 100%;
+}
 
-  &-1 {
-    flex: 0 0 8.333%;
-  }
-  &-2 {
-    flex: 0 0 16.666%;
-  }
-  &-3 {
-    flex: 0 0 25%;
-  }
-  &-4 {
-    flex: 0 0 33.333%;
-  }
-  &-5 {
-    flex: 0 0 41.666%;
-  }
-  &-6 {
-    flex: 0 0 50%;
-  }
-  &-7 {
-    flex: 0 0 58.333%;
-  }
-  &-8 {
-    flex: 0 0 66.666%;
-  }
-  &-9 {
-    flex: 0 0 75%;
-  }
-  &-10 {
-    flex: 0 0 83.333%;
-  }
-  &-11 {
-    flex: 0 0 91.666%;
-  }
-  &-12 {
-    flex: 0 0 100%;
+// Column width classes (e.g., .col-6 for 50%)
+@for $i from 1 through 12 {
+  .col-#{$i} {
+    flex: 0 0 math.percentage(math.div($i, 12));
+    max-width: math.percentage(math.div($i, 12));
   }
 }

@@ -18,34 +18,25 @@ import "@vue-flow/core/dist/theme-default.css";
 
 const formBuilderStore = useFormBuilderStore();
 const nodes = ref<Node[]>([]);
+const isDraggingOver = ref(false);
 
-// Define a type for node data if not already available
 interface NodeData {
   element: FormElement;
   inPreview: boolean;
   onSelect: () => void;
 }
 
-// Register node types
 const nodeTypes = {
   input: TextInputNode as NodeComponent,
   // Add other types here as their components are created/adapted
 };
 
-// Update nodes when store changes
 onMounted(() => {
-  // Initial update
-  // updateNodes(); // watchEffect will run this immediately anyway
-
-  // Watch for changes using watchEffect
   watchEffect(() => {
     updateNodes();
   });
-
-  // setInterval(updateNodes, 1000); // Remove this problematic interval
 });
 
-// Function to update nodes from store
 function updateNodes() {
   nodes.value = formBuilderStore.elements.map((element, index) => ({
     id: element.id,
@@ -62,8 +53,8 @@ function updateNodes() {
   }));
 }
 
-// Handle dropping an element from the panel
 const onDrop = (event: DragEvent) => {
+  isDraggingOver.value = false;
   if (!event.dataTransfer) return;
 
   event.preventDefault();
@@ -71,22 +62,33 @@ const onDrop = (event: DragEvent) => {
   const elementType = event.dataTransfer.getData("elementType");
   if (!elementType) return;
 
-  // Get drop coordinates (simplified)
   const x = event.clientX - 200;
   const y = event.clientY - 100;
 
-  // Create a new element
   formBuilderStore.createAndAddElement(elementType, x, y);
 };
 
-// Prevent default behavior for dragover to allow dropping
 const onDragOver = (event: DragEvent) => {
   event.preventDefault();
+  if (event.dataTransfer) {
+    isDraggingOver.value = true;
+    event.dataTransfer.dropEffect = "copy";
+  }
+};
+
+const onDragLeave = (event: DragEvent) => {
+  const flowHostElement = event.currentTarget as HTMLElement;
+  if (
+    event.relatedTarget === null ||
+    (event.relatedTarget instanceof Node &&
+      !flowHostElement.contains(event.relatedTarget))
+  ) {
+    isDraggingOver.value = false;
+  }
 };
 
 const handleNodesDragStop = ({ nodes: draggedNodes }: { nodes: Node[] }) => {
   draggedNodes.forEach((node) => {
-    // Ensure position is defined and is an object with x and y
     if (
       node.position &&
       typeof node.position.x === "number" &&
@@ -106,6 +108,7 @@ const handleNodesDragStop = ({ nodes: draggedNodes }: { nodes: Node[] }) => {
   <div class="form-canvas">
     <VueFlow
       class="form-canvas__flow"
+      :class="{ 'drag-over': isDraggingOver }"
       :nodes="nodes"
       :nodeTypes="nodeTypes"
       :defaultZoom="1"
@@ -113,6 +116,7 @@ const handleNodesDragStop = ({ nodes: draggedNodes }: { nodes: Node[] }) => {
       :maxZoom="4"
       :elementsSelectable="true"
       @dragover="onDragOver"
+      @dragleave="onDragLeave"
       @drop="onDrop"
       @nodes-drag-stop="handleNodesDragStop"
     >
@@ -126,6 +130,20 @@ const handleNodesDragStop = ({ nodes: draggedNodes }: { nodes: Node[] }) => {
 
       <!-- Empty state -->
       <div v-if="nodes.length === 0" class="form-canvas__empty">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M3 3h7v7H3z" />
+          <path d="M14 3h7v7h-7z" />
+          <path d="M14 14h7v7h-7z" />
+          <path d="M3 14h7v7H3z" />
+        </svg>
         <div>Drag and drop elements here to build your form</div>
       </div>
     </VueFlow>
@@ -141,6 +159,14 @@ const handleNodesDragStop = ({ nodes: draggedNodes }: { nodes: Node[] }) => {
 
   &__flow {
     background-color: var(--theme-bg);
+    position: relative;
+
+    &.drag-over {
+      .vue-flow__viewport {
+        outline: 2px dashed var(--theme-primary);
+        outline-offset: -2px;
+      }
+    }
   }
 
   &__header {
@@ -175,10 +201,21 @@ const handleNodesDragStop = ({ nodes: draggedNodes }: { nodes: Node[] }) => {
     box-shadow: 0 1px 3px 0 rgba(var(--theme-shadow-color-rgb), 0.1),
       0 1px 2px 0 rgba(var(--theme-shadow-color-rgb), 0.08);
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    svg {
+      width: 4rem;
+      height: 4rem;
+      margin-bottom: $spacing-lg;
+      color: var(--theme-primary);
+    }
 
     div {
       color: var(--theme-text-muted);
-      padding: $spacing-lg 0;
+      padding: $spacing-sm 0;
       font-size: $font-size-base;
     }
   }
@@ -188,10 +225,14 @@ const handleNodesDragStop = ({ nodes: draggedNodes }: { nodes: Node[] }) => {
   border-radius: 4px;
   padding: 8px;
   min-width: 150px;
+  // background-color: var(--theme-bg-surface); // Nodes will have their own styles
+  // border: 1px solid var(--theme-border);
+  // color: var(--theme-text);
 }
 
 .vue-flow__node.selected {
   border: 2px solid var(--theme-primary);
+  // box-shadow: 0 0 0 3px rgba(var(--theme-primary-rgb), 0.3); // Optional: add a glow effect
 }
 
 // Ensure MiniMap is above other overlays

@@ -1,0 +1,138 @@
+@use "sass:color";
+@use "sass:string";
+@use "../abstracts/variables" as base;
+
+// ==========================================================================
+// LIGHT THEME PALETTE
+// ==========================================================================
+
+$bg-main-light: base.$white;
+$bg-surface-light: base.$gray-50;
+$bg-alt-light: base.$gray-100;
+$bg-hover-light: color.adjust(base.$gray-50, $lightness: -5%);
+$bg-input-light: base.$white;
+
+$text-primary-light: base.$gray-900;
+$text-secondary-light: base.$gray-700;
+$text-muted-light: base.$gray-500;
+$text-disabled-light: base.$gray-400;
+$text-inverse-light: base.$white;
+$text-code-light: base.$vue-blue-darker;
+
+$border-color-light: base.$gray-300;
+$border-input-light: base.$gray-400;
+$select-arrow-color-light: $text-muted-light;
+$select-arrow-bg-light: $bg-input-light;
+$select-arrow-hover-bg-light: color.adjust($bg-input-light, $lightness: -5%);
+
+$button-default-bg-hover-light: color.adjust(
+  $bg-surface-light,
+  $lightness: -5%
+);
+
+// ==========================================================================
+// LIGHT THEME MAP
+// ==========================================================================
+
+$light-theme-variables: (
+  "text": $text-primary-light,
+  "text-secondary": $text-secondary-light,
+  "text-muted": $text-muted-light,
+  "text-disabled": $text-disabled-light,
+  "text-inverse": $text-inverse-light,
+  "text-code": $text-code-light,
+  "bg": $bg-main-light,
+  "bg-surface": $bg-surface-light,
+  "bg-alt": $bg-alt-light,
+  "bg-hover": $bg-hover-light,
+  "bg-input": $bg-input-light,
+  "panel-bg": $bg-surface-light,
+  "item-bg": base.$white,
+  "item-hover-bg": color.adjust(base.$white, $lightness: -3%),
+  "border": $border-color-light,
+  "border-input": $border-input-light,
+  "select-arrow-color": $select-arrow-color-light,
+  "select-arrow-bg": $select-arrow-bg-light,
+  "select-arrow-hover-bg": $select-arrow-hover-bg-light,
+  "button-default-bg": base.$gray-200,
+  "button-default-text": $text-primary-light,
+  "button-default-border": base.$gray-400,
+  "button-default-hover-bg": $button-default-bg-hover-light,
+  "primary": base.$primary,
+  "primary-rgb":
+    string.unquote(
+      "#{color.channel(base.$primary, 'red')}, #{color.channel(base.$primary, 'green')}, #{color.channel(base.$primary, 'blue')}"
+    ),
+  "primary-light": base.$primary-light,
+  "primary-dark": base.$primary-dark,
+  "primary-contrast": base.$white,
+  "secondary": base.$secondary,
+  "secondary-rgb":
+    string.unquote(
+      "#{color.channel(base.$secondary, 'red')}, #{color.channel(base.$secondary, 'green')}, #{color.channel(base.$secondary, 'blue')}"
+    ),
+  "secondary-light": base.$secondary-light,
+  "secondary-dark": base.$secondary-dark,
+  "secondary-contrast": base.$white,
+  "accent": base.$accent,
+  "accent-rgb":
+    string.unquote(
+      "#{color.channel(base.$accent, 'red')}, #{color.channel(base.$accent, 'green')}, #{color.channel(base.$accent, 'blue')}"
+    ),
+  "accent-light": base.$accent-light,
+  "accent-dark": base.$accent-dark,
+  "accent-contrast": base.$white,
+  "danger": base.$danger,
+  "danger-rgb":
+    string.unquote(
+      "#{color.channel(base.$danger, 'red')}, #{color.channel(base.$danger, 'green')}, #{color.channel(base.$danger, 'blue')}"
+    ),
+  "danger-light": base.$danger-light,
+  "danger-dark": base.$danger-dark,
+  "danger-contrast": base.$white,
+  "warning": base.$warning,
+  "warning-rgb":
+    string.unquote(
+      "#{color.channel(base.$warning, 'red')}, #{color.channel(base.$warning, 'green')}, #{color.channel(base.$warning, 'blue')}"
+    ),
+  "warning-light": base.$warning-light,
+  "warning-dark": base.$warning-dark,
+  "warning-contrast": base.$gray-900,
+  "success": base.$success,
+  "success-rgb":
+    string.unquote(
+      "#{color.channel(base.$success, 'red')}, #{color.channel(base.$success, 'green')}, #{color.channel(base.$success, 'blue')}"
+    ),
+  "success-light": base.$success-light,
+  "success-dark": base.$success-dark,
+  "success-contrast": base.$white,
+  "info": base.$info,
+  "info-rgb":
+    string.unquote(
+      "#{color.channel(base.$info, 'red')}, #{color.channel(base.$info, 'green')}, #{color.channel(base.$info, 'blue')}"
+    ),
+  "info-light": base.$info-light,
+  "info-dark": base.$info-dark,
+  "info-contrast": base.$white,
+  "link": base.$primary,
+  "link-hover": base.$primary-dark,
+  "shadow-color-rgb": base.$shadow-color-rgb-light,
+
+  // Sidebar specific colors - Light Theme (Sidebar background remains dark)
+  "sidebar-heading-text": base.$vue-green,
+  "sidebar-toggle-icon": base.$vue-green,
+  "sidebar-section-text": base.$vue-green,
+  "sidebar-section-icon": base.$vue-green,
+  "sidebar-item-text": base.$white,
+  "sidebar-item-icon": base.$white,
+  "sidebar-item-hover-text": base.$white,
+  "sidebar-item-hover-icon": base.$white,
+  "sidebar-item-active-bg": base.$primary-dark,
+  // Active item bg on dark sidebar
+  "sidebar-item-active-text": base.$white,
+  "sidebar-item-active-icon": base.$white,
+
+  // Element Panel specific
+  "element-icon-bg": base.$gray-50,
+  "element-icon-color": base.$primary-light,
+);

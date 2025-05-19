@@ -31,12 +31,10 @@ export function useDragDrop() {
     const elementType = event.dataTransfer.getData("elementType");
     if (!elementType) return;
 
-    // Get mouse position relative to the target element
     const rect = (event.target as HTMLElement).getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
-    // Create a new element based on the type
     const newElement = createElementByType(elementType, x, y);
     if (newElement) {
       formBuilderStore.addElement(newElement);
@@ -44,7 +42,6 @@ export function useDragDrop() {
     }
   };
 
-  // Helper function to create new element object
   const createElementByType = (
     type: string,
     x: number,

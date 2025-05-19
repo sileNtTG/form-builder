@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref } from "vue";
 import { RouterLink } from "vue-router";
 
-// Props
 interface SidebarProps {
   initialOpen?: boolean;
 }
@@ -11,12 +10,10 @@ const props = withDefaults(defineProps<SidebarProps>(), {
   initialOpen: true,
 });
 
-// Emits
 const emit = defineEmits<{
   (e: "toggle", value: boolean): void;
 }>();
 
-// State
 const isOpen = ref(props.initialOpen);
 const sectionsOpen = ref({
   forms: true,
@@ -36,12 +33,6 @@ const settingsOptions = ref([
   },
 ]);
 
-// Computed
-const sidebarWidth = computed(() =>
-  isOpen.value ? "var(--sidebar-width)" : "var(--sidebar-width-collapsed)"
-);
-
-// Methods
 const toggleSidebar = () => {
   isOpen.value = !isOpen.value;
   emit("toggle", isOpen.value);
@@ -57,11 +48,7 @@ const toggleSection = (section: "forms" | "account" | "settings") => {
 </script>
 
 <template>
-  <aside
-    class="sidebar"
-    :class="{ collapsed: !isOpen }"
-    :style="{ width: sidebarWidth }"
-  >
+  <aside class="sidebar" :class="{ collapsed: !isOpen }">
     <!-- Toggle Button -->
     <button
       @click="toggleSidebar"
@@ -346,10 +333,10 @@ const toggleSection = (section: "forms" | "account" | "settings") => {
   </aside>
 </template>
 
-<style lang="scss">
-/* Component-specific styles for Sidebar */
-/* These styles are directly in the component rather than in a separate file */
+<style lang="scss" scoped>
+@use "../../assets/scss/abstracts" as *;
 
+// Base sidebar styles
 .sidebar {
   background-color: var(--theme-sidebar-bg);
   width: $sidebar-width;
@@ -367,7 +354,6 @@ const toggleSection = (section: "forms" | "account" | "settings") => {
     width: 100%;
     padding: $spacing-sm;
     background-color: var(--theme-bg-surface);
-    color: var(--theme-text);
     @include flex-center;
     border: none;
     cursor: pointer;
@@ -379,6 +365,7 @@ const toggleSection = (section: "forms" | "account" | "settings") => {
     svg {
       height: 0.75rem;
       width: 0.75rem;
+      stroke: var(--theme-sidebar-toggle-icon);
     }
   }
 
@@ -389,7 +376,7 @@ const toggleSection = (section: "forms" | "account" | "settings") => {
 
     h2 {
       @include heading-2;
-      color: var(--theme-text);
+      color: var(--theme-sidebar-heading-text);
       margin-bottom: $spacing-md;
       padding: 0 $spacing-sm;
     }
@@ -416,7 +403,7 @@ const toggleSection = (section: "forms" | "account" | "settings") => {
         height: 0.75rem;
         width: 0.75rem;
         margin-right: $spacing-sm;
-        color: var(--theme-text-muted);
+        stroke: var(--theme-sidebar-section-icon);
 
         &.arrow {
           margin-left: auto;
@@ -432,7 +419,7 @@ const toggleSection = (section: "forms" | "account" | "settings") => {
       span {
         font-size: $font-size-sm;
         font-weight: 600;
-        color: var(--theme-text-muted);
+        color: var(--theme-sidebar-section-text);
       }
     }
 
@@ -446,24 +433,34 @@ const toggleSection = (section: "forms" | "account" | "settings") => {
         border-radius: $border-radius;
         @include flex(row, flex-start, center);
         cursor: pointer;
-        color: var(--theme-text);
+        color: var(--theme-sidebar-item-text);
         text-decoration: none;
-
-        &:hover {
-          background-color: var(--theme-item-hover-bg);
-        }
-
-        &--active {
-          background-color: var(--theme-primary-dark);
-          color: var(--theme-text-inverse);
-          font-weight: $font-weight-semibold;
-        }
 
         svg {
           height: 0.75rem;
           width: 0.75rem;
           margin-right: $spacing-sm;
-          color: var(--theme-text-muted);
+          stroke: var(--theme-sidebar-item-icon);
+          color: var(--theme-sidebar-item-icon);
+        }
+
+        &:hover:not(.item--active) {
+          background-color: var(--theme-item-hover-bg);
+          color: var(--theme-sidebar-item-hover-text);
+          svg {
+            stroke: var(--theme-sidebar-item-hover-icon);
+            color: var(--theme-sidebar-item-hover-icon);
+          }
+        }
+
+        &--active {
+          background-color: var(--theme-sidebar-item-active-bg);
+          color: var(--theme-sidebar-item-active-text);
+          font-weight: $font-weight-semibold;
+          svg {
+            stroke: var(--theme-sidebar-item-active-icon);
+            color: var(--theme-sidebar-item-active-icon);
+          }
         }
       }
     }
@@ -483,11 +480,10 @@ const toggleSection = (section: "forms" | "account" | "settings") => {
     background-color: transparent;
     border: none;
     cursor: pointer;
-    color: var(--theme-text-muted);
+    color: var(--theme-sidebar-section-icon);
 
     &:hover {
       background-color: var(--theme-item-hover-bg);
-      color: var(--theme-text);
     }
 
     svg {
