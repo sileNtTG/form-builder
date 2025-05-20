@@ -15,14 +15,6 @@ A Vue 3 + TypeScript application for creating, editing, and managing dynamic for
 
 ## Tech Stack (test)
 
-## Tech Stack (test)
-
-## Tech Stack (test)
-
-## Tech Stack (test)
-
-## Tech Stack (test)
-
 - **Vue 3** (Composition API)
 - **TypeScript**
 - **Vite** as the build tool
