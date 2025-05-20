@@ -1,6 +1,7 @@
 export interface BaseFormElement {
   id: string;
   type: string;
+  serverFqn?: string;
   label: string;
   required: boolean;
   order: number;
@@ -9,6 +10,7 @@ export interface BaseFormElement {
   width: number;
   height: number;
   validation?: ValidationRule[];
+  parentNode?: string;
 }
 
 export interface TextInputElement extends BaseFormElement {
@@ -61,9 +63,29 @@ export interface FileElement extends BaseFormElement {
   maxSize?: number; // in bytes
 }
 
+export interface ButtonElement extends BaseFormElement {
+  type: "button";
+  buttonType?: "button" | "submit" | "reset";
+}
+
+export interface FieldsetElement extends BaseFormElement {
+  type: "fieldset";
+}
+
 export interface SelectOption {
   value: string;
   label: string;
+}
+
+export interface RadioElementOption {
+  value: string;
+  label: string;
+}
+
+export interface RadioElement extends BaseFormElement {
+  type: "radio";
+  options: RadioElementOption[];
+  defaultValue?: string; // The value of the default selected radio option
 }
 
 export interface ValidationRule {
@@ -90,4 +112,7 @@ export type FormElement =
   | SelectElement
   | NumberElement
   | DateElement
-  | FileElement;
+  | FileElement
+  | ButtonElement
+  | FieldsetElement
+  | RadioElement;

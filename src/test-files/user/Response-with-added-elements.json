@@ -1,0 +1,238 @@
+{
+  "version": "0.0.1",
+  "fqn": "Easy\\Form",
+  "attributes": {
+    "name": "form tobi",
+    "class": "formi",
+    "method": "post"
+  },
+  "processors": [
+    {
+      "fqn": "Easy\\Form\\Support\\Processor\\FormIdentifier"
+    },
+    {
+      "fqn": "Easy\\Form\\Support\\Processor\\CsrfToken"
+    }
+  ],
+  "children": [
+    {
+      "fqn": "Easy\\Form\\Item\\Button",
+      "attributes": {
+        "title": "Tipp: Halte die ⊞- oder ⌘-Taste gedrückt."
+      },
+      "processors": [
+        {
+          "fqn": "Easy\\Form\\Support\\Processor\\Action",
+          "types": ["click"],
+          "closure": {
+            "fqn": "Easy\\Form\\Support\\Closure",
+            "code": "function (\\Easy\\Form\\Item\\Button $button, \\Easy\\Form\\Support\\Event\\MouseEvent $event) use (&$counter) {\r\n            $button->textContent('Magic! #' . \\mt_rand());\r\n\r\n            // $log = $button->form()->lastChild();\r\n            $log = $button->form()->query('#log')->first();\r\n\r\n            \\Easy\\Form\\Markup::fromMarkdown('**Hello** *world*! #' . ++$counter)\r\n                ->appendTo($log);\r\n\r\n            if ($log->count() > 5) {\r\n                $log->firstChild()->remove();\r\n            }\r\n\r\n            if ($event->ctrlKey || $event->metaKey) {\r\n                $debug = \\json_decode(\\json_encode($event));\r\n                unset($debug->target, $debug->relatedTarget, $debug->submitter);\r\n                $log->lastChild()->append(\\Easy\\Form\\Markup::fromText(' (⊞- oder ⌘-Taste) ' . \\json_encode($debug, JSON_PRETTY_PRINT), false));\r\n            }\r\n        }"
+          }
+        }
+      ],
+      "children": [
+        {
+          "fqn": "Easy\\Form\\Markup",
+          "html": "Magic!"
+        }
+      ]
+    },
+    {
+      "fqn": "Easy\\Form\\Fieldset",
+      "attributes": {
+        "class": "multi-demo",
+        "style": "width:fit-content",
+        "formi-multiple-name": "demo",
+        "formi-multiple-maximum": "3",
+        "formi-multiple-add-button": "➕ Demo group"
+      },
+      "processors": [
+        {
+          "fqn": "Easy\\Form\\Support\\Processor\\Multiple",
+          "name": "demo",
+          "minimum": 1,
+          "maximum": 3,
+          "initial": 1,
+          "addButton": "➕ Demo group",
+          "removeButton": {
+            "fqn": "Easy\\Form\\Item\\Button",
+            "attributes": {
+              "style": "cursor:pointer"
+            },
+            "children": [
+              {
+                "fqn": "Easy\\Form\\Markup",
+                "html": "➖ Demo group"
+              }
+            ]
+          }
+        }
+      ],
+      "children": [
+        {
+          "fqn": "Easy\\Form\\Markup",
+          "tag": "div",
+          "children": [
+            {
+              "fqn": "Easy\\Form\\Support\\Label",
+              "attributes": {
+                "for": "name"
+              },
+              "children": [
+                {
+                  "fqn": "Easy\\Form\\Markup",
+                  "html": "Name:"
+                }
+              ]
+            },
+            {
+              "fqn": "Easy\\Form\\Markup",
+              "html": " "
+            },
+            {
+              "fqn": "Easy\\Form\\Item\\Input\\Text",
+              "attributes": {
+                "type": "text",
+                "name": "name",
+                "id": "name"
+              }
+            }
+          ]
+        },
+        {
+          "fqn": "Easy\\Form\\Markup",
+          "tag": "div",
+          "children": [
+            {
+              "fqn": "Easy\\Form\\Support\\Label",
+              "attributes": {
+                "for": "message"
+              },
+              "children": [
+                {
+                  "fqn": "Easy\\Form\\Markup",
+                  "html": "Message:"
+                }
+              ]
+            },
+            {
+              "fqn": "Easy\\Form\\Markup",
+              "html": "<br> "
+            },
+            {
+              "fqn": "Easy\\Form\\Item\\Textarea",
+              "attributes": {
+                "name": "message",
+                "id": "message",
+                "cols": "30",
+                "rows": "4"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "fqn": "Easy\\Form\\Markup",
+      "tag": "div",
+      "children": [
+        {
+          "fqn": "Easy\\Form\\Item\\Input\\Checkbox",
+          "attributes": {
+            "type": "checkbox",
+            "name": "newsletter",
+            "id": "newsletter"
+          }
+        },
+        {
+          "fqn": "Easy\\Form\\Markup",
+          "html": " "
+        },
+        {
+          "fqn": "Easy\\Form\\Support\\Label",
+          "attributes": {
+            "for": "newsletter"
+          },
+          "children": [
+            {
+              "fqn": "Easy\\Form\\Markup",
+              "html": "Subscribe?"
+            }
+          ]
+        },
+        {
+          "fqn": "Easy\\Form\\Markup",
+          "html": "<br><br>"
+        }
+      ]
+    },
+    {
+      "fqn": "Easy\\Form\\Item\\Button",
+      "children": [
+        {
+          "fqn": "Easy\\Form\\Markup",
+          "html": "Submit"
+        }
+      ]
+    },
+    {
+      "fqn": "Easy\\Form\\Markup",
+      "html": "<div id=\"log\">test <br> test2</div>"
+    },
+    {
+      "fqn": "Easy\\Form\\Item\\Input\\Text",
+      "attributes": {
+        "type": "text",
+        "name": "test_text_input_name",
+        "id": "test_text_input_id",
+        "label": "Sample Text Input (Appended)",
+        "placeholder": "Enter text here"
+      }
+    },
+    {
+      "fqn": "Easy\\Form\\Item\\Textarea",
+      "attributes": {
+        "name": "test_textarea_name",
+        "id": "test_textarea_id",
+        "label": "Sample Textarea (Appended)",
+        "rows": "3",
+        "placeholder": "Enter multiple lines here"
+      }
+    },
+    {
+      "fqn": "Easy\\Form\\Item\\Select",
+      "attributes": {
+        "name": "test_select_name",
+        "id": "test_select_id",
+        "label": "Sample Select (Appended)",
+        "options": [
+          { "value": "s_opt1", "label": "Appended Option 1" },
+          { "value": "s_opt2", "text": "Appended Option 2" }
+        ]
+      }
+    },
+    {
+      "fqn": "Easy\\Form\\Item\\Input\\Checkbox",
+      "attributes": {
+        "type": "checkbox",
+        "name": "test_checkbox_name",
+        "id": "test_checkbox_id",
+        "label": "Sample Checkbox (Appended)",
+        "checked": true
+      }
+    },
+    {
+      "fqn": "Easy\\Form\\Item\\Input\\Radio",
+      "attributes": {
+        "name": "test_radio_group_name",
+        "id": "test_radio_group_id",
+        "label": "Sample Radio Group (Appended)",
+        "options": [
+          { "value": "r_opt1", "label": "Appended Radio 1" },
+          { "value": "r_opt2", "text": "Appended Radio 2" }
+        ],
+        "defaultValue": "r_opt1"
+      }
+    }
+  ]
+}

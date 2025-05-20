@@ -12,9 +12,17 @@ import { Controls } from "@vue-flow/controls";
 import { MiniMap } from "@vue-flow/minimap";
 import type { FormElement } from "../../models/FormElement";
 import TextInputNode from "../elements/TextInput.vue";
+import FieldsetNode from "../nodes/FieldsetNode.vue";
+import ButtonNode from "../nodes/ButtonNode.vue";
+import TextareaNode from "../nodes/TextareaNode.vue";
+import CheckboxNode from "../nodes/CheckboxNode.vue";
+import SelectNode from "../nodes/SelectNode.vue";
+import RadioNode from "../nodes/RadioNode.vue";
 
 import "@vue-flow/core/dist/style.css";
 import "@vue-flow/core/dist/theme-default.css";
+import "@vue-flow/controls/dist/style.css";
+import "@vue-flow/minimap/dist/style.css";
 
 const formBuilderStore = useFormBuilderStore();
 const nodes = ref<Node[]>([]);
@@ -25,9 +33,14 @@ interface NodeData {
   inPreview: boolean;
   onSelect: () => void;
 }
-
 const nodeTypes = {
   input: TextInputNode as NodeComponent,
+  fieldset: FieldsetNode as NodeComponent,
+  button: ButtonNode as NodeComponent,
+  textarea: TextareaNode as NodeComponent,
+  checkbox: CheckboxNode as NodeComponent,
+  select: SelectNode as NodeComponent,
+  radio: RadioNode as NodeComponent,
   // Add other types here as their components are created/adapted
 };
 
@@ -49,7 +62,11 @@ function updateNodes() {
       element,
       inPreview: false,
       onSelect: () => formBuilderStore.selectElement(element.id),
+      label: element.label,
+      width: element.width,
+      height: element.height,
     } as NodeData,
+    parentNode: element.parentNode,
   }));
 }
 
@@ -62,6 +79,9 @@ const onDrop = (event: DragEvent) => {
   const elementType = event.dataTransfer.getData("elementType");
   if (!elementType) return;
 
+  // TODO: Review offset calculation. These are likely rough estimates
+  // to account for UI elements like sidebar/header or mouse pointer position.
+  // A more robust method would transform clientX/clientY to VueFlow viewport coordinates.
   const x = event.clientX - 200;
   const y = event.clientY - 100;
 
@@ -151,6 +171,8 @@ const handleNodesDragStop = ({ nodes: draggedNodes }: { nodes: Node[] }) => {
 </template>
 
 <style lang="scss">
+@use "../../assets/scss/abstracts" as *; // Added for SCSS variables
+
 /* Component-specific styles for FormCanvas */
 .form-canvas {
   width: 100%;
@@ -222,17 +244,22 @@ const handleNodesDragStop = ({ nodes: draggedNodes }: { nodes: Node[] }) => {
 }
 
 .vue-flow__node {
-  border-radius: 4px;
-  padding: 8px;
-  min-width: 150px;
-  // background-color: var(--theme-bg-surface); // Nodes will have their own styles
-  // border: 1px solid var(--theme-border);
-  // color: var(--theme-text);
+  /* Let the custom node component define its entire appearance */
+  background-color: transparent;
+  border: none; /* Border will be handled by the custom node if needed, or by selection outline */
+  padding: 0; /* Custom node will handle its own padding */
+  min-width: auto; /* Allow custom node to dictate its own min-width if necessary */
+  /* border-radius: 4px; // Handled by custom node */
+  /* min-width: 150px; // Handled by custom node or its content */
 }
 
 .vue-flow__node.selected {
-  border: 2px solid var(--theme-primary);
-  // box-shadow: 0 0 0 3px rgba(var(--theme-primary-rgb), 0.3); // Optional: add a glow effect
+  /* VueFlow default selection style might be okay, or we can customize */
+  /* For now, let custom node handle its own selected appearance if needed, 
+     or rely on VueFlow's default. Let's ensure VueFlow default is visible. */
+  /* border: 2px solid var(--theme-primary); // This is a good default selection indicator */
+  outline: 2px solid var(--theme-primary, #007bff); /* Use outline to avoid layout shifts */
+  outline-offset: 2px;
 }
 
 // Ensure MiniMap is above other overlays

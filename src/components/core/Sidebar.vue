@@ -1,36 +1,52 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { RouterLink } from "vue-router";
+import { ref, computed, onMounted, nextTick } from "vue";
+import { RouterLink, useRouter } from "vue-router";
+import { useFormBuilderStore } from "@/stores/formBuilder";
 
-interface SidebarProps {
-  initialOpen?: boolean;
-}
-
-const props = withDefaults(defineProps<SidebarProps>(), {
-  initialOpen: true,
-});
+const store = useFormBuilderStore();
+const router = useRouter();
 
 const emit = defineEmits<{
   (e: "toggle", value: boolean): void;
 }>();
 
-const isOpen = ref(props.initialOpen);
+const isOpen = ref(true);
 const sectionsOpen = ref({
   forms: true,
   account: false,
   settings: true,
 });
 
-const settingsOptions = ref([
-  { name: "Themes", path: "/settings/themes" },
+const formNameInputRefs = ref<Record<string, HTMLInputElement>>({});
+const newlyCreatedFormId = ref<string | null>(null);
+
+const forms = computed(() => store.formList);
+const activeFormId = computed(() => store.activeFormId);
+
+onMounted(() => {
+  store.loadInitialForms();
+});
+
+const settingsOptions = ref<
+  Array<{
+    name: string;
+    path?: string;
+    action?: () => void;
+    isRouterLink?: boolean;
+  }>
+>([
   {
     name: "Preferences",
-    action: () => console.log("Preferences clicked (placeholder)"),
+    path: "/preferences",
+    isRouterLink: true,
   },
   {
     name: "API Keys",
-    action: () => console.log("API Keys clicked (placeholder)"),
+    path: "/api-key",
+    isRouterLink: true,
   },
+  // Example of an action item if you need one later:
+  // { name: "Logout", action: () => console.log("Logout action"), isRouterLink: false }
 ]);
 
 const toggleSidebar = () => {
@@ -45,11 +61,45 @@ const toggleSection = (section: "forms" | "account" | "settings") => {
   }
   sectionsOpen.value[section] = !sectionsOpen.value[section];
 };
+
+const handleCreateForm = async () => {
+  const newId = store.createBlankForm("Untitled Form");
+  newlyCreatedFormId.value = newId;
+  await nextTick();
+  if (formNameInputRefs.value[newId]) {
+    formNameInputRefs.value[newId].focus();
+    formNameInputRefs.value[newId].select();
+  }
+};
+
+const handleFormNameChange = (formId: string, event: Event) => {
+  const target = event.target as HTMLInputElement;
+  store.updateActiveFormName(target.value);
+};
+
+const handleFormNameEnter = (formId: string) => {
+  if (formNameInputRefs.value[formId]) {
+    formNameInputRefs.value[formId].blur();
+  }
+  newlyCreatedFormId.value = null;
+};
+
+const selectForm = (formId: string) => {
+  store.setActiveForm(formId);
+  newlyCreatedFormId.value = null;
+  router.push({ name: "FormBuilder" });
+};
+
+const handleSettingsItemClickAndNavigate = (path: string) => {
+  if (store.activeFormId !== null) {
+    store.setActiveForm(null);
+  }
+  router.push(path);
+};
 </script>
 
 <template>
   <aside class="sidebar" :class="{ collapsed: !isOpen }">
-    <!-- Toggle Button -->
     <button
       @click="toggleSidebar"
       class="sidebar__toggle"
@@ -81,11 +131,9 @@ const toggleSection = (section: "forms" | "account" | "settings") => {
       </svg>
     </button>
 
-    <!-- Menu content - only show when open -->
     <div v-if="isOpen" class="sidebar__content panel-scroll">
       <h2>Form Builder</h2>
 
-      <!-- My Forms -->
       <div class="sidebar__section">
         <button @click="toggleSection('forms')" class="sidebar__section-button">
           <svg
@@ -120,10 +168,33 @@ const toggleSection = (section: "forms" | "account" | "settings") => {
         </button>
 
         <div v-if="sectionsOpen.forms" class="sidebar__section-content">
+          <button @click="handleCreateForm" class="item item--create-form">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>Create Form</span>
+          </button>
           <div
-            v-for="form in ['Contact Form', 'Survey', 'Registration']"
-            :key="form"
+            v-if="!forms.length && newlyCreatedFormId === null"
+            class="item item--empty"
+          >
+            Click "Create Form" to start.
+          </div>
+          <div
+            v-for="form in forms"
+            :key="form.id"
             class="item"
+            :class="{ 'item--active': form.id === activeFormId }"
+            @click="selectForm(form.id)"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -138,12 +209,22 @@ const toggleSection = (section: "forms" | "account" | "settings") => {
                 d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
               />
             </svg>
-            {{ form }}
+            <input
+              v-if="form.id === activeFormId"
+              type="text"
+              :ref="el => { if (el) formNameInputRefs[form.id] = el as HTMLInputElement }"
+              :value="form.name"
+              @input="handleFormNameChange(form.id, $event)"
+              @keyup.enter="handleFormNameEnter(form.id)"
+              @blur="handleFormNameEnter(form.id)"
+              class="item__name-input"
+              placeholder="Form Name"
+            />
+            <span v-else class="item__name-text">{{ form.name }}</span>
           </div>
         </div>
       </div>
 
-      <!-- Account -->
       <div class="sidebar__section">
         <button
           @click="toggleSection('account')"
@@ -191,7 +272,6 @@ const toggleSection = (section: "forms" | "account" | "settings") => {
         </div>
       </div>
 
-      <!-- Settings -->
       <div class="sidebar__section">
         <button
           @click="toggleSection('settings')"
@@ -236,35 +316,50 @@ const toggleSection = (section: "forms" | "account" | "settings") => {
 
         <div v-if="sectionsOpen.settings" class="sidebar__section-content">
           <template v-for="option in settingsOptions" :key="option.name">
-            <router-link
-              v-if="option.path"
-              :to="option.path"
-              custom
-              v-slot="{ navigate, isActive }"
-            >
-              <div
-                class="item"
-                :class="{ 'item--active': isActive }"
-                @click="navigate"
-                role="link"
-              >
-                {{ option.name }}
-              </div>
-            </router-link>
             <div
-              v-else-if="option.action"
-              @click="option.action"
+              v-if="option.path || option.action"
               class="item"
-              role="button"
+              :class="{
+                'item--active':
+                  option.path &&
+                  $route.path === option.path &&
+                  $route.name !== 'FormBuilder' &&
+                  $route.name !== 'FormBuilderEditor',
+              }"
+              @click="
+                option.isRouterLink && option.path
+                  ? handleSettingsItemClickAndNavigate(option.path)
+                  : option.action
+                  ? option.action()
+                  : null
+              "
             >
-              {{ option.name }}
+              <RouterLink
+                v-if="option.isRouterLink && option.path"
+                :to="option.path"
+                custom
+                v-slot="{ href }"
+              >
+                <a :href="href" @click.prevent="void 0" class="item__link">
+                  <span>{{ option.name }}</span>
+                </a>
+              </RouterLink>
+              <div
+                v-else-if="!option.isRouterLink && option.action"
+                class="item__link"
+                role="button"
+              >
+                <span>{{ option.name }}</span>
+              </div>
+              <div v-else class="item__link">
+                <span>{{ option.name }}</span>
+              </div>
             </div>
           </template>
         </div>
       </div>
     </div>
 
-    <!-- If sidebar is collapsed, show only icons -->
     <div v-if="!isOpen" class="sidebar__collapsed-icons">
       <button
         class="sidebar__collapsed-icon"
@@ -336,11 +431,10 @@ const toggleSection = (section: "forms" | "account" | "settings") => {
 <style lang="scss" scoped>
 @use "../../assets/scss/abstracts" as *;
 
-// Base sidebar styles
 .sidebar {
   background-color: var(--theme-sidebar-bg);
   width: $sidebar-width;
-  height: 100%;
+  height: 100dvh;
   overflow: hidden;
   box-shadow: 0 10px 15px -3px rgba(var(--theme-shadow-color-rgb), 0.12),
     0 4px 6px -2px rgba(var(--theme-shadow-color-rgb), 0.08);
@@ -429,12 +523,25 @@ const toggleSection = (section: "forms" | "account" | "settings") => {
       overflow: hidden;
 
       .item {
+        position: relative;
         padding: $spacing-sm $spacing-sm;
         border-radius: $border-radius;
         @include flex(row, flex-start, center);
         cursor: pointer;
         color: var(--theme-sidebar-item-text);
         text-decoration: none;
+        width: 100%;
+        background: none;
+        border: none;
+        text-align: left;
+
+        .item__link {
+          color: inherit;
+          text-decoration: none;
+          display: flex;
+          align-items: center;
+          width: 100%;
+        }
 
         svg {
           height: 0.75rem;
@@ -442,6 +549,7 @@ const toggleSection = (section: "forms" | "account" | "settings") => {
           margin-right: $spacing-sm;
           stroke: var(--theme-sidebar-item-icon);
           color: var(--theme-sidebar-item-icon);
+          flex-shrink: 0;
         }
 
         &:hover:not(.item--active) {
@@ -461,6 +569,36 @@ const toggleSection = (section: "forms" | "account" | "settings") => {
             stroke: var(--theme-sidebar-item-active-icon);
             color: var(--theme-sidebar-item-active-icon);
           }
+        }
+        &--empty {
+          color: var(--theme-text-muted);
+          cursor: default;
+          padding-left: $spacing-md;
+        }
+        &--create-form {
+          margin-bottom: $spacing-sm;
+          span {
+            margin-left: $spacing-xs;
+          }
+        }
+
+        &__name-input {
+          flex-grow: 1;
+          background-color: transparent;
+          border: none;
+          outline: none;
+          color: inherit;
+          font-family: inherit;
+          font-size: inherit;
+          padding: 0;
+          margin: 0;
+          width: 100%;
+        }
+        &__name-text {
+          flex-grow: 1;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
       }
     }

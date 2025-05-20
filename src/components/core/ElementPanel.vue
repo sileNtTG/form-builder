@@ -27,6 +27,12 @@ const elements = ref([
     description: "Select from options",
     icon: `<svg xmlns="http://www.w3.org/2000/svg" class="element-icon__svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>`,
   },
+  {
+    type: "radio",
+    label: "Radio Group",
+    description: "Select one from multiple options",
+    icon: `<svg xmlns="http://www.w3.org/2000/svg" class="element-icon__svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`,
+  },
 ]);
 
 // Set up drag events
@@ -105,6 +111,8 @@ const onDragStart = (event: DragEvent, elementType: string) => {
 </template>
 
 <style lang="scss">
+@use "../../assets/scss/abstracts" as *; // Added for SCSS variables and mixins
+
 /* Component-specific styles for ElementPanel, including .panel and .panel-elements styles */
 
 .panel {
@@ -155,7 +163,6 @@ const onDragStart = (event: DragEvent, elementType: string) => {
 // Styles specifically for Element Panel, extending/using .panel structure
 .panel-elements {
   width: auto;
-  max-width: 500px;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -199,7 +206,7 @@ const onDragStart = (event: DragEvent, elementType: string) => {
 
   &__grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: $spacing-md;
   }
 
@@ -314,5 +321,14 @@ const onDragStart = (event: DragEvent, elementType: string) => {
   .panel-elements__grid {
     grid-template-columns: 1fr;
   }
+}
+
+// Styles for the SVG icons if needed, though they might be self-styled
+:deep(.element-icon__svg) {
+  // Using :deep because v-html creates content outside component scope
+  width: 1.5rem; // Example size
+  height: 1.5rem; // Example size
+  stroke-width: 1.5; // Example stroke width, if not set in SVG string
+  // color: var(--theme-icon-color); // Example theming
 }
 </style>

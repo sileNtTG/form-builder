@@ -1,7 +1,9 @@
 import { ref } from "vue";
 import { useFormBuilderStore } from "../stores/formBuilder";
-import type { FormElement } from "../models/FormElement";
-import { v4 as uuidv4 } from "uuid";
+// FormElement import might not be needed if createElementByType is removed
+// import type { FormElement } from "../models/FormElement";
+// uuidv4 might not be needed if createElementByType is removed
+// import { v4 as uuidv4 } from "uuid";
 
 export function useDragDrop() {
   const isDragging = ref(false);
@@ -31,86 +33,19 @@ export function useDragDrop() {
     const elementType = event.dataTransfer.getData("elementType");
     if (!elementType) return;
 
-    const rect = (event.target as HTMLElement).getBoundingClientRect();
+    const targetElement = event.target as HTMLElement;
+    // Ensure target is part of the canvas/dropzone you intend.
+    // May need to adjust if event.target is a child of the intended drop surface.
+    const rect = targetElement.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
-    const newElement = createElementByType(elementType, x, y);
-    if (newElement) {
-      formBuilderStore.addElement(newElement);
-      formBuilderStore.selectElement(newElement.id);
-    }
+    // Call the store's method to create and add the element
+    formBuilderStore.createAndAddElement(elementType, x, y);
+    // The store's method already handles adding to elements array and selecting.
   };
 
-  const createElementByType = (
-    type: string,
-    x: number,
-    y: number
-  ): FormElement | null => {
-    const baseElement = {
-      id: uuidv4(),
-      label: `New ${type.charAt(0).toUpperCase() + type.slice(1)}`,
-      required: false,
-      order: formBuilderStore.elements.length + 1,
-      x,
-      y,
-      width: 300,
-      height: 70,
-    };
-
-    switch (type) {
-      case "input":
-        return {
-          ...baseElement,
-          type: "input",
-          placeholder: "Enter text",
-        };
-      case "textarea":
-        return {
-          ...baseElement,
-          type: "textarea",
-          placeholder: "Enter text",
-          rows: 4,
-        };
-      case "checkbox":
-        return {
-          ...baseElement,
-          type: "checkbox",
-          checked: false,
-        };
-      case "select":
-        return {
-          ...baseElement,
-          type: "select",
-          options: [
-            { value: "option1", label: "Option 1" },
-            { value: "option2", label: "Option 2" },
-          ],
-          multiple: false,
-        };
-      case "number":
-        return {
-          ...baseElement,
-          type: "number",
-          min: 0,
-          max: 100,
-        };
-      case "date":
-        return {
-          ...baseElement,
-          type: "date",
-        };
-      case "file":
-        return {
-          ...baseElement,
-          type: "file",
-          accept: "*/*",
-          multiple: false,
-        };
-      default:
-        return null;
-    }
-  };
+  // Removed local createElementByType function
 
   return {
     isDragging,

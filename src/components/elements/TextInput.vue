@@ -75,13 +75,16 @@ const handleClick = () => {
 
 <style lang="scss" scoped>
 .form-element {
-  margin-bottom: $spacing-md;
   position: relative;
   background-color: var(--theme-bg-surface);
-  padding: $spacing-md;
+  padding: $spacing-xs;
   border-radius: $border-radius;
   box-shadow: 0 1px 3px 0 rgba(var(--theme-shadow-color-rgb), 0.1),
     0 1px 2px 0 rgba(var(--theme-shadow-color-rgb), 0.08);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
 
   &__input {
     width: 100%;
@@ -117,6 +120,7 @@ const handleClick = () => {
     font-weight: $font-weight-medium;
     color: var(--theme-text-secondary);
     margin-bottom: $spacing-xs;
+    flex-shrink: 0;
 
     .required-indicator {
       color: var(--theme-danger);

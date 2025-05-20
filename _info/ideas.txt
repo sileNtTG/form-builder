@@ -1,0 +1,34 @@
+w.eberts
+  1:47 PM
+Was ich noch gerne hätte, wäre die Umwandlung eines "Templates" in seine Einzelkomponenten.
+
+
+
+
+
+
+
+t.grigoriadis
+:space_invader:  1:48 PM
+willst du mal eine kurze liste machen
+1:48
+dann baue ich das nach und nach ein
+1:48
+quasi:
+templates in seine Einzelkomponenten
+kann was..
+mehr stuff
+
+
+w.eberts
+  1:59 PM
+Das sind alles Ideen für das Endstadium.
+2:01
+Für den Anfang wäre eine strukturierte Darstellung wie bei den TYPO3 Forms ganz gut. Verschachtelte Blöcke, die sich per Drag'n'Drop bewegen lassen.
+2:03
+Dann die Details mit Einstellungsmöglichkeiten des ausgewählten Blocks auf der rechten Seite.
+2:04
+Und dann die übersichtliche Treeview auf der linken Seite.
+New
+2:09
+Und dann noch ein Suchschlitz, mit dem man schnell das gewünschte Feld finden kann. Stell dir mal ein komplexes mehrseitiges Formular vor mit dutzenden Feldern. Da gibt man "Geburts" in den Suchschlitz an und sieht nur noch das Geburtstagsfeld und kann es schnell abändern.

@@ -3,12 +3,12 @@ import { createRouter, createWebHistory } from "vue-router";
 const routes = [
   {
     path: "/",
-    name: "FormList",
-    component: () => import("../views/FormList.vue"),
+    name: "FormBuilder",
+    component: () => import("../views/FormBuilder.vue"),
   },
   {
     path: "/builder",
-    name: "FormBuilder",
+    name: "FormBuilderEditor",
     component: () => import("../views/FormBuilder.vue"),
   },
   {
@@ -17,9 +17,14 @@ const routes = [
     component: () => import("../views/FormPreview.vue"),
   },
   {
-    path: "/settings/themes",
-    name: "ThemesSettings",
-    component: () => import("../views/Settings/ThemesPage.vue"),
+    path: "/preferences",
+    name: "Preferences",
+    component: () => import("../views/PreferencesView.vue"),
+  },
+  {
+    path: "/api-key",
+    name: "ApiKey",
+    component: () => import("../views/ApiKeyView.vue"),
   },
 ];
 
