@@ -25,13 +25,3 @@ Tech Stack:
 - Axios for API communication
 
 The system should be extensible, maintainable, and focus on a good user experience. 
-
-ich möchte das du nochmal über alles drüber gehst - jedes file in - es muss alles proffesionel geordnert / kommentiert und in den jeweilgein geeignetne files liegen. Klar struktruiert und gut organisiert. DAS IST WICHTIG.
-
-es muss einem Tech-Lead würdig sein. alle scss files, kommentare oder vue files die nicht wichtig sind oder überladen oder falsch beschriftet oder nicht korrekt geschachtelt sind müssen klar verbessert werden.
-
-auch - brauchen wir noch /assets/_base.scss? kein tailwind code mehr. die readme muss gut geschrieben sein
-
-Auch haben wir zweimal $gray-... defniert
-
-hier ist der gesamte folder 
