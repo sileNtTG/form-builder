@@ -379,6 +379,14 @@ onUnmounted(() => {
     event: CustomEvent
   ) => {}) as EventListener);
 });
+
+// Add this function inside the script section
+function handleInputKeydown(event: KeyboardEvent) {
+  // Handle keydown events in the input field
+  // This function is called for all keys except Escape
+  // We're still forwarding the keyboard events to the main handler
+  handleKeydown(event);
+}
 </script>
 
 <template>
@@ -419,7 +427,6 @@ onUnmounted(() => {
             class="command-palette__input"
             v-model="searchQuery"
             placeholder="Search elements or type a command..."
-            @keydown.stop
           />
           <div class="command-palette__shortcuts">
             <span class="shortcut">
