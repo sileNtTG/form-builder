@@ -28,6 +28,39 @@ function handleDelete(e: Event, id: string) {
 // Track if we're in the middle of a drag operation on this fieldset
 const isFieldsetDragTarget = ref(false);
 const dropPosition = ref({ index: 0, top: 0 });
+const isDragging = ref(false);
+
+// Handle drag start
+function handleDragStart(e: DragEvent) {
+  if (!e.dataTransfer || !props.element.id) return;
+
+  // Mark that we're dragging this element
+  isDragging.value = true;
+
+  // Set the element ID as data to be transferred
+  e.dataTransfer.setData("application/element-id", props.element.id);
+
+  // For compatibility with different browsers
+  e.dataTransfer.setData("text/plain", props.element.id);
+
+  // Set the drag effect to move
+  e.dataTransfer.effectAllowed = "move";
+
+  // Add a class to the element being dragged for visual feedback
+  if (e.target instanceof HTMLElement) {
+    e.target.classList.add("dragging");
+  }
+}
+
+// Handle drag end
+function handleDragEnd(e: DragEvent) {
+  isDragging.value = false;
+
+  // Remove visual feedback
+  if (e.target instanceof HTMLElement) {
+    e.target.classList.remove("dragging");
+  }
+}
 
 // Calculate the drop position inside the fieldset
 function calculateDropPosition(fieldsetEl: HTMLElement, mouseY: number) {
@@ -110,6 +143,28 @@ function handleFieldsetDrop(e: DragEvent) {
     return;
   }
 
+  // Check if we're moving an existing element
+  const elementId =
+    e.dataTransfer.getData("application/element-id") ||
+    e.dataTransfer.getData("text/plain");
+
+  if (elementId && elementId.length > 0) {
+    // We're moving an existing element into the fieldset
+    const position = dropPosition.value.index;
+
+    emit("element-drop", {
+      fieldsetId: props.element.id,
+      elementId: elementId,
+      position: position,
+      isMove: true,
+    });
+
+    // Reset the drop position
+    dropPosition.value = { index: 0, top: 0 };
+    return;
+  }
+
+  // Otherwise, continue with the original code for adding new elements
   const elementType = e.dataTransfer.getData("application/element-type");
   if (!elementType) {
     return;
@@ -169,10 +224,21 @@ function handleInsertPointClick({
 <template>
   <div
     class="element-card"
-    :class="{ selected: formBuilderStore.selectedElementId === element.id }"
+    :class="{
+      selected: formBuilderStore.selectedElementId === element.id,
+      dragging: isDragging,
+    }"
     @click="(e) => selectElement(element.id, e)"
+    draggable="true"
+    @dragstart="handleDragStart"
+    @dragend="handleDragEnd"
   >
     <div class="element-card__header">
+      <div class="element-card__drag-handle" title="Drag to reorder">
+        <svg viewBox="0 0 24 24">
+          <path d="M8 9h8M8 12h8M8 15h8" />
+        </svg>
+      </div>
       <span class="element-card__title">
         {{ element.type.charAt(0).toUpperCase() + element.type.slice(1)
         }}<span v-if="element.label">: {{ element.label }}</span>
@@ -341,10 +407,18 @@ function handleInsertPointClick({
   width: 100%;
   overflow: hidden;
   margin-bottom: 0.5rem;
+  cursor: grab;
 
   &.selected {
     border: 1px solid var(--theme-primary, #1abc9c);
     box-shadow: 0 0 0 1px rgba(26, 188, 156, 0.4);
+  }
+
+  &.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+    transform: scale(1.02);
+    border: 1px dashed var(--theme-primary, #1abc9c);
   }
 
   &__header {
@@ -357,10 +431,30 @@ function handleInsertPointClick({
     color: var(--theme-text, #fff);
   }
 
+  &__drag-handle {
+    cursor: grab;
+    margin-right: 0.5rem;
+    display: flex;
+    align-items: center;
+
+    svg {
+      width: 16px;
+      height: 16px;
+      stroke: var(--theme-text-muted, #aaa);
+      stroke-width: 2;
+      fill: none;
+    }
+
+    &:hover svg {
+      stroke: var(--theme-primary, #1abc9c);
+    }
+  }
+
   &__title {
     font-size: 0.85em;
     color: var(--theme-text, #fff);
     font-weight: 500;
+    flex-grow: 1;
   }
 
   &__actions {

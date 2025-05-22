@@ -98,6 +98,18 @@ const handleCanvasDrop = (e: DragEvent) => {
 
   if (!e.dataTransfer) return;
 
+  // Check if we're moving an existing element (by element-id)
+  const elementId =
+    e.dataTransfer.getData("application/element-id") ||
+    e.dataTransfer.getData("text/plain");
+
+  if (elementId && elementId.length > 0) {
+    // We're moving an existing element
+    moveElement(elementId, dropPosition.value.index);
+    return;
+  }
+
+  // Otherwise, continue with creating a new element...
   // Try to get the element type from various formats
   let elementType = "";
 
@@ -229,17 +241,58 @@ const handleCanvasDrop = (e: DragEvent) => {
   dropPosition.value = { index: -1, top: 0 };
 };
 
+// Function to move an element to a new position
+function moveElement(elementId: string, newIndex: number) {
+  // Find the element in the store
+  const elements = formBuilderStore.elements;
+  const currentIndex = elements.findIndex((el) => el.id === elementId);
+
+  if (currentIndex === -1 || newIndex === -1) return;
+
+  // Don't do anything if dropping at the same position or right after itself
+  if (newIndex === currentIndex || newIndex === currentIndex + 1) return;
+
+  // Create a copy of the elements
+  const elementsCopy = [...elements];
+
+  // Remove the element from its current position
+  const [elementToMove] = elementsCopy.splice(currentIndex, 1);
+
+  // Adjust the target index if needed (when moving an item down)
+  const adjustedIndex = currentIndex < newIndex ? newIndex - 1 : newIndex;
+
+  // Insert the element at the new position
+  elementsCopy.splice(adjustedIndex, 0, elementToMove);
+
+  // Update the store
+  formBuilderStore.setFormElements(elementsCopy);
+  formBuilderStore.selectElement(elementId);
+}
+
 // Handle fieldset element drop
 function handleElementDrop({
   fieldsetId,
   elementType,
-  position = 0, // Default to beginning of fieldset
+  elementId,
+  position = 0,
+  isMove = false,
 }: {
   fieldsetId: string;
-  elementType: string;
+  elementType?: string;
+  elementId?: string;
   position?: number;
+  isMove?: boolean;
 }) {
-  if (!fieldsetId || !elementType) return;
+  if (!fieldsetId) return;
+
+  // Check if we're moving an existing element
+  if (isMove && elementId) {
+    moveElementToFieldset(elementId, fieldsetId, position);
+    return;
+  }
+
+  // Otherwise continue with creating a new element
+  if (!elementType) return;
 
   // Create a new element for the fieldset
   const baseElementProps = {
@@ -314,6 +367,83 @@ function handleElementDrop({
     // Add the element to the fieldset at the specified position
     formBuilderStore.addElementToFieldset(fieldsetId, newElement, position);
   }
+}
+
+// Function to move an element to a fieldset
+function moveElementToFieldset(
+  elementId: string,
+  fieldsetId: string,
+  position: number
+) {
+  // Find the element in the main elements array
+  const elements = formBuilderStore.elements;
+  const elementIndex = elements.findIndex((el) => el.id === elementId);
+
+  if (elementIndex === -1) {
+    // Element not found in main array, check if it's in another fieldset
+    let found = false;
+
+    // Search through all fieldsets
+    for (const element of elements) {
+      if (element.type === "fieldset") {
+        const fieldset =
+          element as import("../../models/FormElement").FieldsetElement;
+        if (fieldset.children && Array.isArray(fieldset.children)) {
+          const childIndex = fieldset.children.findIndex(
+            (child) => child.id === elementId
+          );
+
+          if (childIndex !== -1) {
+            // Found the element in this fieldset
+            const elementToMove = { ...fieldset.children[childIndex] };
+
+            // Remove from current fieldset
+            const updatedChildren = [...fieldset.children];
+            updatedChildren.splice(childIndex, 1);
+
+            // Update the original fieldset by removing the element
+            formBuilderStore.updateElement(fieldset.id, {
+              ...fieldset,
+              children: updatedChildren,
+            });
+
+            // Add to the target fieldset
+            formBuilderStore.addElementToFieldset(
+              fieldsetId,
+              elementToMove,
+              position
+            );
+            formBuilderStore.selectElement(elementId);
+
+            found = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!found) {
+      console.warn(`Element with ID ${elementId} not found`);
+    }
+
+    return;
+  }
+
+  // Element is in the main array, move it to the fieldset
+  const elementToMove = { ...elements[elementIndex] };
+
+  // Create a copy of the elements
+  const elementsCopy = [...elements];
+
+  // Remove the element from the main array
+  elementsCopy.splice(elementIndex, 1);
+
+  // Update the main store
+  formBuilderStore.setFormElements(elementsCopy);
+
+  // Add to the fieldset
+  formBuilderStore.addElementToFieldset(fieldsetId, elementToMove, position);
+  formBuilderStore.selectElement(elementId);
 }
 
 // Handle insertion point clicks
