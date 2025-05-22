@@ -148,13 +148,23 @@ interface CommandPaletteOptions {
 }
 
 // Open the command palette
-function openCommandPalette(options: CommandPaletteOptions = {}) {
+function openCommandPalette(event?: MouseEvent): void;
+function openCommandPalette(options?: CommandPaletteOptions): void;
+function openCommandPalette(
+  eventOrOptions?: MouseEvent | CommandPaletteOptions
+): void {
   isVisible.value = true;
   searchQuery.value = "";
   selectedIndex.value = 0;
 
+  // Check if the parameter is a CommandPaletteOptions object
+  const options =
+    eventOrOptions && !(eventOrOptions instanceof MouseEvent)
+      ? (eventOrOptions as CommandPaletteOptions)
+      : undefined;
+
   // Store insertion position if provided
-  if (options.insertPosition !== undefined) {
+  if (options?.insertPosition !== undefined) {
     currentInsertPosition.value = options.insertPosition;
     insertMode.value = options.mode === "insert";
     currentFieldsetId.value = options.fieldsetId || null;

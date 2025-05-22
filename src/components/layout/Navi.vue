@@ -70,6 +70,12 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener("click", closeDropdownOnClickOutside);
 });
+
+function setFormNameInputRef(id: string, el: any) {
+  if (el) {
+    formNameInputRefs.value[id] = el as HTMLInputElement;
+  }
+}
 </script>
 
 <template>
@@ -146,7 +152,7 @@ onUnmounted(() => {
               <input
                 v-if="form.id === newlyCreatedFormId"
                 type="text"
-                :ref="(el) => { if (el) formNameInputRefs.value[form.id as string] = el as HTMLInputElement }"
+                :ref="el => setFormNameInputRef(form.id as string, el)"
                 :value="form.name"
                 @input="handleFormNameChange(form.id, $event)"
                 @keyup.enter="handleFormNameEnter(form.id)"
