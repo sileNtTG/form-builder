@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watchEffect, onMounted } from "vue";
+import { ref, watchEffect, onMounted, provide } from "vue";
 import { useLocalStorage } from "@/composables/useLocalStorage";
 import { useFormBuilderStore } from "@/stores/formBuilder";
 import Header from "@/components/layout/Header.vue";
@@ -15,6 +15,9 @@ const themeStorageKey = "form-builder-theme";
 // Initialize currentTheme from localStorage or default to 'dark'
 const storedTheme = getItem<"light" | "dark">(themeStorageKey);
 const currentTheme = ref<"light" | "dark">(storedTheme || "dark");
+
+// Provide global drag state for cross-component communication
+provide("isDragging", ref(false));
 
 watchEffect(() => {
   document.body.setAttribute("data-theme", currentTheme.value);
@@ -50,45 +53,23 @@ onMounted(async () => {
 </template>
 
 <style lang="scss">
-@use "assets/scss/abstracts" as *; // Ensure variables and mixins are available
+@use "./assets/scss/main.scss";
 
-// Globale Styles für HTML und Body
-html,
-body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  overflow: hidden;
-}
-
-// App-wide standard layout styles
 .app-layout {
-  height: 100vh;
-  height: 100dvh; // Dynamische Viewport-Höhe für mobile Browser
   display: flex;
   flex-direction: column;
-  background-color: var(--theme-bg);
-  color: var(--theme-text);
+  height: 100vh;
   overflow: hidden;
+  background-color: var(--theme-bg);
 }
 
 .app-header-container {
-  display: flex;
-  flex-direction: column;
-  flex: 0 0 auto;
-  z-index: 100; // Damit Header immer über dem Inhalt ist
+  flex-shrink: 0;
 }
 
 .app-content {
-  flex: 1;
   display: flex;
+  flex: 1;
   overflow: hidden;
-  position: relative;
-}
-
-// Stelle sicher, dass das Router-View den gesamten verfügbaren Platz einnimmt
-router-view {
-  width: 100%;
-  height: 100%;
 }
 </style>

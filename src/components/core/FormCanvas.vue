@@ -6,594 +6,483 @@ import InsertionPoint from "./InsertionPoint.vue";
 import { v4 as uuidv4 } from "uuid";
 import type { FormElement } from "../../models/FormElement";
 
-// Create global drag state for cross-component and cross-browser support
-const currentDraggedElementId = ref<string | null>(null);
-provide("currentDraggedElementId", currentDraggedElementId);
-
 const formBuilderStore = useFormBuilderStore();
-const elements = computed(() => formBuilderStore.elements);
 
-// Drag state tracking
-const isDragging = ref(false);
-const dropPosition = ref({ index: -1, top: 0 });
+// Sorted elements for rendering
+const elements = computed(() => {
+  const elemsCopy = [...formBuilderStore.elements];
+  elemsCopy.sort((a, b) => a.order - b.order);
+  return elemsCopy;
+});
+
 const canvasRef = ref<HTMLElement | null>(null);
 
-const selectElement = (id: string) => {
+// Drag and drop state
+const dragging = ref(false);
+const draggedElementId = ref<string | null>(null);
+const dropTargetIndex = ref(-1);
+const externalDragType = ref<string | null>(null);
+
+function handleElementClick(id: string) {
   formBuilderStore.selectElement(id);
-};
-
-const handleEdit = (e: Event, id: string) => {
-  e.stopPropagation();
-};
-
-const handleDelete = (e: Event, id: string) => {
-  e.stopPropagation();
-  formBuilderStore.removeElement(id);
-};
-
-// Calculate drop position based on mouse Y position
-function calculateDropPosition(mouseY: number) {
-  if (!canvasRef.value) return { index: -1, top: 0 };
-
-  const canvas = canvasRef.value;
-  const canvasRect = canvas.getBoundingClientRect();
-  const relativeY = mouseY - canvasRect.top + canvas.scrollTop;
-
-  // Get all element cards in the canvas
-  const cards = Array.from(canvas.querySelectorAll(".element-card"));
-
-  if (cards.length === 0) {
-    // If no cards, position at the top
-    return { index: 0, top: 20 };
-  }
-
-  // Find where to insert the new element
-  for (let i = 0; i < cards.length; i++) {
-    const card = cards[i] as HTMLElement;
-    const cardRect = card.getBoundingClientRect();
-    const cardTop = cardRect.top - canvasRect.top + canvas.scrollTop;
-    const cardMiddle = cardTop + cardRect.height / 2;
-
-    if (relativeY < cardMiddle) {
-      // Insert before this element
-      return { index: i, top: cardTop - 8 };
-    }
-  }
-
-  // Insert after the last element
-  const lastCard = cards[cards.length - 1] as HTMLElement;
-  const lastRect = lastCard.getBoundingClientRect();
-  const lastBottom = lastRect.bottom - canvasRect.top + canvas.scrollTop;
-  return { index: cards.length, top: lastBottom + 8 };
 }
 
-// Canvas event handlers
-const handleCanvasDragOver = (e: DragEvent) => {
+function handleElementDragStart(id: string) {
+  draggedElementId.value = id;
+  dragging.value = true;
+}
+
+function handleDragOver(e: DragEvent) {
+  e.preventDefault();
+
+  const index = getDropIndex(e.clientY);
+  dropTargetIndex.value = index;
+
+  if (e.dataTransfer) {
+    e.dataTransfer.dropEffect = draggedElementId.value ? "move" : "copy";
+  }
+}
+
+function handleDragEnter(e: DragEvent) {
   e.preventDefault();
 
   if (e.dataTransfer) {
-    // Akzeptieren aller Formate
-    e.dataTransfer.dropEffect = "move";
+    e.dataTransfer.dropEffect = draggedElementId.value ? "move" : "copy";
+
+    if (!dragging.value) {
+      dragging.value = true;
+
+      try {
+        const elementType =
+          e.dataTransfer.getData("text/plain") ||
+          e.dataTransfer.getData("application/element-type");
+
+        if (elementType) {
+          externalDragType.value = elementType;
+        }
+      } catch (err) {
+        // Browser security - ignore
+      }
+    }
   }
+}
 
-  // Calculate drop position for visual indicator
-  if (canvasRef.value) {
-    const position = calculateDropPosition(e.clientY);
-    dropPosition.value = position;
+function handleDragEnd(event: DragEvent) {
+  // Only reset if no successful drop occurred
+  if (!event.defaultPrevented) {
+    resetDragState();
   }
+}
 
-  // Set dragging state
-  isDragging.value = true;
-};
-
-const handleCanvasDragLeave = (e: DragEvent) => {
-  // Check if we're really leaving the canvas and not entering a child
-  const relatedTarget = e.relatedTarget as Node;
-  if (!canvasRef.value?.contains(relatedTarget)) {
-    isDragging.value = false;
-  }
-};
-
-const handleCanvasDrop = (e: DragEvent) => {
-  console.log("DROP EVENT TRIGGERED!");
+function handleDrop(e: DragEvent) {
   e.preventDefault();
   e.stopPropagation();
 
-  // Reset dragging state
-  isDragging.value = false;
+  const dropIndex = getDropIndex(e.clientY);
+  dropTargetIndex.value = dropIndex;
 
-  if (!e.dataTransfer) {
-    console.error("No dataTransfer object in drop event");
-    return;
-  }
+  let elementProcessed = false;
 
-  // First try to get the element ID from dataTransfer
-  let elementId = "";
-  try {
-    const types = Array.from(e.dataTransfer.types);
-    console.log("Available dataTransfer types:", types);
+  // Check for external element types from sidebar
+  if (e.dataTransfer) {
+    try {
+      const elementType =
+        e.dataTransfer.getData("text/plain") ||
+        e.dataTransfer.getData("application/element-type");
 
-    if (types.includes("application/element-id")) {
-      elementId = e.dataTransfer.getData("application/element-id");
-    } else if (types.includes("text/plain")) {
-      elementId = e.dataTransfer.getData("text/plain");
-    } else if (types.includes("text/uri-list")) {
-      elementId = e.dataTransfer.getData("text/uri-list");
-    } else if (types.includes("text/html")) {
-      elementId = e.dataTransfer.getData("text/html");
-    }
-  } catch (err) {
-    console.warn("Error reading dataTransfer:", err);
-  }
-
-  // If dataTransfer failed, use the global variable as fallback
-  if (!elementId && currentDraggedElementId.value) {
-    console.log(
-      "Using global dragged element ID:",
-      currentDraggedElementId.value
-    );
-    elementId = currentDraggedElementId.value;
-  }
-
-  console.log("Drop detected, element ID:", elementId);
-
-  if (elementId && elementId.length > 0) {
-    // We're moving an existing element
-    console.log("Moving element to position:", dropPosition.value.index);
-    moveElement(elementId, dropPosition.value.index);
-
-    // Reset the global drag state
-    currentDraggedElementId.value = null;
-    return;
-  } else {
-    console.log("No element ID found in drop data");
-  }
-
-  // Otherwise, continue with creating a new element...
-  // Try to get the element type from various formats
-  let elementType = "";
-
-  try {
-    // Try all possible formats
-    elementType =
-      e.dataTransfer.getData("application/element-type") ||
-      e.dataTransfer.getData("text/plain") ||
-      e.dataTransfer.getData("text");
-  } catch (error) {
-    console.error("Error reading drag data:", error);
-    return;
-  }
-
-  if (!elementType) {
-    console.warn("No element type found in drop event");
-    return;
-  }
-
-  console.log("Element type found:", elementType);
-
-  const { index } = dropPosition.value;
-  if (index === -1) return;
-
-  // Create element properties
-  const baseElementProps = {
-    id: uuidv4(),
-    label: `New ${elementType.charAt(0).toUpperCase() + elementType.slice(1)}`,
-    required: false,
-    order: 0,
-    x: 20,
-    y: 0,
-  };
-
-  // Create element based on type
-  let newElement: FormElement | null = null;
-
-  switch (elementType) {
-    case "input":
-      newElement = {
-        ...baseElementProps,
-        type: "input",
-        placeholder: "Enter text",
-        width: 250,
-        height: 48,
-      } as FormElement;
-      break;
-    case "textarea":
-      newElement = {
-        ...baseElementProps,
-        type: "textarea",
-        placeholder: "Enter text",
-        rows: 4,
-        width: 300,
-        height: 120,
-      } as FormElement;
-      break;
-    case "checkbox":
-      newElement = {
-        ...baseElementProps,
-        type: "checkbox",
-        checked: false,
-        width: 200,
-        height: 40,
-      } as FormElement;
-      break;
-    case "select":
-      newElement = {
-        ...baseElementProps,
-        type: "select",
-        options: [
-          { value: "option1", label: "Option 1" },
-          { value: "option2", label: "Option 2" },
-        ],
-        multiple: false,
-        width: 250,
-        height: 48,
-      } as FormElement;
-      break;
-    case "radio":
-      newElement = {
-        ...baseElementProps,
-        type: "radio",
-        options: [
-          { value: "option1", label: "Option 1" },
-          { value: "option2", label: "Option 2" },
-        ],
-        defaultValue: "option1",
-        width: 250,
-        height: 80,
-      } as FormElement;
-      break;
-    case "fieldset":
-      newElement = {
-        ...baseElementProps,
-        type: "fieldset",
-        children: [],
-        width: 400,
-        height: 200,
-      } as FormElement;
-      break;
-    case "button":
-      newElement = {
-        ...baseElementProps,
-        type: "button",
-        buttonType: "button",
-        width: 150,
-        height: 48,
-      } as FormElement;
-      break;
-    default:
-      newElement = {
-        ...baseElementProps,
-        type: elementType as any,
-        width: 250,
-        height: 48,
-      } as FormElement;
-  }
-
-  if (newElement) {
-    // Insert the element at the correct position
-    const elementsCopy = [...formBuilderStore.elements];
-    elementsCopy.splice(index, 0, newElement);
-    formBuilderStore.setFormElements(elementsCopy);
-    formBuilderStore.selectElement(newElement.id);
-  }
-
-  // Reset drop position
-  dropPosition.value = { index: -1, top: 0 };
-};
-
-// Function to move an element to a new position
-function moveElement(elementId: string, newIndex: number) {
-  // Find the element in the store
-  const elements = formBuilderStore.elements;
-  const currentIndex = elements.findIndex((el) => el.id === elementId);
-
-  if (currentIndex === -1 || newIndex === -1) return;
-
-  // Don't do anything if dropping at the same position or right after itself
-  if (newIndex === currentIndex || newIndex === currentIndex + 1) return;
-
-  // Create a copy of the elements
-  const elementsCopy = [...elements];
-
-  // Remove the element from its current position
-  const [elementToMove] = elementsCopy.splice(currentIndex, 1);
-
-  // Adjust the target index if needed (when moving an item down)
-  const adjustedIndex = currentIndex < newIndex ? newIndex - 1 : newIndex;
-
-  // Insert the element at the new position
-  elementsCopy.splice(adjustedIndex, 0, elementToMove);
-
-  // Update the store
-  formBuilderStore.setFormElements(elementsCopy);
-  formBuilderStore.selectElement(elementId);
-}
-
-// Handle fieldset element drop
-function handleElementDrop({
-  fieldsetId,
-  elementType,
-  elementId,
-  position = 0,
-  isMove = false,
-}: {
-  fieldsetId: string;
-  elementType?: string;
-  elementId?: string;
-  position?: number;
-  isMove?: boolean;
-}) {
-  if (!fieldsetId) return;
-
-  // Check if we're moving an existing element
-  if (isMove && elementId) {
-    moveElementToFieldset(elementId, fieldsetId, position);
-    return;
-  }
-
-  // Otherwise continue with creating a new element
-  if (!elementType) return;
-
-  // Create a new element for the fieldset
-  const baseElementProps = {
-    id: uuidv4(),
-    label: `New ${elementType.charAt(0).toUpperCase() + elementType.slice(1)}`,
-    required: false,
-    order: 0,
-    x: 0,
-    y: 0,
-  };
-
-  let newElement: FormElement | null = null;
-
-  // Create element based on type
-  switch (elementType) {
-    case "input":
-      newElement = {
-        ...baseElementProps,
-        type: "input",
-        placeholder: "Enter text",
-        width: 250,
-        height: 48,
-      } as FormElement;
-      break;
-    case "textarea":
-      newElement = {
-        ...baseElementProps,
-        type: "textarea",
-        placeholder: "Enter text",
-        rows: 4,
-        width: 300,
-        height: 120,
-      } as FormElement;
-      break;
-    case "checkbox":
-      newElement = {
-        ...baseElementProps,
-        type: "checkbox",
-        checked: false,
-        width: 200,
-        height: 40,
-      } as FormElement;
-      break;
-    case "fieldset":
-      newElement = {
-        ...baseElementProps,
-        type: "fieldset",
-        children: [],
-        width: 400,
-        height: 200,
-      } as FormElement;
-      break;
-    case "button":
-      newElement = {
-        ...baseElementProps,
-        type: "button",
-        buttonType: "button",
-        width: 150,
-        height: 48,
-      } as FormElement;
-      break;
-    default:
-      newElement = {
-        ...baseElementProps,
-        type: elementType as any,
-        width: 250,
-        height: 48,
-      } as FormElement;
-  }
-
-  if (newElement) {
-    // Add the element to the fieldset at the specified position
-    formBuilderStore.addElementToFieldset(fieldsetId, newElement, position);
-  }
-}
-
-// Function to move an element to a fieldset
-function moveElementToFieldset(
-  elementId: string,
-  fieldsetId: string,
-  position: number
-) {
-  // Find the element in the main elements array
-  const elements = formBuilderStore.elements;
-  const elementIndex = elements.findIndex((el) => el.id === elementId);
-
-  if (elementIndex === -1) {
-    // Element not found in main array, check if it's in another fieldset
-    let found = false;
-
-    // Search through all fieldsets
-    for (const element of elements) {
-      if (element.type === "fieldset") {
-        const fieldset =
-          element as import("../../models/FormElement").FieldsetElement;
-        if (fieldset.children && Array.isArray(fieldset.children)) {
-          const childIndex = fieldset.children.findIndex(
-            (child) => child.id === elementId
-          );
-
-          if (childIndex !== -1) {
-            // Found the element in this fieldset
-            const elementToMove = { ...fieldset.children[childIndex] };
-
-            // Remove from current fieldset
-            const updatedChildren = [...fieldset.children];
-            updatedChildren.splice(childIndex, 1);
-
-            // Update the original fieldset by removing the element
-            formBuilderStore.updateElement(fieldset.id, {
-              ...fieldset,
-              children: updatedChildren,
-            });
-
-            // Add to the target fieldset
-            formBuilderStore.addElementToFieldset(
-              fieldsetId,
-              elementToMove,
-              position
-            );
-            formBuilderStore.selectElement(elementId);
-
-            found = true;
-            break;
-          }
+      if (elementType && !draggedElementId.value) {
+        if (
+          [
+            "input",
+            "textarea",
+            "checkbox",
+            "select",
+            "radio",
+            "fieldset",
+            "button",
+            "date",
+            "number",
+          ].includes(elementType)
+        ) {
+          externalDragType.value = elementType;
+        } else {
+          draggedElementId.value = elementType;
         }
       }
+    } catch (err) {
+      console.error("Error reading drag data:", err);
     }
-
-    if (!found) {
-      console.warn(`Element with ID ${elementId} not found`);
-    }
-
-    return;
   }
 
-  // Element is in the main array, move it to the fieldset
-  const elementToMove = { ...elements[elementIndex] };
+  // Handle existing elements (internal moves)
+  if (dragging.value && draggedElementId.value && dropIndex >= 0) {
+    moveElement(draggedElementId.value, dropIndex);
+    elementProcessed = true;
+  }
+  // Handle new elements from sidebar
+  else if (dragging.value && externalDragType.value && dropIndex >= 0) {
+    createAndAddElement(externalDragType.value, dropIndex);
+    elementProcessed = true;
+  }
 
-  // Create a copy of the elements
-  const elementsCopy = [...elements];
-
-  // Remove the element from the main array
-  elementsCopy.splice(elementIndex, 1);
-
-  // Update the main store
-  formBuilderStore.setFormElements(elementsCopy);
-
-  // Add to the fieldset
-  formBuilderStore.addElementToFieldset(fieldsetId, elementToMove, position);
-  formBuilderStore.selectElement(elementId);
+  // Reset state after processing
+  setTimeout(
+    () => {
+      resetDragState();
+    },
+    elementProcessed ? 50 : 10
+  );
 }
 
-// Handle insertion point clicks
-function handleInsertPointClick({
-  index,
-}: {
-  index: number;
-  fieldsetId?: string;
-}) {
-  openInsertMenu(index);
+function resetDragState() {
+  dragging.value = false;
+  draggedElementId.value = null;
+  dropTargetIndex.value = -1;
+  externalDragType.value = null;
 }
 
-// Open insert menu at specific position
-function openInsertMenu(index: number) {
-  console.log(`Opening insert menu at position ${index}`);
+function getDropIndex(mouseY: number): number {
+  if (!canvasRef.value) return -1;
 
-  // Dispatch a custom event that will be listened to by the CommandPalette component
+  const canvas = canvasRef.value;
+  const rect = canvas.getBoundingClientRect();
+  const relativeY = mouseY - rect.top + canvas.scrollTop;
+
+  const contentContainer = canvas.querySelector(".form-canvas__content");
+  if (!contentContainer) return 0;
+
+  // Only find direct children elements (not nested in fieldsets)
+  const directChildren = Array.from(contentContainer.children).filter((child) =>
+    child.classList.contains("element-card")
+  );
+
+  if (directChildren.length === 0) {
+    return 0;
+  }
+
+  // Iterate through all direct children and check mouse position
+  for (let i = 0; i < directChildren.length; i++) {
+    const card = directChildren[i] as HTMLElement;
+    const cardRect = card.getBoundingClientRect();
+    const cardTop = cardRect.top - rect.top + canvas.scrollTop;
+    const cardMiddle = cardTop + cardRect.height / 2;
+
+    if (relativeY < cardMiddle) {
+      return i;
+    }
+  }
+
+  return directChildren.length;
+}
+
+function getDropIndicatorPosition(): number {
+  if (!canvasRef.value || dropTargetIndex.value < 0) return 0;
+
+  const canvas = canvasRef.value;
+
+  const contentContainer = canvas.querySelector(".form-canvas__content");
+  if (!contentContainer) return 20;
+
+  const directChildren = Array.from(contentContainer.children).filter((child) =>
+    child.classList.contains("element-card")
+  );
+
+  if (directChildren.length === 0) return 20;
+
+  if (dropTargetIndex.value >= directChildren.length) {
+    // After the last element
+    const lastCard = directChildren[directChildren.length - 1] as HTMLElement;
+    const lastRect = lastCard.getBoundingClientRect();
+    const canvasRect = canvas.getBoundingClientRect();
+    return lastRect.bottom - canvasRect.top + canvas.scrollTop + 8;
+  }
+
+  // Before the indexed element
+  const card = directChildren[dropTargetIndex.value] as HTMLElement;
+  const cardRect = card.getBoundingClientRect();
+  const canvasRect = canvas.getBoundingClientRect();
+  return cardRect.top - canvasRect.top + canvas.scrollTop - 8;
+}
+
+function moveElement(id: string, toIndex: number) {
+  formBuilderStore.moveElementToPosition(id, toIndex, null);
+}
+
+function handleInsertPointClick({ index }: { index: number }) {
   const event = new CustomEvent("openCommandPalette", {
     detail: {
       insertPosition: index,
       mode: "insert",
     },
   });
-
   window.dispatchEvent(event);
 }
 
-// Clean up any drag state when component is unmounted
+function createAndAddElement(type: string, position: number) {
+  const element = createElementByType(type, position);
+
+  if (element) {
+    formBuilderStore.addElementAtPosition(element, position, null);
+    return element;
+  }
+
+  return null;
+}
+
+function createElementByType(
+  type: string,
+  position: number
+): FormElement | null {
+  const baseProps = {
+    id: uuidv4(),
+    label: `New ${type.charAt(0).toUpperCase() + type.slice(1)}`,
+    required: false,
+    order: position,
+    x: 0,
+    y: 0,
+    width: 250,
+    height: 48,
+  };
+
+  switch (type) {
+    case "input":
+      return {
+        ...baseProps,
+        type: "input",
+        placeholder: "Enter text",
+      } as FormElement;
+    case "textarea":
+      return {
+        ...baseProps,
+        type: "textarea",
+        placeholder: "Enter text",
+        rows: 4,
+        width: 300,
+        height: 120,
+      } as FormElement;
+    case "checkbox":
+      return {
+        ...baseProps,
+        type: "checkbox",
+        checked: false,
+        width: 200,
+        height: 40,
+      } as FormElement;
+    case "select":
+      return {
+        ...baseProps,
+        type: "select",
+        options: [
+          { value: "option1", label: "Option 1" },
+          { value: "option2", label: "Option 2" },
+        ],
+        width: 250,
+        height: 48,
+      } as FormElement;
+    case "button":
+      return {
+        ...baseProps,
+        type: "button",
+        buttonType: "button",
+        width: 150,
+        height: 48,
+      } as FormElement;
+    case "fieldset":
+      return {
+        ...baseProps,
+        type: "fieldset",
+        children: [],
+        width: 400,
+        height: 200,
+      } as FormElement;
+    case "number":
+      return {
+        ...baseProps,
+        type: "number",
+        min: 0,
+        max: 100,
+        width: 150,
+        height: 48,
+      } as FormElement;
+    case "date":
+      return {
+        ...baseProps,
+        type: "date",
+        width: 200,
+        height: 48,
+      } as FormElement;
+    case "radio":
+      return {
+        ...baseProps,
+        type: "radio",
+        options: [
+          { value: "option1", label: "Option 1" },
+          { value: "option2", label: "Option 2" },
+        ],
+        width: 250,
+        height: 80,
+      } as FormElement;
+    default:
+      console.warn(`Unknown element type: ${type}`);
+      return null;
+  }
+}
+
+function handleDragLeave(e: DragEvent) {
+  // Check if we're truly leaving the canvas, not just entering a child
+  const related = e.relatedTarget as HTMLElement;
+
+  if (!canvasRef.value?.contains(related)) {
+    resetDragState();
+  }
+}
+
 onMounted(() => {
-  document.addEventListener("dragend", () => {
-    isDragging.value = false;
-  });
+  document.addEventListener("dragend", handleDragEnd, { capture: true });
+});
+
+onUnmounted(() => {
+  document.removeEventListener("dragend", handleDragEnd, { capture: true });
+
+  if (canvasRef.value) {
+    canvasRef.value.removeEventListener("drop", () => {});
+    canvasRef.value.removeEventListener("dragover", () => {});
+    canvasRef.value.removeEventListener("dragleave", () => {});
+    canvasRef.value.removeEventListener("dragenter", () => {});
+  }
 });
 </script>
 
 <template>
   <div class="canvas-container">
     <div
-      class="canvas-stack"
-      @dragover="handleCanvasDragOver"
-      @dragleave="handleCanvasDragLeave"
-      @drop="handleCanvasDrop"
-      @dragenter.prevent
+      class="form-canvas"
+      :class="{ 'dragging-active': dragging }"
+      @dragover="handleDragOver"
+      @dragenter="handleDragEnter"
+      @dragleave="handleDragLeave"
+      @drop="handleDrop"
       ref="canvasRef"
     >
-      <!-- Empty state message -->
-      <div v-if="elements.length === 0" class="form-canvas__empty">
-        Drag and drop elements here to build your form or click on elements in
-        the sidebar
+      <!-- Debug Info -->
+      <div v-if="dragging" class="debug-info">
+        <template v-if="draggedElementId">
+          Moving: {{ draggedElementId }} → {{ dropTargetIndex }}
+        </template>
+        <template v-else-if="externalDragType">
+          New Element: {{ externalDragType }}
+        </template>
+        <template v-else> Waiting for element... </template>
       </div>
 
-      <!-- Drop indicator when dragging -->
+      <!-- Leerer Zustand -->
+      <div v-if="elements.length === 0" class="form-canvas__empty">
+        Ziehe Elemente aus der Seitenleiste hierher, um dein Formular zu
+        erstellen
+      </div>
+
+      <!-- Drop-Indikator -->
       <div
-        v-if="isDragging && dropPosition.index >= 0"
+        v-if="dragging && dropTargetIndex >= 0"
         class="drop-indicator"
-        :style="{ top: `${dropPosition.top}px` }"
+        :style="{ top: `${getDropIndicatorPosition()}px` }"
       ></div>
 
-      <template v-if="elements.length > 0">
-        <!-- Einfügepunkt am Anfang -->
-        <InsertionPoint :index="0" @insert="handleInsertPointClick" />
+      <div class="form-canvas__content">
+        <template v-if="elements.length > 0">
+          <!-- Einfügepunkt am Anfang -->
+          <InsertionPoint :index="0" @insert="handleInsertPointClick" />
 
-        <!-- Elemente mit Einfügepunkten dazwischen -->
-        <template v-for="(element, index) in elements" :key="element.id">
-          <FormElementRenderer
-            :element="element"
-            @element-drop="handleElementDrop"
-          />
-          <InsertionPoint :index="index + 1" @insert="handleInsertPointClick" />
+          <!-- Elemente mit Einfügepunkten dazwischen -->
+          <template v-for="(element, index) in elements" :key="element.id">
+            <FormElementRenderer
+              :element="element"
+              @drag-start="handleElementDragStart"
+              @click="() => handleElementClick(element.id)"
+            />
+            <InsertionPoint
+              :index="index + 1"
+              @insert="handleInsertPointClick"
+            />
+          </template>
         </template>
-      </template>
+      </div>
     </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
 .canvas-container {
-  padding: 0.3rem;
+  padding: 0.8rem;
   flex: 1;
   overflow: auto;
 }
 
-.canvas-stack {
+.form-canvas {
   max-width: 850px;
   width: 100%;
-  margin: 1rem auto;
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
+  margin: 0 auto;
   position: relative;
-  min-height: 200px;
+  min-height: calc(100vh - 160px);
+  border: 2px dashed #3a3f4a;
+  border-radius: 8px;
+  padding: 1.5rem;
 
-  &.two-column-layout {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.8rem;
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  &.dragging-active {
+    background-color: rgba(26, 188, 156, 0.05);
+    border: 2px dashed rgba(26, 188, 156, 0.7);
   }
 }
 
-/* Drop indicator styling */
+.debug-info {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #ff0;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  z-index: 9999;
+  pointer-events: none;
+}
+
 .drop-indicator {
   position: absolute;
-  left: 0;
-  right: 0;
+  left: 10px;
+  right: 10px;
   height: 3px;
   background-color: var(--theme-primary, #1abc9c);
   border-radius: 2px;
   z-index: 100;
   box-shadow: 0 0 8px 1px rgba(26, 188, 156, 0.6);
   animation: pulse 1.5s infinite;
+
+  &:before,
+  &:after {
+    content: "";
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--theme-primary, #1abc9c);
+    top: -2.5px;
+    box-shadow: 0 0 6px 1px rgba(26, 188, 156, 0.6);
+  }
+
+  &:before {
+    left: 0;
+  }
+
+  &:after {
+    right: 0;
+  }
 }
 
 @keyframes pulse {
@@ -613,9 +502,7 @@ onMounted(() => {
 
 .form-canvas__empty {
   text-align: center;
-  padding: 2rem;
-  border: 2px dashed var(--theme-border, #444);
-  border-radius: 8px;
+  padding: 3rem;
   color: var(--theme-text-muted, #aaa);
   font-style: italic;
   font-size: 0.9em;

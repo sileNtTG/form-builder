@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fieldset Nesting Test</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+      :root {
+        --theme-bg: #1e1e2e;
+        --theme-bg-alt: #27293d;
+        --theme-bg-surface: #2c2e3e;
+        --theme-primary: #1abc9c;
+        --theme-primary-hover: #16a085;
+        --theme-text: #eceff4;
+        --theme-text-muted: #8791a9;
+        --theme-border: #40465b;
+        --theme-border-light: #4c526a;
+        --theme-error: #e74c3c;
+        --theme-warning: #f39c12;
+        --theme-success: #2ecc71;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: var(--theme-bg);
+        color: var(--theme-text);
+        min-height: 100vh;
+      }
+
+      h1 {
+        font-size: 1.8rem;
+        font-weight: 600;
+        margin: 0.5rem 0 1.5rem;
+        padding: 0 1.5rem;
+        color: var(--theme-primary);
+      }
+
+      h2 {
+        font-size: 1.4rem;
+        font-weight: 500;
+        margin-bottom: 1rem;
+        color: var(--theme-primary);
+      }
+
+      h3 {
+        font-size: 1.1rem;
+        font-weight: 500;
+        margin: 0.6rem 0;
+        color: var(--theme-text);
+      }
+
+      .container {
+        display: flex;
+        gap: 1.5rem;
+        padding: 0 1.5rem 1.5rem;
+      }
+
+      .panel {
+        flex: 1;
+        border: 1px solid var(--theme-border);
+        border-radius: 8px;
+        padding: 1.2rem;
+        background-color: var(--theme-bg-alt);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .result {
+        background-color: var(--theme-bg-surface);
+        border: 1px solid var(--theme-border-light);
+        padding: 1rem;
+        border-radius: 6px;
+        margin-top: 1rem;
+      }
+
+      pre {
+        white-space: pre-wrap;
+        font-family: "Monaco", "Menlo", "Ubuntu Mono", "Consolas", monospace;
+        font-size: 0.9rem;
+        line-height: 1.4;
+        color: var(--theme-text);
+      }
+
+      button {
+        background-color: var(--theme-primary);
+        border: none;
+        color: white;
+        padding: 0.5rem 0.8rem;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        margin: 0.3rem 0.3rem 0.3rem 0;
+        transition: background-color 0.2s, transform 0.1s;
+      }
+
+      button:hover {
+        background-color: var(--theme-primary-hover);
+      }
+
+      button:active {
+        transform: translateY(1px);
+      }
+
+      input,
+      select {
+        background-color: var(--theme-bg-surface);
+        border: 1px solid var(--theme-border);
+        color: var(--theme-text);
+        padding: 0.4rem 0.6rem;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        margin: 0.3rem 0;
+        width: 100%;
+      }
+
+      input:focus,
+      select:focus {
+        outline: none;
+        border-color: var(--theme-primary);
+        box-shadow: 0 0 0 2px rgba(26, 188, 156, 0.3);
+      }
+
+      select {
+        cursor: pointer;
+      }
+
+      label {
+        display: block;
+        margin: 0.5rem 0 0.2rem;
+        font-size: 0.9rem;
+        color: var(--theme-text-muted);
+      }
+
+      .element {
+        margin: 0.6rem 0;
+        padding: 0.8rem 1rem;
+        border: 1px solid var(--theme-border-light);
+        border-radius: 6px;
+        background-color: var(--theme-bg-surface);
+        transition: all 0.2s;
+      }
+
+      .fieldset {
+        border: 2px solid var(--theme-border);
+        background-color: rgba(60, 65, 92, 0.3);
+      }
+
+      .fieldset-content {
+        padding: 0.5rem 0 0 1.2rem;
+        border-left: 2px solid rgba(137, 147, 177, 0.2);
+        margin-top: 0.5rem;
+      }
+
+      .selected {
+        border: 2px solid var(--theme-primary);
+        box-shadow: 0 0 0 2px rgba(26, 188, 156, 0.3);
+      }
+
+      .drop-indicator {
+        height: 4px;
+        background-color: var(--theme-primary);
+        border-radius: 2px;
+        margin: 4px 0;
+        animation: pulse 2s infinite;
+      }
+
+      .card {
+        background-color: var(--theme-bg-surface);
+        border: 1px solid var(--theme-border-light);
+        border-radius: 6px;
+        padding: 1.2rem;
+        margin: 1rem 0;
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1.2rem;
+      }
+
+      .section {
+        margin-bottom: 1.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid var(--theme-border-light);
+      }
+
+      .section:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+      }
+
+      .flex-row {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+      }
+
+      .flex-space-between {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .badge {
+        background-color: rgba(26, 188, 156, 0.2);
+        color: var(--theme-primary);
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+      }
+
+      .empty-state {
+        padding: 2rem;
+        text-align: center;
+        color: var(--theme-text-muted);
+        font-style: italic;
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 0.6;
+        }
+        50% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0.6;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <h1>Fieldset Nesting Test</h1>
+
+      <div class="container">
+        <div class="panel">
+          <h2>Controls</h2>
+          <div class="section">
+            <div class="toolbar">
+              <button @click="addElement('input')">Add Input</button>
+              <button @click="addElement('fieldset')">Add Fieldset</button>
+              <button
+                @click="resetElements()"
+                style="background-color: #e74c3c"
+              >
+                Reset
+              </button>
+            </div>
+
+            <div class="card">
+              <h3>Quick Add At Position</h3>
+              <p style="margin-bottom: 0.8rem; font-size: 0.9rem">
+                Current target:
+                <span class="badge"
+                  >{{ dropTargetParentId ? 'Fieldset: ' + dropTargetParentId :
+                  'Root' }}</span
+                >
+                at position
+                <span class="badge">{{ dropTargetIndex }}</span>
+              </p>
+              <div class="toolbar">
+                <button @click="addElementAtPosition('input')">
+                  Add Input Here
+                </button>
+                <button @click="addElementAtPosition('fieldset')">
+                  Add Fieldset Here
+                </button>
+                <button @click="addElementAtPosition('checkbox')">
+                  Add Checkbox Here
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <h3>Move Element</h3>
+            <div>
+              <label for="elementId">Element ID:</label>
+              <input id="elementId" v-model="moveOperation.elementId" />
+
+              <label for="toParentId">To Parent ID:</label>
+              <input
+                id="toParentId"
+                v-model="moveOperation.toParentId"
+                placeholder="Empty for root"
+              />
+
+              <label for="toPosition">To Position:</label>
+              <input
+                id="toPosition"
+                v-model="moveOperation.toPosition"
+                type="number"
+              />
+
+              <button @click="moveElement()">Move</button>
+            </div>
+          </div>
+
+          <div class="section">
+            <h3>Add to Fieldset</h3>
+            <div>
+              <label for="fieldsetId">Fieldset ID:</label>
+              <input
+                id="fieldsetId"
+                v-model="addToFieldsetOperation.fieldsetId"
+              />
+
+              <label for="elementType">Element Type:</label>
+              <select
+                id="elementType"
+                v-model="addToFieldsetOperation.elementType"
+              >
+                <option value="input">Input</option>
+                <option value="textarea">Textarea</option>
+                <option value="checkbox">Checkbox</option>
+                <option value="fieldset">Nested Fieldset</option>
+              </select>
+
+              <label for="position">Position:</label>
+              <input
+                id="position"
+                v-model="addToFieldsetOperation.position"
+                type="number"
+              />
+
+              <button @click="addToFieldset()">Add to Fieldset</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Visual Representation</h2>
+          <div v-if="elements.length === 0" class="empty-state">
+            No elements yet. Add some elements to see them here.
+          </div>
+
+          <div v-else>
+            <!-- Drop indicator at top position -->
+            <div class="drop-indicator" v-if="dropTargetIndex === 0"></div>
+
+            <!-- Root level elements -->
+            <div v-for="(element, index) in elements" :key="element.id">
+              <div
+                :class="['element', element.type === 'fieldset' ? 'fieldset' : '', 
+                selectedElement === element.id ? 'selected' : '']"
+                @click="selectElement(element.id)"
+              >
+                <div class="flex-space-between">
+                  <span>
+                    {{ element.label }}
+                    <span class="badge">{{ element.type }}</span>
+                    <small style="color: var(--theme-text-muted)"
+                      >ID: {{ element.id }}</small
+                    >
+                  </span>
+                  <span class="badge">Order: {{ element.order }}</span>
+                </div>
+
+                <!-- Fieldset content -->
+                <div
+                  v-if="element.type === 'fieldset' && element.children"
+                  class="fieldset-content"
+                >
+                  <div
+                    v-for="(child, childIndex) in element.children"
+                    :key="child.id"
+                  >
+                    <div
+                      :class="['element', child.type === 'fieldset' ? 'fieldset' : '', 
+                      selectedElement === child.id ? 'selected' : '']"
+                      @click.stop="selectElement(child.id)"
+                    >
+                      <div class="flex-space-between">
+                        <span>
+                          {{ child.label }}
+                          <span class="badge">{{ child.type }}</span>
+                          <small style="color: var(--theme-text-muted)"
+                            >ID: {{ child.id }}</small
+                          >
+                        </span>
+                        <span class="badge">Order: {{ child.order }}</span>
+                      </div>
+
+                      <!-- Nested fieldset content (recursive) -->
+                      <div
+                        v-if="child.type === 'fieldset' && child.children"
+                        class="fieldset-content"
+                      >
+                        <div
+                          v-for="(grandchild, grandchildIndex) in child.children"
+                          :key="grandchild.id"
+                        >
+                          <div
+                            :class="['element', 
+                            selectedElement === grandchild.id ? 'selected' : '']"
+                            @click.stop="selectElement(grandchild.id)"
+                          >
+                            <div class="flex-space-between">
+                              <span>
+                                {{ grandchild.label }}
+                                <span class="badge">{{ grandchild.type }}</span>
+                                <small style="color: var(--theme-text-muted)"
+                                  >ID: {{ grandchild.id }}</small
+                                >
+                              </span>
+                              <span class="badge"
+                                >Order: {{ grandchild.order }}</span
+                              >
+                            </div>
+                          </div>
+                          <!-- Drop indicator between grandchildren -->
+                          <div
+                            class="drop-indicator"
+                            v-if="dropTargetParentId === child.id && dropTargetIndex === grandchildIndex + 1"
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                    <!-- Drop indicator between children -->
+                    <div
+                      class="drop-indicator"
+                      v-if="dropTargetParentId === element.id && dropTargetIndex === childIndex + 1"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+              <!-- Drop indicator between root elements -->
+              <div
+                class="drop-indicator"
+                v-if="!dropTargetParentId && dropTargetIndex === index + 1"
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>JSON Data</h2>
+          <div class="result">
+            <h3>Elements Array</h3>
+            <pre>{{ JSON.stringify(elements, null, 2) }}</pre>
+          </div>
+
+          <div class="result">
+            <h3>Selected Element</h3>
+            <pre v-if="selectedElementData">
+{{ JSON.stringify(selectedElementData, null, 2) }}</pre
+            >
+            <p v-else class="empty-state">No element selected</p>
+          </div>
+
+          <div class="result">
+            <h3>Position Info</h3>
+            <p>
+              <strong>Drop Target Parent:</strong>
+              <span class="badge">{{ dropTargetParentId || 'root' }}</span>
+            </p>
+            <p>
+              <strong>Drop Target Index:</strong>
+              <span class="badge">{{ dropTargetIndex }}</span>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const { createApp, ref, computed } = Vue;
+
+      createApp({
+        setup() {
+          // Hauptdatenstruktur - die Elemente
+          const elements = ref([]);
+          const selectedElement = ref(null);
+          const nextId = ref(1);
+
+          // Drop-Position
+          const dropTargetParentId = ref(null);
+          const dropTargetIndex = ref(0);
+
+          // Operation-Parameter
+          const moveOperation = ref({
+            elementId: "",
+            toParentId: "", // leer = root
+            toPosition: 0,
+          });
+
+          const addToFieldsetOperation = ref({
+            fieldsetId: "",
+            elementType: "input",
+            position: 0,
+          });
+
+          // Helper: Element nach ID finden
+          const findElement = (elements, id, parent = null) => {
+            // In der aktuellen Ebene suchen
+            const directMatch = elements.find((e) => e.id === id);
+            if (directMatch)
+              return {
+                element: directMatch,
+                parent,
+                index: elements.indexOf(directMatch),
+              };
+
+            // In Fieldsets suchen
+            for (const element of elements) {
+              if (element.type === "fieldset" && element.children) {
+                const result = findElement(element.children, id, element);
+                if (result) return result;
+              }
+            }
+
+            return null; // Nicht gefunden
+          };
+
+          // Element erstellen
+          const createElementByType = (type, position = 0, parentId = null) => {
+            const id = `elem-${nextId.value++}`;
+
+            const baseProps = {
+              id,
+              type,
+              label: `New ${type.charAt(0).toUpperCase() + type.slice(1)}`,
+              order: position,
+              width: 250,
+              height: 48,
+            };
+
+            if (type === "fieldset") {
+              return {
+                ...baseProps,
+                children: [],
+                width: 400,
+                height: 200,
+              };
+            }
+
+            return baseProps;
+          };
+
+          // Element zum Root hinzufügen
+          const addElement = (type) => {
+            // Die Funktionalität von addElementAtPosition nutzen,
+            // um die aktuelle ausgewählte Position zu verwenden
+            addElementAtPosition(type);
+          };
+
+          // Element an aktueller Position hinzufügen (neuer Helper)
+          const addElementAtPosition = (type) => {
+            const parentId = dropTargetParentId.value;
+            const position = dropTargetIndex.value;
+
+            if (parentId) {
+              // Element in Fieldset einfügen
+              const fieldset = findElement(elements.value, parentId);
+
+              if (fieldset && fieldset.element.type === "fieldset") {
+                // Element erstellen
+                const newElement = createElementByType(
+                  type,
+                  position,
+                  parentId
+                );
+
+                if (!fieldset.element.children) {
+                  fieldset.element.children = [];
+                }
+
+                // Element an der richtigen Position einfügen
+                const safePosition = Math.min(
+                  Math.max(0, position),
+                  fieldset.element.children.length
+                );
+                fieldset.element.children.splice(safePosition, 0, newElement);
+
+                // Orders aktualisieren
+                fieldset.element.children.forEach((child, index) => {
+                  child.order = index;
+                });
+
+                selectedElement.value = newElement.id;
+              } else {
+                console.error("Ziel-Fieldset nicht gefunden:", parentId);
+              }
+            } else {
+              // Element im Root hinzufügen
+              const newElement = createElementByType(type, position);
+
+              // Element an der richtigen Position einfügen
+              const safePosition = Math.min(
+                Math.max(0, position),
+                elements.value.length
+              );
+              elements.value.splice(safePosition, 0, newElement);
+
+              // Orders aktualisieren
+              elements.value.forEach((elem, index) => {
+                elem.order = index;
+              });
+
+              selectedElement.value = newElement.id;
+            }
+          };
+
+          // Element in ein Fieldset einfügen
+          const addToFieldset = () => {
+            const { fieldsetId, elementType, position } =
+              addToFieldsetOperation.value;
+
+            if (!fieldsetId) {
+              alert("Please enter a Fieldset ID");
+              return;
+            }
+
+            // Fieldset finden
+            const result = findElement(elements.value, fieldsetId);
+            if (!result || result.element.type !== "fieldset") {
+              alert("Fieldset not found or element is not a fieldset");
+              return;
+            }
+
+            // Element erstellen und einfügen
+            const newElement = createElementByType(
+              elementType,
+              position,
+              fieldsetId
+            );
+
+            if (!result.element.children) {
+              result.element.children = [];
+            }
+
+            // An der korrekten Position einfügen
+            const safePosition = Math.min(
+              Math.max(0, position),
+              result.element.children.length
+            );
+            result.element.children.splice(safePosition, 0, newElement);
+
+            // Orders aktualisieren
+            result.element.children.forEach((child, index) => {
+              child.order = index;
+            });
+
+            selectedElement.value = newElement.id;
+
+            // Operations-Feld zurücksetzen
+            addToFieldsetOperation.value.position = 0;
+          };
+
+          // Element verschieben
+          const moveElement = () => {
+            const { elementId, toParentId, toPosition } = moveOperation.value;
+
+            if (!elementId) {
+              alert("Please enter an Element ID");
+              return;
+            }
+
+            // Element und aktuelle Position finden
+            const sourceResult = findElement(elements.value, elementId);
+            if (!sourceResult) {
+              alert("Source element not found");
+              return;
+            }
+
+            // Element entfernen
+            let sourceArray;
+            if (sourceResult.parent) {
+              sourceArray = sourceResult.parent.children;
+            } else {
+              sourceArray = elements.value;
+            }
+
+            const [movedElement] = sourceArray.splice(sourceResult.index, 1);
+
+            // Zielposition bestimmen
+            let targetArray;
+            if (toParentId) {
+              // In ein Fieldset einfügen
+              const targetFieldset = findElement(elements.value, toParentId);
+              if (
+                !targetFieldset ||
+                targetFieldset.element.type !== "fieldset"
+              ) {
+                alert("Target fieldset not found or is not a fieldset");
+                // Element zurück in Ausgangsposition
+                sourceArray.splice(sourceResult.index, 0, movedElement);
+                return;
+              }
+
+              if (!targetFieldset.element.children) {
+                targetFieldset.element.children = [];
+              }
+
+              targetArray = targetFieldset.element.children;
+            } else {
+              // In Root einfügen
+              targetArray = elements.value;
+            }
+
+            // An der korrekten Position einfügen
+            const safePosition = Math.min(
+              Math.max(0, toPosition),
+              targetArray.length
+            );
+            targetArray.splice(safePosition, 0, movedElement);
+
+            // Orders aktualisieren
+            targetArray.forEach((elem, index) => {
+              elem.order = index;
+            });
+
+            // Operations-Feld zurücksetzen
+            moveOperation.value = {
+              elementId: "",
+              toParentId: "",
+              toPosition: 0,
+            };
+
+            // Drop-Ziel zurücksetzen
+            dropTargetParentId.value = null;
+            dropTargetIndex.value = 0;
+          };
+
+          // Element auswählen
+          const selectElement = (id) => {
+            selectedElement.value = id;
+
+            // Drop-Ziel setzen (zum Testen)
+            const result = findElement(elements.value, id);
+            if (result) {
+              if (result.parent) {
+                dropTargetParentId.value = result.parent.id;
+                dropTargetIndex.value = result.index + 1;
+              } else {
+                dropTargetParentId.value = null;
+                dropTargetIndex.value = result.index + 1;
+              }
+            }
+          };
+
+          // Alles zurücksetzen
+          const resetElements = () => {
+            elements.value = [];
+            selectedElement.value = null;
+            nextId.value = 1;
+            dropTargetParentId.value = null;
+            dropTargetIndex.value = 0;
+          };
+
+          // Details zum ausgewählten Element
+          const selectedElementData = computed(() => {
+            if (!selectedElement.value) return null;
+
+            const result = findElement(elements.value, selectedElement.value);
+            if (!result) return null;
+
+            return {
+              element: result.element,
+              parent: result.parent
+                ? {
+                    id: result.parent.id,
+                    type: result.parent.type,
+                  }
+                : null,
+              position: result.index,
+            };
+          });
+
+          return {
+            elements,
+            selectedElement,
+            dropTargetParentId,
+            dropTargetIndex,
+            moveOperation,
+            addToFieldsetOperation,
+            selectedElementData,
+            addElement,
+            moveElement,
+            addToFieldset,
+            selectElement,
+            resetElements,
+            addElementAtPosition,
+          };
+        },
+      }).mount("#app");
+    </script>
+  </body>
+</html>

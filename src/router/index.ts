@@ -26,6 +26,11 @@ const routes = [
     name: "ApiKey",
     component: () => import("../views/ApiKeyView.vue"),
   },
+  {
+    path: "/fieldset-test",
+    name: "FieldsetTest",
+    component: () => import("../views/FieldsetTestView.vue"),
+  },
 ];
 
 const router = createRouter({

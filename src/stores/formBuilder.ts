@@ -223,7 +223,25 @@ export const useFormBuilderStore = defineStore("formBuilder", {
 
     syncActiveFormVisualsFromCanvas() {
       if (this.activeForm) {
-        this.activeForm.visualElements = [...this.elements];
+        console.log(`Syncing ${this.elements.length} elements to active form`);
+
+        // Tiefe Kopie erstellen, um sicherzustellen, dass die Referenzen unterschiedlich sind
+        const elementsCopy = JSON.parse(JSON.stringify(this.elements));
+
+        // Sicherstellen, dass alle Elemente korrekte Ordnungszahlen haben
+        elementsCopy.forEach((element: FormElement, index: number) => {
+          element.order = index;
+        });
+
+        // Aktives Formular aktualisieren mit der korrigierten Kopie
+        this.activeForm.visualElements = elementsCopy;
+
+        // Debug-Info für ausgewähltes Element
+        if (this.selectedElementId) {
+          console.log(`Current selected element: ${this.selectedElementId}`);
+        }
+      } else {
+        console.warn("No active form to sync visual elements to");
       }
     },
 
@@ -235,9 +253,60 @@ export const useFormBuilderStore = defineStore("formBuilder", {
     },
 
     setFormElements(elements: FormElement[]) {
-      this.elements = elements;
+      // Klare Zuweisung, um sicherzustellen, dass die Änderungen überall übernommen werden
+      console.log(`Store: Setting ${elements.length} elements`);
+
+      // Tiefe Kopie der Elemente erstellen, um sicherzustellen, dass es eine neue Referenz ist
+      this.elements = JSON.parse(JSON.stringify(elements));
+
+      // Selection zurücksetzen
       this.selectedElementId = null;
+
+      // Mit aktivem Formular synchronisieren
       this.syncActiveFormVisualsFromCanvas();
+    },
+
+    resetElementsCache() {
+      // Temporär leeres Array setzen, um sicherzustellen, dass Vue die Änderungen erkennt
+      this.elements = [];
+
+      // Selection zurücksetzen
+      this.selectedElementId = null;
+    },
+
+    setFormElementsAndSelect(
+      elements: FormElement[],
+      elementToSelectId: string
+    ) {
+      console.log(
+        `Store: Setting ${elements.length} elements and selecting ${elementToSelectId}`
+      );
+
+      // ID des zu selektierenden Elements merken
+      const idToSelect = elementToSelectId;
+
+      // Erst alle Elemente zurücksetzen
+      this.resetElementsCache();
+
+      // Warten bis Vue den DOM aktualisiert hat
+      setTimeout(() => {
+        // Dann die Elemente aktualisieren (mit korrekter Reihenfolge)
+        const sortedElements = [...elements];
+        sortedElements.forEach((el, idx) => {
+          el.order = idx;
+        });
+
+        this.elements = JSON.parse(JSON.stringify(sortedElements));
+
+        // Mit aktivem Formular synchronisieren
+        this.syncActiveFormVisualsFromCanvas();
+
+        // Sicherstellen, dass die Auswahl nach der Synchronisierung gesetzt wird
+        setTimeout(() => {
+          console.log(`Ensuring selection of ${idToSelect} is maintained`);
+          this.selectedElementId = idToSelect;
+        }, 50);
+      }, 0);
     },
 
     addElement(element: FormElement) {
@@ -447,7 +516,50 @@ export const useFormBuilderStore = defineStore("formBuilder", {
     },
 
     selectElement(elementId: string | null) {
-      this.selectedElementId = elementId;
+      console.log(`Selecting element: ${elementId}`);
+
+      // Clear current selection first
+      this.selectedElementId = null;
+
+      // Use setTimeout to ensure the selection happens after UI updates
+      setTimeout(() => {
+        // Set the new selection
+        this.selectedElementId = elementId;
+
+        // If element ID is provided, let's try to find it to confirm it exists
+        if (elementId) {
+          const findElementById = (
+            elements: FormElement[],
+            id: string
+          ): FormElement | null => {
+            const element = elements.find((el) => el.id === id);
+            if (element) return element;
+
+            // Check in fieldset children
+            for (const el of elements) {
+              if (
+                el.type === "fieldset" &&
+                el.children &&
+                el.children.length > 0
+              ) {
+                const found = findElementById(el.children, id);
+                if (found) return found;
+              }
+            }
+
+            return null;
+          };
+
+          const foundElement = findElementById(this.elements, elementId);
+          if (foundElement) {
+            console.log(
+              `Selected element found: ${foundElement.type} (${elementId})`
+            );
+          } else {
+            console.warn(`Selected element not found: ${elementId}`);
+          }
+        }
+      }, 0);
     },
 
     async saveForm() {
@@ -465,32 +577,208 @@ export const useFormBuilderStore = defineStore("formBuilder", {
     ) {
       function findAndAdd(elements: FormElement[]): boolean {
         for (const el of elements) {
-          if (el.type === "fieldset" && el.id === fieldsetId) {
-            if (!el.children) el.children = [];
-
-            // Add at specified index or default to beginning (index 0)
-            if (atIndex >= 0 && atIndex <= el.children.length) {
-              el.children.splice(atIndex, 0, element);
-            } else {
-              // Fallback to adding at the beginning if index is invalid
-              el.children.unshift(element);
+          if (el.id === fieldsetId && el.type === "fieldset") {
+            if (!el.children) {
+              el.children = [];
             }
+
+            // Calculate safe position and insert element
+            const safeIndex = Math.max(
+              0,
+              Math.min(atIndex, el.children.length)
+            );
+            el.children.splice(safeIndex, 0, element);
+
+            // Update order indices for all children
+            el.children.forEach((child, index) => {
+              child.order = index;
+            });
+
             return true;
-          } else if (el.type === "fieldset" && el.children) {
-            if (findAndAdd(el.children)) return true;
+          }
+
+          // Recursively search in nested fieldsets
+          if (el.type === "fieldset" && el.children && el.children.length > 0) {
+            if (findAndAdd(el.children)) {
+              return true;
+            }
           }
         }
         return false;
       }
-      if (findAndAdd(this.elements)) {
+
+      const success = findAndAdd(this.elements);
+      if (success) {
         this.syncActiveFormVisualsFromCanvas();
         this.selectElement(element.id);
       } else {
-        console.warn(`Fieldset with id ${fieldsetId} not found.`);
+        console.error(`Fieldset with id ${fieldsetId} not found`);
       }
     },
 
-    // Update a specific property of an element
+    // Add element at specific position (root or within fieldset)
+    addElementAtPosition(
+      element: FormElement,
+      position: number,
+      parentId: string | null = null
+    ) {
+      if (parentId) {
+        // Add to fieldset
+        this.addElementToFieldset(parentId, element, position);
+      } else {
+        // Add to root level
+        const elementsCopy = [...this.elements];
+
+        const safePosition = Math.max(
+          0,
+          Math.min(position, elementsCopy.length)
+        );
+        elementsCopy.splice(safePosition, 0, element);
+
+        // Update order indices
+        elementsCopy.forEach((elem, index) => {
+          elem.order = index;
+        });
+
+        this.setFormElementsAndSelect(elementsCopy, element.id);
+      }
+    },
+
+    // Move element to new position (with parent support)
+    moveElementToPosition(
+      elementId: string,
+      toPosition: number,
+      toParentId: string | null = null
+    ) {
+      // Find and remove element from source
+      const sourceResult = this.findElementWithParent(elementId);
+      if (!sourceResult) {
+        console.error(`Element ${elementId} not found`);
+        return;
+      }
+
+      const {
+        element: movedElement,
+        parent: sourceParent,
+        index: sourceIndex,
+      } = sourceResult;
+
+      // Remove from source array
+      let sourceArray: FormElement[];
+      if (
+        sourceParent &&
+        sourceParent.type === "fieldset" &&
+        sourceParent.children
+      ) {
+        sourceArray = sourceParent.children;
+      } else {
+        sourceArray = this.elements;
+      }
+
+      sourceArray.splice(sourceIndex, 1);
+
+      // Insert at target position
+      if (toParentId) {
+        // Move to fieldset
+        const targetFieldset = this.findElementWithParent(toParentId);
+        if (!targetFieldset || targetFieldset.element.type !== "fieldset") {
+          console.error(`Target fieldset ${toParentId} not found`);
+          // Restore element to source
+          sourceArray.splice(sourceIndex, 0, movedElement);
+          return;
+        }
+
+        const targetElement = targetFieldset.element;
+        if (targetElement.type === "fieldset") {
+          if (!targetElement.children) {
+            targetElement.children = [];
+          }
+
+          const targetArray = targetElement.children;
+          const safePosition = Math.max(
+            0,
+            Math.min(toPosition, targetArray.length)
+          );
+          targetArray.splice(safePosition, 0, movedElement);
+
+          // Update order indices
+          targetArray.forEach((elem, index) => {
+            elem.order = index;
+          });
+        }
+      } else {
+        // Move to root level
+        const elementsCopy = [...this.elements];
+        const safePosition = Math.max(
+          0,
+          Math.min(toPosition, elementsCopy.length)
+        );
+        elementsCopy.splice(safePosition, 0, movedElement);
+
+        // Update order indices
+        elementsCopy.forEach((elem, index) => {
+          elem.order = index;
+        });
+
+        this.setFormElements(elementsCopy);
+      }
+
+      this.syncActiveFormVisualsFromCanvas();
+      this.selectElement(elementId);
+    },
+
+    // Find element with parent information for hierarchical operations
+    findElementWithParent(elementId: string): {
+      element: FormElement;
+      parent: FormElement | null;
+      index: number;
+    } | null {
+      // Search in root level
+      const rootIndex = this.elements.findIndex((el) => el.id === elementId);
+      if (rootIndex !== -1) {
+        return {
+          element: this.elements[rootIndex],
+          parent: null,
+          index: rootIndex,
+        };
+      }
+
+      // Recursively search in fieldsets
+      const searchInChildren = (
+        elements: FormElement[],
+        parent: FormElement | null = null
+      ): {
+        element: FormElement;
+        parent: FormElement | null;
+        index: number;
+      } | null => {
+        for (const element of elements) {
+          if (element.type === "fieldset" && element.children) {
+            // Search in direct children
+            const childIndex = element.children.findIndex(
+              (child) => child.id === elementId
+            );
+            if (childIndex !== -1) {
+              return {
+                element: element.children[childIndex],
+                parent: element,
+                index: childIndex,
+              };
+            }
+
+            // Search deeper levels recursively
+            const deepResult = searchInChildren(element.children, element);
+            if (deepResult) {
+              return deepResult;
+            }
+          }
+        }
+        return null;
+      };
+
+      return searchInChildren(this.elements);
+    },
+
     updateElementProperty(elementId: string, key: string, value: any) {
       const element = this.elements.find((el) => el.id === elementId);
       if (!element) return;

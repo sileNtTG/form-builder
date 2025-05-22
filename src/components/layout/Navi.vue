@@ -166,6 +166,59 @@ function setFormNameInputRef(id: string, el: any) {
         </div>
       </div>
     </div>
+
+    <div class="app-nav__secondary-links">
+      <router-link
+        to="/preferences"
+        class="nav-link"
+        active-class="nav-link--active"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <circle cx="12" cy="12" r="3"></circle>
+          <path
+            d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"
+          ></path>
+        </svg>
+        <span>Preferences</span>
+      </router-link>
+      <router-link
+        to="/api-key"
+        class="nav-link"
+        active-class="nav-link--active"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 010-10h10a5 5 0 010 10v4"></path>
+        </svg>
+        <span>API Key</span>
+      </router-link>
+      <router-link
+        to="/fieldset-test"
+        class="nav-link"
+        active-class="nav-link--active"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <path d="M3 9h18M9 3v18" />
+        </svg>
+        <span>Fieldset Test</span>
+      </router-link>
+    </div>
   </nav>
 </template>
 
@@ -173,7 +226,7 @@ function setFormNameInputRef(id: string, el: any) {
 .app-nav {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   flex: 0 0 auto;
   width: 100%;
   height: 48px;
@@ -184,6 +237,40 @@ function setFormNameInputRef(id: string, el: any) {
   &__main-menu {
     display: flex;
     align-items: center;
+  }
+
+  &__secondary-links {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--theme-text-muted);
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: color 0.2s;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+
+  &:hover {
+    color: var(--theme-text);
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+
+  &--active {
+    color: var(--theme-primary);
+    font-weight: 500;
+  }
+
+  svg {
+    width: 1rem;
+    height: 1rem;
+    stroke-width: 2;
   }
 }
 

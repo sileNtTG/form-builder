@@ -1,288 +1,311 @@
 <script setup lang="ts">
 import type { FormElement } from "../../models/FormElement";
-import { ref, computed, inject, provide } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { useFormBuilderStore } from "../../stores/formBuilder";
-import InsertionPoint from "./InsertionPoint.vue";
 
-// Set up drag state that can be shared globally
-const currentDraggedElementId = inject(
-  "currentDraggedElementId",
-  ref<string | null>(null)
-);
-provide("currentDraggedElementId", currentDraggedElementId);
+const props = defineProps<{ element: FormElement }>();
+const emit = defineEmits(["drag-start", "click"]);
 
 const formBuilderStore = useFormBuilderStore();
-const props = defineProps<{ element: FormElement }>();
-const emit = defineEmits(["element-drop"]);
-
-// Add selection and actions
-function selectElement(id: string, event: Event) {
-  // Stop propagation to prevent parent elements from being selected
-  event.stopPropagation();
-  formBuilderStore.selectElement(id);
-}
-
-function handleEdit(e: Event, id: string) {
-  e.stopPropagation();
-  formBuilderStore.selectElement(id);
-}
-
-function handleDelete(e: Event, id: string) {
-  e.stopPropagation();
-  formBuilderStore.removeElement(id);
-}
-
-// Track if we're in the middle of a drag operation on this fieldset
-const isFieldsetDragTarget = ref(false);
-const dropPosition = ref({ index: 0, top: 0 });
 const isDragging = ref(false);
 
-// Handle drag start
-function handleDragStart(e: DragEvent) {
-  if (!e.dataTransfer || !props.element.id) return;
+// Fieldset drag and drop state
+const isFieldsetDragOver = ref(false);
+const fieldsetDropIndex = ref(-1);
 
-  console.log("Drag started for element:", props.element.id);
+// Use computed property for selection state
+const isSelected = computed(() => {
+  return formBuilderStore.selectedElementId === props.element.id;
+});
 
-  // Store the ID globally for better cross-browser support
-  currentDraggedElementId.value = props.element.id;
+// Handle element selection
+function selectElement(event: Event) {
+  event.stopPropagation();
+  emit("click");
 
-  // Mark that we're dragging this element
-  isDragging.value = true;
-
-  // Set the element ID as data to be transferred - try multiple formats for compatibility
-  try {
-    e.dataTransfer.setData("application/element-id", props.element.id);
-    e.dataTransfer.setData("text/plain", props.element.id);
-    e.dataTransfer.setData("text/uri-list", props.element.id);
-    e.dataTransfer.setData("text/html", props.element.id);
-  } catch (err) {
-    console.error("Error setting drag data:", err);
-  }
-
-  // Make sure a ghost image is created correctly
-  const ghostEl = document.createElement("div");
-  ghostEl.textContent = props.element.type;
-  ghostEl.style.padding = "10px";
-  ghostEl.style.background = "rgba(26, 188, 156, 0.3)";
-  ghostEl.style.border = "1px solid #1abc9c";
-  ghostEl.style.borderRadius = "4px";
-  ghostEl.style.position = "absolute";
-  ghostEl.style.top = "-1000px";
-  document.body.appendChild(ghostEl);
-
-  try {
-    e.dataTransfer.setDragImage(ghostEl, 0, 0);
-  } catch (err) {
-    console.warn("Could not set drag image:", err);
-  }
-
-  // Set the drag effect to move
-  e.dataTransfer.effectAllowed = "move";
-
-  // Add a class to the element being dragged for visual feedback
-  if (e.target instanceof HTMLElement) {
-    e.target.classList.add("dragging");
-  }
-
-  // Clean up the ghost element
-  setTimeout(() => {
-    document.body.removeChild(ghostEl);
-  }, 0);
+  // Force immediate selection in the store for better reactivity
+  formBuilderStore.selectElement(props.element.id);
 }
 
-// Handle drag end
+function handleEdit(e: Event) {
+  e.stopPropagation();
+  formBuilderStore.selectElement(props.element.id);
+}
+
+function handleDelete(e: Event) {
+  e.stopPropagation();
+  formBuilderStore.removeElement(props.element.id);
+}
+
+function handleDragStart(e: DragEvent) {
+  if (!e.dataTransfer) return;
+
+  isDragging.value = true;
+
+  // Set data for HTML5 drag & drop with multiple formats for compatibility
+  try {
+    e.dataTransfer.setData("text/plain", props.element.id);
+    e.dataTransfer.setData("application/element-type", props.element.type);
+    e.dataTransfer.setData("application/element-id", props.element.id);
+  } catch (err) {
+    // Fallback for restrictive browsers
+    e.dataTransfer.setData("text", props.element.id);
+  }
+
+  e.dataTransfer.effectAllowed = "move";
+  emit("drag-start", props.element.id);
+
+  if (e.target instanceof HTMLElement) {
+    e.target.classList.add("dragging");
+
+    // Create enhanced drag image
+    try {
+      const ghost = e.target.cloneNode(true) as HTMLElement;
+      ghost.style.transform = "scale(0.8)";
+      ghost.style.opacity = "0.8";
+      ghost.style.position = "absolute";
+      ghost.style.top = "-1000px";
+      ghost.style.left = "-1000px";
+      document.body.appendChild(ghost);
+
+      e.dataTransfer.setDragImage(ghost, 20, 20);
+
+      setTimeout(() => {
+        document.body.removeChild(ghost);
+      }, 100);
+    } catch (err) {
+      console.error("Error creating drag image:", err);
+    }
+  }
+}
+
+// Reset drag state
 function handleDragEnd(e: DragEvent) {
-  console.log("Drag ended for element:", props.element.id);
   isDragging.value = false;
 
-  // Clear the global reference
-  currentDraggedElementId.value = null;
-
-  // Remove visual feedback
   if (e.target instanceof HTMLElement) {
     e.target.classList.remove("dragging");
   }
 }
 
-// Calculate the drop position inside the fieldset
-function calculateDropPosition(fieldsetEl: HTMLElement, mouseY: number) {
-  const fieldsetRect = fieldsetEl.getBoundingClientRect();
-  const relativeY = mouseY - fieldsetRect.top;
-
-  // Get all child element cards within this fieldset
-  const cards = Array.from(fieldsetEl.querySelectorAll(".element-card"));
-
-  if (
-    cards.length === 0 ||
-    !props.element.type ||
-    props.element.type !== "fieldset" ||
-    !("children" in props.element) ||
-    !props.element.children ||
-    props.element.children.length === 0
-  ) {
-    // If no cards, position at the top
-    return { index: 0, top: 16 };
-  }
-
-  // Find where to insert the new element
-  for (let i = 0; i < cards.length; i++) {
-    const rect = cards[i].getBoundingClientRect();
-    const cardTop = rect.top - fieldsetRect.top;
-    const cardMiddle = cardTop + rect.height / 2;
-
-    if (relativeY < cardMiddle) {
-      // Insert before this element
-      return { index: i, top: cardTop - 6 };
-    }
-  }
-
-  // Insert after the last element
-  const lastRect = cards[cards.length - 1].getBoundingClientRect();
-  const lastBottom = lastRect.bottom - fieldsetRect.top;
-  return { index: cards.length, top: lastBottom + 8 };
-}
-
-function handleFieldsetDragOver(e: DragEvent) {
-  e.preventDefault();
-  e.stopPropagation(); // Prevent parent handlers
-
-  if (e.dataTransfer) {
-    e.dataTransfer.dropEffect = "copy";
-  }
-
-  isFieldsetDragTarget.value = true;
-
-  // Update drop position
-  if (e.currentTarget) {
-    dropPosition.value = calculateDropPosition(
-      e.currentTarget as HTMLElement,
-      e.clientY
-    );
-  }
-}
-
-function handleFieldsetDragLeave(e: DragEvent) {
-  e.preventDefault();
-  e.stopPropagation();
-
-  // Check if we're really leaving the fieldset or just entering a child
-  const relatedTarget = e.relatedTarget as HTMLElement;
-  const currentTarget = e.currentTarget as HTMLElement;
-
-  if (!relatedTarget || !currentTarget.contains(relatedTarget)) {
-    isFieldsetDragTarget.value = false;
-  }
-}
-
-function handleFieldsetDrop(e: DragEvent) {
-  e.preventDefault();
-  e.stopPropagation(); // Critical to prevent event bubbling
-
-  isFieldsetDragTarget.value = false;
-
-  // Safety check to prevent errors
-  if (!e.dataTransfer || !props.element.id) {
-    return;
-  }
-
-  // First try to get the element ID from dataTransfer
-  let elementId = "";
-  try {
-    elementId =
-      e.dataTransfer.getData("application/element-id") ||
-      e.dataTransfer.getData("text/plain");
-  } catch (err) {
-    console.warn("Error reading dataTransfer in fieldset:", err);
-  }
-
-  // If dataTransfer failed, use the global variable as fallback
-  if (!elementId && currentDraggedElementId.value) {
-    console.log(
-      "Fieldset using global dragged element ID:",
-      currentDraggedElementId.value
-    );
-    elementId = currentDraggedElementId.value;
-  }
-
-  console.log("Fieldset drop detected, element ID:", elementId);
-
-  if (elementId && elementId.length > 0) {
-    // We're moving an existing element into the fieldset
-    const position = dropPosition.value.index;
-
-    console.log(
-      `Moving element ${elementId} to fieldset ${props.element.id} at position ${position}`
-    );
-
-    emit("element-drop", {
-      fieldsetId: props.element.id,
-      elementId: elementId,
-      position: position,
-      isMove: true,
-    });
-
-    // Reset the global drag state
-    currentDraggedElementId.value = null;
-
-    // Reset the drop position
-    dropPosition.value = { index: 0, top: 0 };
-    return;
-  }
-
-  // Otherwise, continue with the original code for adding new elements
-  const elementType = e.dataTransfer.getData("application/element-type");
-  if (!elementType) {
-    return;
-  }
-
-  // Use the calculated drop position
-  const position = dropPosition.value.index;
-
-  // Emit event with fieldset id and element type
-  emit("element-drop", {
-    fieldsetId: props.element.id,
-    elementType: elementType,
-    position: position,
-  });
-
-  // Reset the drop position
-  dropPosition.value = { index: 0, top: 0 };
-}
-
-// Handle nested element drop events from child components
-function handleNestedElementDrop(event: {
-  fieldsetId: string;
-  elementType: string;
-}) {
-  // Just forward the event up, don't modify it
-  emit("element-drop", event);
-}
-
-// Prevent click propagation on all form elements
 function stopPropagation(e: Event) {
   e.stopPropagation();
 }
 
-// Handle insertion point click within fieldset
-function handleInsertPointClick({
-  index,
-  fieldsetId,
-}: {
-  index: number;
-  fieldsetId?: string;
-}) {
-  if (!props.element.id) return;
+// Watch for selection changes and force component update
+watch(
+  () => formBuilderStore.selectedElementId,
+  (newId) => {
+    if (newId === props.element.id) {
+      console.log(`Element ${props.element.id} is now selected`);
+    }
+  }
+);
 
-  // Create a custom event to open the command palette
-  const event = new CustomEvent("openCommandPalette", {
-    detail: {
-      insertPosition: index,
-      mode: "insert",
-      fieldsetId: props.element.id,
-    },
-  });
+// When the component is mounted, check if it should be selected
+onMounted(() => {
+  if (formBuilderStore.selectedElementId === props.element.id) {
+    console.log(`Element ${props.element.id} is initially selected`);
+  }
+});
 
-  window.dispatchEvent(event);
+// Neue Funktionen für Fieldset-Drag-and-Drop
+function handleFieldsetDragOver(e: DragEvent) {
+  if (props.element.type !== "fieldset") return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  isFieldsetDragOver.value = true;
+
+  // Berechne Drop-Index innerhalb des Fieldsets
+  const dropIndex = calculateFieldsetDropIndex(e);
+  fieldsetDropIndex.value = dropIndex;
+
+  if (e.dataTransfer) {
+    e.dataTransfer.dropEffect = "copy";
+  }
+}
+
+function handleFieldsetDragEnter(e: DragEvent) {
+  if (props.element.type !== "fieldset") return;
+
+  e.preventDefault();
+  e.stopPropagation();
+  isFieldsetDragOver.value = true;
+}
+
+function handleFieldsetDragLeave(e: DragEvent) {
+  if (props.element.type !== "fieldset") return;
+
+  const related = e.relatedTarget as HTMLElement;
+  const fieldsetElement = e.currentTarget as HTMLElement;
+
+  // Nur zurücksetzen wenn wir das Fieldset wirklich verlassen
+  if (!fieldsetElement.contains(related)) {
+    isFieldsetDragOver.value = false;
+    fieldsetDropIndex.value = -1;
+  }
+}
+
+function handleFieldsetDrop(e: DragEvent) {
+  if (props.element.type !== "fieldset") return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  const dropIndex = fieldsetDropIndex.value;
+
+  console.log(`Drop in fieldset ${props.element.id} at position ${dropIndex}`);
+
+  if (e.dataTransfer) {
+    try {
+      const elementType =
+        e.dataTransfer.getData("text/plain") ||
+        e.dataTransfer.getData("application/element-type");
+
+      const elementId = e.dataTransfer.getData("application/element-id");
+
+      if (elementId) {
+        // Element verschieben
+        console.log(
+          `Moving element ${elementId} to fieldset ${props.element.id} at position ${dropIndex}`
+        );
+        formBuilderStore.moveElementToPosition(
+          elementId,
+          dropIndex,
+          props.element.id
+        );
+      } else if (
+        elementType &&
+        [
+          "input",
+          "textarea",
+          "checkbox",
+          "select",
+          "radio",
+          "fieldset",
+          "button",
+          "date",
+          "number",
+        ].includes(elementType)
+      ) {
+        // Neues Element erstellen
+        console.log(
+          `Creating new ${elementType} in fieldset ${props.element.id} at position ${dropIndex}`
+        );
+        const newElement = createElementByType(elementType, dropIndex);
+        if (newElement) {
+          formBuilderStore.addElementAtPosition(
+            newElement,
+            dropIndex,
+            props.element.id
+          );
+        }
+      }
+    } catch (err) {
+      console.error("Error handling fieldset drop:", err);
+    }
+  }
+
+  // Reset
+  isFieldsetDragOver.value = false;
+  fieldsetDropIndex.value = -1;
+}
+
+function calculateFieldsetDropIndex(e: DragEvent): number {
+  if (props.element.type !== "fieldset" || !props.element.children) return 0;
+
+  const fieldsetContent = (e.currentTarget as HTMLElement).querySelector(
+    ".fieldset-content"
+  );
+  if (!fieldsetContent) return 0;
+
+  const rect = fieldsetContent.getBoundingClientRect();
+  const relativeY = e.clientY - rect.top;
+
+  const childCards = Array.from(
+    fieldsetContent.querySelectorAll(".element-card")
+  );
+
+  if (childCards.length === 0) return 0;
+
+  for (let i = 0; i < childCards.length; i++) {
+    const card = childCards[i] as HTMLElement;
+    const cardRect = card.getBoundingClientRect();
+    const cardTop = cardRect.top - rect.top;
+    const cardMiddle = cardTop + cardRect.height / 2;
+
+    if (relativeY < cardMiddle) {
+      return i;
+    }
+  }
+
+  return childCards.length;
+}
+
+// Hilfsfunktion zum Erstellen von Elementen (aus FormCanvas kopiert)
+function createElementByType(
+  type: string,
+  position: number
+): FormElement | null {
+  const baseProps = {
+    id: crypto.randomUUID(),
+    label: `Neues ${type.charAt(0).toUpperCase() + type.slice(1)}`,
+    required: false,
+    order: position,
+    x: 0,
+    y: 0,
+    width: 250,
+    height: 48,
+  };
+
+  switch (type) {
+    case "input":
+      return {
+        ...baseProps,
+        type: "input",
+        placeholder: "Text eingeben",
+      } as FormElement;
+    case "textarea":
+      return {
+        ...baseProps,
+        type: "textarea",
+        placeholder: "Text eingeben",
+        rows: 4,
+        width: 300,
+        height: 120,
+      } as FormElement;
+    case "checkbox":
+      return {
+        ...baseProps,
+        type: "checkbox",
+        checked: false,
+        width: 200,
+        height: 40,
+      } as FormElement;
+    case "select":
+      return {
+        ...baseProps,
+        type: "select",
+        options: [
+          { value: "option1", label: "Option 1" },
+          { value: "option2", label: "Option 2" },
+        ],
+        width: 250,
+        height: 48,
+      } as FormElement;
+    case "fieldset":
+      return {
+        ...baseProps,
+        type: "fieldset",
+        children: [],
+        width: 400,
+        height: 200,
+      } as FormElement;
+    default:
+      return null;
+  }
 }
 </script>
 
@@ -290,13 +313,15 @@ function handleInsertPointClick({
   <div
     class="element-card"
     :class="{
-      selected: formBuilderStore.selectedElementId === element.id,
+      selected: isSelected,
       dragging: isDragging,
     }"
-    @click="(e) => selectElement(element.id, e)"
+    @click="selectElement"
     draggable="true"
     @dragstart="handleDragStart"
     @dragend="handleDragEnd"
+    :data-element-id="element.id"
+    :data-element-type="element.type"
   >
     <div class="element-card__header">
       <div class="element-card__drag-handle" title="Drag to reorder">
@@ -305,15 +330,11 @@ function handleInsertPointClick({
         </svg>
       </div>
       <span class="element-card__title">
-        {{ element.type.charAt(0).toUpperCase() + element.type.slice(1)
-        }}<span v-if="element.label">: {{ element.label }}</span>
+        {{ element.type.charAt(0).toUpperCase() + element.type.slice(1) }}
+        <span v-if="element.label">: {{ element.label }}</span>
       </span>
       <div class="element-card__actions">
-        <button
-          class="icon-btn"
-          title="Edit"
-          @click="(e) => handleEdit(e, element.id)"
-        >
+        <button class="icon-btn" title="Edit" @click="handleEdit">
           <svg viewBox="0 0 24 24">
             <path
               d="M16.475 5.408l2.117 2.117a2.121 2.121 0 0 1 0 3l-9.192 9.192a2 2 0 0 1-1.414.586H5v-2.586a2 2 0 0 1 .586-1.414l9.192-9.192a2.121 2.121 0 0 1 3 0z"
@@ -321,11 +342,7 @@ function handleInsertPointClick({
             <path d="M15 7l2 2" />
           </svg>
         </button>
-        <button
-          class="icon-btn"
-          title="Delete"
-          @click="(e) => handleDelete(e, element.id)"
-        >
+        <button class="icon-btn" title="Delete" @click="handleDelete">
           <svg viewBox="0 0 24 24">
             <path d="M4 7h16" />
             <path d="M10 11v6" />
@@ -407,30 +424,20 @@ function handleInsertPointClick({
       <template v-else-if="element.type === 'fieldset'">
         <div
           class="element-fieldset"
-          :class="{ 'fieldset-drag-target': isFieldsetDragTarget }"
+          :class="{ 'fieldset-drag-over': isFieldsetDragOver }"
           @dragover="handleFieldsetDragOver"
+          @dragenter="handleFieldsetDragEnter"
           @dragleave="handleFieldsetDragLeave"
           @drop="handleFieldsetDrop"
-          ref="fieldsetEl"
         >
           <div class="fieldset-legend">{{ element.label }}</div>
-
-          <!-- Drop indicator for drag and drop -->
-          <div
-            v-if="isFieldsetDragTarget"
-            class="drop-indicator fieldset-drop-indicator"
-            :style="{ top: `${dropPosition.top}px` }"
-          ></div>
-
           <div class="fieldset-content">
-            <!-- Einfügepunkt am Anfang des Fieldsets -->
-            <InsertionPoint
-              :index="0"
-              :fieldsetId="element.id"
-              @insert="handleInsertPointClick"
-            />
+            <!-- Drop-Indikator am Anfang -->
+            <div
+              v-if="isFieldsetDragOver && fieldsetDropIndex === 0"
+              class="fieldset-drop-indicator"
+            ></div>
 
-            <!-- Fieldset children with insertion points between them -->
             <template v-if="element.children && element.children.length > 0">
               <template
                 v-for="(child, childIndex) in element.children"
@@ -438,13 +445,15 @@ function handleInsertPointClick({
               >
                 <FormElementRenderer
                   :element="child"
-                  @element-drop="handleNestedElementDrop"
+                  @drag-start="$emit('drag-start', $event)"
                 />
-                <InsertionPoint
-                  :index="childIndex + 1"
-                  :fieldsetId="element.id"
-                  @insert="handleInsertPointClick"
-                />
+                <!-- Drop-Indikator zwischen Elementen -->
+                <div
+                  v-if="
+                    isFieldsetDragOver && fieldsetDropIndex === childIndex + 1
+                  "
+                  class="fieldset-drop-indicator"
+                ></div>
               </template>
             </template>
             <div v-else class="fieldset-empty" @click="stopPropagation">
@@ -472,7 +481,7 @@ function handleInsertPointClick({
   width: 100%;
   overflow: hidden;
   margin-bottom: 0.5rem;
-  cursor: grab;
+  cursor: pointer;
 
   &.selected {
     border: 1px solid var(--theme-primary, #1abc9c);
@@ -481,9 +490,10 @@ function handleInsertPointClick({
 
   &.dragging {
     opacity: 0.5;
-    cursor: grabbing;
-    transform: scale(1.02);
+    transform: scale(0.98);
     border: 1px dashed var(--theme-primary, #1abc9c);
+    position: relative;
+    z-index: 10;
   }
 
   &__header {
@@ -501,6 +511,10 @@ function handleInsertPointClick({
     margin-right: 0.5rem;
     display: flex;
     align-items: center;
+    background: rgba(0, 0, 0, 0.15);
+    padding: 5px;
+    border-radius: 3px;
+    transition: all 0.2s;
 
     svg {
       width: 16px;
@@ -510,8 +524,18 @@ function handleInsertPointClick({
       fill: none;
     }
 
-    &:hover svg {
-      stroke: var(--theme-primary, #1abc9c);
+    &:hover {
+      background: rgba(26, 188, 156, 0.2);
+      transform: scale(1.05);
+
+      svg {
+        stroke: var(--theme-primary, #1abc9c);
+      }
+    }
+
+    &:active {
+      cursor: grabbing;
+      background: rgba(26, 188, 156, 0.3);
     }
   }
 
@@ -626,10 +650,9 @@ function handleInsertPointClick({
   position: relative;
   transition: all 0.2s ease;
 
-  &.fieldset-drag-target {
-    border-color: var(--theme-primary, #1abc9c);
-    box-shadow: 0 0 0 1px rgba(26, 188, 156, 0.3);
-    background: rgba(44, 49, 60, 0.5);
+  &.fieldset-drag-over {
+    background: rgba(26, 188, 156, 0.1);
+    border: 2px dashed var(--theme-primary, #1abc9c);
   }
 }
 
@@ -660,35 +683,34 @@ function handleInsertPointClick({
   padding: 0.6rem;
   font-style: italic;
   font-size: 0.8em;
+  border: 1px dashed var(--theme-border);
+  border-radius: 4px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(26, 188, 156, 0.05);
+    border-color: var(--theme-primary);
+  }
 }
 
 .fieldset-drop-indicator {
-  left: 0.6rem;
-  right: 0.6rem;
-  position: absolute;
-}
-
-.drop-indicator {
-  height: 2px;
+  height: 3px;
   background-color: var(--theme-primary, #1abc9c);
   border-radius: 2px;
-  z-index: 100;
-  box-shadow: 0 0 6px 1px rgba(26, 188, 156, 0.5);
+  margin: 4px 0;
   animation: pulse 1.5s infinite;
+  opacity: 0.8;
 }
 
 @keyframes pulse {
   0% {
-    opacity: 0.7;
-    transform: scaleY(1);
+    opacity: 0.4;
   }
   50% {
     opacity: 1;
-    transform: scaleY(1.5);
   }
   100% {
-    opacity: 0.7;
-    transform: scaleY(1);
+    opacity: 0.4;
   }
 }
 </style>

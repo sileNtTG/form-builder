@@ -201,38 +201,55 @@ function startDrag(event: DragEvent, elementType: string) {
   if (event.dataTransfer) {
     // Setze die Drag-Operation
     event.dataTransfer.effectAllowed = "copy";
-    event.dataTransfer.dropEffect = "copy";
 
-    // Setze mehrere Datenformate für maximale Kompatibilität
+    // Konsistente MIME-Typen für Drag & Drop
     try {
+      // Hauptformat: text/plain (am besten unterstützt)
       event.dataTransfer.setData("text/plain", elementType);
+
+      // Zusätzliche Backup-Formate für mehr Kompatibilität
       event.dataTransfer.setData("application/element-type", elementType);
+      event.dataTransfer.setData("text", elementType);
     } catch (e) {
       console.error("Fehler beim Setzen der Drag-Daten:", e);
-      // Fallback, wenn das spezifische Format nicht funktioniert
+      // Einfacher Fallback
       event.dataTransfer.setData("text", elementType);
     }
 
-    // Ein besseres Drag-Image erstellen
+    // Visuelles Feedback für den Benutzer
     const elementCard = event.currentTarget as HTMLElement;
     if (elementCard) {
-      // Clone the element card to create a better drag image
+      // Klone die Karte für ein besseres Drag-Bild
+      elementCard.classList.add("dragging");
+
+      // Ein besseres Drag-Image erstellen
       const cardClone = elementCard.cloneNode(true) as HTMLElement;
       cardClone.style.transform = "scale(0.8)";
       cardClone.style.opacity = "0.8";
       cardClone.style.position = "absolute";
       cardClone.style.top = "-1000px";
       cardClone.style.left = "-1000px";
+      cardClone.style.zIndex = "9999";
+      cardClone.style.boxShadow = "0 5px 10px rgba(0,0,0,0.5)";
+      cardClone.style.border = "1px solid #1abc9c";
 
       document.body.appendChild(cardClone);
 
-      // Set the drag image with proper offset
+      // Setze das Drag-Image mit passendem Offset
       event.dataTransfer.setDragImage(cardClone, 20, 20);
 
-      // Remove the element after a short delay
+      // Entferne das Element nach kurzer Verzögerung
       setTimeout(() => {
         document.body.removeChild(cardClone);
       }, 100);
+
+      // Event, um Drag-End zu verarbeiten
+      const handleDragEnd = () => {
+        elementCard.classList.remove("dragging");
+        document.removeEventListener("dragend", handleDragEnd);
+      };
+
+      document.addEventListener("dragend", handleDragEnd);
     }
   }
 }
