@@ -1,8 +1,15 @@
 <script setup lang="ts">
 import type { FormElement } from "../../models/FormElement";
-import { ref, computed } from "vue";
+import { ref, computed, inject, provide } from "vue";
 import { useFormBuilderStore } from "../../stores/formBuilder";
 import InsertionPoint from "./InsertionPoint.vue";
+
+// Set up drag state that can be shared globally
+const currentDraggedElementId = inject(
+  "currentDraggedElementId",
+  ref<string | null>(null)
+);
+provide("currentDraggedElementId", currentDraggedElementId);
 
 const formBuilderStore = useFormBuilderStore();
 const props = defineProps<{ element: FormElement }>();
@@ -34,14 +41,40 @@ const isDragging = ref(false);
 function handleDragStart(e: DragEvent) {
   if (!e.dataTransfer || !props.element.id) return;
 
+  console.log("Drag started for element:", props.element.id);
+
+  // Store the ID globally for better cross-browser support
+  currentDraggedElementId.value = props.element.id;
+
   // Mark that we're dragging this element
   isDragging.value = true;
 
-  // Set the element ID as data to be transferred
-  e.dataTransfer.setData("application/element-id", props.element.id);
+  // Set the element ID as data to be transferred - try multiple formats for compatibility
+  try {
+    e.dataTransfer.setData("application/element-id", props.element.id);
+    e.dataTransfer.setData("text/plain", props.element.id);
+    e.dataTransfer.setData("text/uri-list", props.element.id);
+    e.dataTransfer.setData("text/html", props.element.id);
+  } catch (err) {
+    console.error("Error setting drag data:", err);
+  }
 
-  // For compatibility with different browsers
-  e.dataTransfer.setData("text/plain", props.element.id);
+  // Make sure a ghost image is created correctly
+  const ghostEl = document.createElement("div");
+  ghostEl.textContent = props.element.type;
+  ghostEl.style.padding = "10px";
+  ghostEl.style.background = "rgba(26, 188, 156, 0.3)";
+  ghostEl.style.border = "1px solid #1abc9c";
+  ghostEl.style.borderRadius = "4px";
+  ghostEl.style.position = "absolute";
+  ghostEl.style.top = "-1000px";
+  document.body.appendChild(ghostEl);
+
+  try {
+    e.dataTransfer.setDragImage(ghostEl, 0, 0);
+  } catch (err) {
+    console.warn("Could not set drag image:", err);
+  }
 
   // Set the drag effect to move
   e.dataTransfer.effectAllowed = "move";
@@ -50,11 +83,20 @@ function handleDragStart(e: DragEvent) {
   if (e.target instanceof HTMLElement) {
     e.target.classList.add("dragging");
   }
+
+  // Clean up the ghost element
+  setTimeout(() => {
+    document.body.removeChild(ghostEl);
+  }, 0);
 }
 
 // Handle drag end
 function handleDragEnd(e: DragEvent) {
+  console.log("Drag ended for element:", props.element.id);
   isDragging.value = false;
+
+  // Clear the global reference
+  currentDraggedElementId.value = null;
 
   // Remove visual feedback
   if (e.target instanceof HTMLElement) {
@@ -143,14 +185,34 @@ function handleFieldsetDrop(e: DragEvent) {
     return;
   }
 
-  // Check if we're moving an existing element
-  const elementId =
-    e.dataTransfer.getData("application/element-id") ||
-    e.dataTransfer.getData("text/plain");
+  // First try to get the element ID from dataTransfer
+  let elementId = "";
+  try {
+    elementId =
+      e.dataTransfer.getData("application/element-id") ||
+      e.dataTransfer.getData("text/plain");
+  } catch (err) {
+    console.warn("Error reading dataTransfer in fieldset:", err);
+  }
+
+  // If dataTransfer failed, use the global variable as fallback
+  if (!elementId && currentDraggedElementId.value) {
+    console.log(
+      "Fieldset using global dragged element ID:",
+      currentDraggedElementId.value
+    );
+    elementId = currentDraggedElementId.value;
+  }
+
+  console.log("Fieldset drop detected, element ID:", elementId);
 
   if (elementId && elementId.length > 0) {
     // We're moving an existing element into the fieldset
     const position = dropPosition.value.index;
+
+    console.log(
+      `Moving element ${elementId} to fieldset ${props.element.id} at position ${position}`
+    );
 
     emit("element-drop", {
       fieldsetId: props.element.id,
@@ -158,6 +220,9 @@ function handleFieldsetDrop(e: DragEvent) {
       position: position,
       isMove: true,
     });
+
+    // Reset the global drag state
+    currentDraggedElementId.value = null;
 
     // Reset the drop position
     dropPosition.value = { index: 0, top: 0 };

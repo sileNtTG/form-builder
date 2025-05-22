@@ -1,10 +1,14 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from "vue";
+import { computed, ref, onMounted, onUnmounted, provide, inject } from "vue";
 import { useFormBuilderStore } from "../../stores/formBuilder";
 import FormElementRenderer from "./FormElementRenderer.vue";
 import InsertionPoint from "./InsertionPoint.vue";
 import { v4 as uuidv4 } from "uuid";
 import type { FormElement } from "../../models/FormElement";
+
+// Create global drag state for cross-component and cross-browser support
+const currentDraggedElementId = ref<string | null>(null);
+provide("currentDraggedElementId", currentDraggedElementId);
 
 const formBuilderStore = useFormBuilderStore();
 const elements = computed(() => formBuilderStore.elements);
@@ -68,7 +72,8 @@ const handleCanvasDragOver = (e: DragEvent) => {
   e.preventDefault();
 
   if (e.dataTransfer) {
-    e.dataTransfer.dropEffect = "copy";
+    // Akzeptieren aller Formate
+    e.dataTransfer.dropEffect = "move";
   }
 
   // Calculate drop position for visual indicator
@@ -90,23 +95,58 @@ const handleCanvasDragLeave = (e: DragEvent) => {
 };
 
 const handleCanvasDrop = (e: DragEvent) => {
+  console.log("DROP EVENT TRIGGERED!");
   e.preventDefault();
   e.stopPropagation();
 
   // Reset dragging state
   isDragging.value = false;
 
-  if (!e.dataTransfer) return;
+  if (!e.dataTransfer) {
+    console.error("No dataTransfer object in drop event");
+    return;
+  }
 
-  // Check if we're moving an existing element (by element-id)
-  const elementId =
-    e.dataTransfer.getData("application/element-id") ||
-    e.dataTransfer.getData("text/plain");
+  // First try to get the element ID from dataTransfer
+  let elementId = "";
+  try {
+    const types = Array.from(e.dataTransfer.types);
+    console.log("Available dataTransfer types:", types);
+
+    if (types.includes("application/element-id")) {
+      elementId = e.dataTransfer.getData("application/element-id");
+    } else if (types.includes("text/plain")) {
+      elementId = e.dataTransfer.getData("text/plain");
+    } else if (types.includes("text/uri-list")) {
+      elementId = e.dataTransfer.getData("text/uri-list");
+    } else if (types.includes("text/html")) {
+      elementId = e.dataTransfer.getData("text/html");
+    }
+  } catch (err) {
+    console.warn("Error reading dataTransfer:", err);
+  }
+
+  // If dataTransfer failed, use the global variable as fallback
+  if (!elementId && currentDraggedElementId.value) {
+    console.log(
+      "Using global dragged element ID:",
+      currentDraggedElementId.value
+    );
+    elementId = currentDraggedElementId.value;
+  }
+
+  console.log("Drop detected, element ID:", elementId);
 
   if (elementId && elementId.length > 0) {
     // We're moving an existing element
+    console.log("Moving element to position:", dropPosition.value.index);
     moveElement(elementId, dropPosition.value.index);
+
+    // Reset the global drag state
+    currentDraggedElementId.value = null;
     return;
+  } else {
+    console.log("No element ID found in drop data");
   }
 
   // Otherwise, continue with creating a new element...
@@ -486,6 +526,7 @@ onMounted(() => {
       @dragover="handleCanvasDragOver"
       @dragleave="handleCanvasDragLeave"
       @drop="handleCanvasDrop"
+      @dragenter.prevent
       ref="canvasRef"
     >
       <!-- Empty state message -->
