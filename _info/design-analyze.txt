@@ -1,0 +1,68 @@
+1. Design-Analyse deiner Beispiele
+Dunkle UI (Dark Mode)
+Viele deiner Beispiele nutzen ein dunkles Farbschema mit klaren Kontrasten.
+Panels und Modals sind klar abgegrenzt, mit abgerundeten Ecken und Schatten.
+Buttons und Inputs sind groß, klar beschriftet und gut erreichbar.
+Seitenleiste (Sidebar)
+Die Sidebar ist immer links, mit klaren Icons und Text.
+Aktive Bereiche sind farblich hervorgehoben.
+Unterteilungen (z.B. "Input", "Selection", "Containers") helfen bei der Orientierung.
+Zentrale Arbeitsfläche (Canvas)
+Viel Platz für die eigentliche Arbeit (Formularbau).
+Elemente können frei platziert oder in Raster/Abschnitte gezogen werden.
+Drag & Drop ist intuitiv, mit klaren Hover- und Platzierungsindikatoren.
+Eigenschaften/Properties Panel
+Rechts ein Panel für die Konfiguration des aktuell ausgewählten Elements.
+Klare Gruppierung (z.B. "General", "Layout", "Validation").
+Große, gut lesbare Eingabefelder.
+Modale Dialoge
+Modale Fenster für das Hinzufügen neuer Elemente oder wichtige Aktionen.
+Klare, große Buttons, eindeutige Beschriftungen.
+Fehlermeldungen & Feedback
+Fehler und Hinweise erscheinen als Toast/Popup, meist unten rechts.
+Farblich klar (z.B. rot für Fehler).
+Helle UI (Light Mode)
+Ein Beispiel ist sehr hell, mit viel Weißraum, klaren Linien und dezenten Schatten.
+Sehr aufgeräumt, wenig Ablenkung.
+2. Empfohlene Design-Prinzipien für deinen Form Builder
+A. Fokus auf Übersichtlichkeit
+Klare Trennung der drei Hauptbereiche: Sidebar, Canvas, Properties.
+Breadcrumbs oder eine Mini-Map für große/verschachtelte Formulare.
+Section-Header und Gruppierungen für lange Formulare.
+B. Visuelles Feedback
+Drag & Drop mit klaren Platzhaltern und Animationen.
+Hover- und Fokus-Effekte für alle interaktiven Elemente.
+Undo/Redo-Buttons immer sichtbar.
+C. Zugänglichkeit & UX
+Große Klickflächen und ausreichend Abstand zwischen Elementen.
+Tooltips und Hilfetexte bei komplexen Einstellungen.
+Keyboard-Navigation und Screenreader-Support.
+D. Farb- und Typografie
+Dunkles Theme als Standard, aber Light Mode optional.
+Akzentfarbe für Aktionen (z.B. Buttons, aktive Elemente).
+Klare, moderne Schrift (z.B. Inter, Roboto, Open Sans).
+Dezente Schatten und abgerundete Ecken für moderne Optik.
+E. Responsive Design
+Auch auf kleineren Bildschirmen nutzbar (z.B. Properties Panel als Drawer).
+3. Konkrete UI/UX-Inspirationen für dich
+Sidebar
+Feste Breite, dunkler Hintergrund, Icons + Text.
+Aktiver Bereich farblich hervorgehoben.
+Accordion für Untergruppen (z.B. "Input", "Selection", "Containers").
+Canvas
+Dunkler Hintergrund mit feinem Raster (wie bei dir).
+Elemente als Karten mit Schatten, Drag-Handles.
+Mini-Map unten rechts für große Formulare.
+Properties Panel
+Rechte Seite, dunkleres Panel, große Inputs.
+Tabs oder Accordion für viele Einstellungen.
+"Delete"-Button immer ganz unten, rot.
+Elemente/Buttons
+Große, kontrastreiche Buttons.
+Eindeutige Icons (Material Icons, Tabler Icons, etc.).
+Hover- und Fokus-Effekte.
+Modale Dialoge
+Zentriert, abgerundet, Schatten.
+Klare Titel, große Buttons.
+Fehlermeldungen
+Toast unten rechts, mit Icon und kurzer Beschreibung.

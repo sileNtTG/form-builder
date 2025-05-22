@@ -36,75 +36,63 @@ const elements = ref([
 ]);
 
 // Set up drag events
-const onDragStart = (event: DragEvent, elementType: string) => {
-  if (event.dataTransfer) {
-    event.dataTransfer.setData("elementType", elementType);
-    event.dataTransfer.effectAllowed = "copy";
-
-    // Add visual feedback during dragging
-    if (event.target instanceof HTMLElement) {
-      event.target.classList.add("dragging");
-
-      // Remove feedback when drag ends
-      const onDragEnd = () => {
-        event.target instanceof HTMLElement &&
-          event.target.classList.remove("dragging");
-        document.removeEventListener("dragend", onDragEnd);
-      };
-
-      document.addEventListener("dragend", onDragEnd);
-    }
+const handleDragStart = (e: DragEvent, elementType: string) => {
+  if (e.dataTransfer) {
+    e.dataTransfer.setData("application/element-type", elementType);
+    e.dataTransfer.effectAllowed = "copy";
   }
 };
 </script>
 
 <template>
-  <div class="element-panel-container">
-    <div class="panel panel-elements">
-      <div class="panel-elements__header">
-        <h2 class="panel-elements__title">
-          <svg
-            class="panel-elements__icon"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
-            />
-          </svg>
-          Form Elements
-        </h2>
+  <!-- Entferne das große zentrale 'Form Elements' Overlay/Panel vollständig aus dem Template. -->
+  <!-- (Kein weiterer Block mit 'Form Elements' Headline, Cards oder Panel im Template.) -->
 
-        <div class="panel-elements__badge">Drag & Drop</div>
-      </div>
-
-      <div class="panel-elements__grid">
-        <div
-          v-for="element in elements"
-          :key="element.type"
-          draggable="true"
-          @dragstart="onDragStart($event, element.type)"
-          class="element-item"
-        >
-          <div class="element-icon">
-            <span v-html="element.icon"></span>
-          </div>
-          <div class="element-item__content">
-            <div class="element-item__label">{{ element.label }}</div>
-            <div class="element-item__description">
-              {{ element.description }}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="panel-elements__footer">
-        Drag elements onto the canvas to build your form
+  <!-- Toolbar/Panel am unteren Rand -->
+  <div class="elements-toolbar elements-toolbar--card">
+    <div class="elements-toolbar__headline">
+      <svg class="headline-icon" viewBox="0 0 20 20" fill="none">
+        <rect
+          x="3"
+          y="3"
+          width="14"
+          height="14"
+          rx="2"
+          stroke="#1abc9c"
+          stroke-width="1.5"
+        />
+        <path
+          d="M6 7h8"
+          stroke="#1abc9c"
+          stroke-width="1.5"
+          stroke-linecap="round"
+        />
+        <path
+          d="M6 10h8"
+          stroke="#1abc9c"
+          stroke-width="1.5"
+          stroke-linecap="round"
+        />
+        <path
+          d="M6 13h4"
+          stroke="#1abc9c"
+          stroke-width="1.5"
+          stroke-linecap="round"
+        />
+      </svg>
+      Form Elements
+    </div>
+    <div class="elements-toolbar__inner">
+      <div
+        v-for="element in elements"
+        :key="element.type"
+        class="elements-toolbar__card"
+        draggable="true"
+        @dragstart="(e) => handleDragStart(e, element.type)"
+      >
+        <div class="icon-bg" v-html="element.icon"></div>
+        <div class="elements-toolbar__label">{{ element.label }}</div>
+        <div class="elements-toolbar__sublabel">{{ element.description }}</div>
       </div>
     </div>
   </div>
@@ -330,5 +318,108 @@ const onDragStart = (event: DragEvent, elementType: string) => {
   height: 1.5rem; // Example size
   stroke-width: 1.5; // Example stroke width, if not set in SVG string
   // color: var(--theme-icon-color); // Example theming
+}
+
+.elements-toolbar--card {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+  background: rgba(28, 32, 38, 0.98);
+  border-top: 1.5px solid var(--theme-border, #333a44);
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 0 0.5rem 0;
+  height: auto;
+
+  .elements-toolbar__headline {
+    color: #eaf6f6;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    margin: 0.5rem 0 0.1rem 0;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+
+    .headline-icon {
+      width: 18px;
+      height: 18px;
+      stroke-width: 1.5;
+      display: inline-block;
+      vertical-align: middle;
+    }
+  }
+
+  .elements-toolbar__inner {
+    max-width: 1000px;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0.7rem;
+    padding: 0.7rem;
+  }
+  .elements-toolbar__card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100px;
+    min-width: 90px;
+    height: 90px;
+    background: #232834;
+    border-radius: 14px;
+    box-shadow: 0 2px 8px #0002;
+    border: 1.2px solid #2c313c;
+    cursor: grab;
+    user-select: none;
+    transition: box-shadow 0.15s, border 0.15s, background 0.15s;
+    &:hover {
+      border: 1.2px solid var(--theme-primary, #1abc9c);
+      box-shadow: 0 4px 16px #1abc9c33;
+      background: #262b36;
+    }
+    .icon-bg {
+      background: #232834;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0.7rem auto 0.3rem auto;
+      box-shadow: 0 1px 4px #0002;
+      transition: background 0.15s, box-shadow 0.15s;
+      svg {
+        width: 24px;
+        height: 24px;
+        stroke-width: 2.2;
+        stroke: #1abc9c;
+        display: block;
+      }
+    }
+    .elements-toolbar__label {
+      font-size: 0.92rem;
+      color: #eaf6f6;
+      font-weight: 600;
+      margin-bottom: 0.05rem;
+      text-align: center;
+    }
+    .elements-toolbar__sublabel {
+      font-size: 0.72rem;
+      color: #bfc9d1;
+      text-align: center;
+      font-weight: 400;
+      line-height: 1.1;
+      margin-bottom: 0.1rem;
+    }
+  }
 }
 </style>

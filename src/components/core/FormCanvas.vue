@@ -1,271 +1,452 @@
 <script setup lang="ts">
-import { ref, onMounted, watchEffect } from "vue";
+import { computed, ref, onMounted, onUnmounted } from "vue";
 import { useFormBuilderStore } from "../../stores/formBuilder";
-import {
-  VueFlow,
-  type Node,
-  type XYPosition,
-  type NodeComponent,
-} from "@vue-flow/core";
-import { Background } from "@vue-flow/background";
-import { Controls } from "@vue-flow/controls";
-import { MiniMap } from "@vue-flow/minimap";
+import FormElementRenderer from "./FormElementRenderer.vue";
+import InsertionPoint from "./InsertionPoint.vue";
+import { v4 as uuidv4 } from "uuid";
 import type { FormElement } from "../../models/FormElement";
-import TextInputNode from "../elements/TextInput.vue";
-import FieldsetNode from "../nodes/FieldsetNode.vue";
-import ButtonNode from "../nodes/ButtonNode.vue";
-import TextareaNode from "../nodes/TextareaNode.vue";
-import CheckboxNode from "../nodes/CheckboxNode.vue";
-import SelectNode from "../nodes/SelectNode.vue";
-import RadioNode from "../nodes/RadioNode.vue";
-
-import "@vue-flow/core/dist/style.css";
-import "@vue-flow/core/dist/theme-default.css";
-import "@vue-flow/controls/dist/style.css";
-import "@vue-flow/minimap/dist/style.css";
 
 const formBuilderStore = useFormBuilderStore();
-const nodes = ref<Node[]>([]);
-const isDraggingOver = ref(false);
+const elements = computed(() => formBuilderStore.elements);
 
-interface NodeData {
-  element: FormElement;
-  inPreview: boolean;
-  onSelect: () => void;
-}
-const nodeTypes = {
-  input: TextInputNode as NodeComponent,
-  fieldset: FieldsetNode as NodeComponent,
-  button: ButtonNode as NodeComponent,
-  textarea: TextareaNode as NodeComponent,
-  checkbox: CheckboxNode as NodeComponent,
-  select: SelectNode as NodeComponent,
-  radio: RadioNode as NodeComponent,
-  // Add other types here as their components are created/adapted
+// Drag state tracking
+const isDragging = ref(false);
+const dropPosition = ref({ index: -1, top: 0 });
+const canvasRef = ref<HTMLElement | null>(null);
+
+const selectElement = (id: string) => {
+  formBuilderStore.selectElement(id);
 };
 
+const handleEdit = (e: Event, id: string) => {
+  e.stopPropagation();
+};
+
+const handleDelete = (e: Event, id: string) => {
+  e.stopPropagation();
+  formBuilderStore.removeElement(id);
+};
+
+// Calculate drop position based on mouse Y position
+function calculateDropPosition(mouseY: number) {
+  if (!canvasRef.value) return { index: -1, top: 0 };
+
+  const canvas = canvasRef.value;
+  const canvasRect = canvas.getBoundingClientRect();
+  const relativeY = mouseY - canvasRect.top + canvas.scrollTop;
+
+  // Get all element cards in the canvas
+  const cards = Array.from(canvas.querySelectorAll(".element-card"));
+
+  if (cards.length === 0) {
+    // If no cards, position at the top
+    return { index: 0, top: 20 };
+  }
+
+  // Find where to insert the new element
+  for (let i = 0; i < cards.length; i++) {
+    const card = cards[i] as HTMLElement;
+    const cardRect = card.getBoundingClientRect();
+    const cardTop = cardRect.top - canvasRect.top + canvas.scrollTop;
+    const cardMiddle = cardTop + cardRect.height / 2;
+
+    if (relativeY < cardMiddle) {
+      // Insert before this element
+      return { index: i, top: cardTop - 8 };
+    }
+  }
+
+  // Insert after the last element
+  const lastCard = cards[cards.length - 1] as HTMLElement;
+  const lastRect = lastCard.getBoundingClientRect();
+  const lastBottom = lastRect.bottom - canvasRect.top + canvas.scrollTop;
+  return { index: cards.length, top: lastBottom + 8 };
+}
+
+// Canvas event handlers
+const handleCanvasDragOver = (e: DragEvent) => {
+  e.preventDefault();
+
+  if (e.dataTransfer) {
+    e.dataTransfer.dropEffect = "copy";
+  }
+
+  // Calculate drop position for visual indicator
+  if (canvasRef.value) {
+    const position = calculateDropPosition(e.clientY);
+    dropPosition.value = position;
+  }
+
+  // Set dragging state
+  isDragging.value = true;
+};
+
+const handleCanvasDragLeave = (e: DragEvent) => {
+  // Check if we're really leaving the canvas and not entering a child
+  const relatedTarget = e.relatedTarget as Node;
+  if (!canvasRef.value?.contains(relatedTarget)) {
+    isDragging.value = false;
+  }
+};
+
+const handleCanvasDrop = (e: DragEvent) => {
+  e.preventDefault();
+  e.stopPropagation();
+
+  // Reset dragging state
+  isDragging.value = false;
+
+  if (!e.dataTransfer) return;
+
+  // Try to get the element type from various formats
+  let elementType = "";
+
+  try {
+    // Try all possible formats
+    elementType =
+      e.dataTransfer.getData("application/element-type") ||
+      e.dataTransfer.getData("text/plain") ||
+      e.dataTransfer.getData("text");
+  } catch (error) {
+    console.error("Error reading drag data:", error);
+    return;
+  }
+
+  if (!elementType) {
+    console.warn("No element type found in drop event");
+    return;
+  }
+
+  console.log("Element type found:", elementType);
+
+  const { index } = dropPosition.value;
+  if (index === -1) return;
+
+  // Create element properties
+  const baseElementProps = {
+    id: uuidv4(),
+    label: `New ${elementType.charAt(0).toUpperCase() + elementType.slice(1)}`,
+    required: false,
+    order: 0,
+    x: 20,
+    y: 0,
+  };
+
+  // Create element based on type
+  let newElement: FormElement | null = null;
+
+  switch (elementType) {
+    case "input":
+      newElement = {
+        ...baseElementProps,
+        type: "input",
+        placeholder: "Enter text",
+        width: 250,
+        height: 48,
+      } as FormElement;
+      break;
+    case "textarea":
+      newElement = {
+        ...baseElementProps,
+        type: "textarea",
+        placeholder: "Enter text",
+        rows: 4,
+        width: 300,
+        height: 120,
+      } as FormElement;
+      break;
+    case "checkbox":
+      newElement = {
+        ...baseElementProps,
+        type: "checkbox",
+        checked: false,
+        width: 200,
+        height: 40,
+      } as FormElement;
+      break;
+    case "select":
+      newElement = {
+        ...baseElementProps,
+        type: "select",
+        options: [
+          { value: "option1", label: "Option 1" },
+          { value: "option2", label: "Option 2" },
+        ],
+        multiple: false,
+        width: 250,
+        height: 48,
+      } as FormElement;
+      break;
+    case "radio":
+      newElement = {
+        ...baseElementProps,
+        type: "radio",
+        options: [
+          { value: "option1", label: "Option 1" },
+          { value: "option2", label: "Option 2" },
+        ],
+        defaultValue: "option1",
+        width: 250,
+        height: 80,
+      } as FormElement;
+      break;
+    case "fieldset":
+      newElement = {
+        ...baseElementProps,
+        type: "fieldset",
+        children: [],
+        width: 400,
+        height: 200,
+      } as FormElement;
+      break;
+    case "button":
+      newElement = {
+        ...baseElementProps,
+        type: "button",
+        buttonType: "button",
+        width: 150,
+        height: 48,
+      } as FormElement;
+      break;
+    default:
+      newElement = {
+        ...baseElementProps,
+        type: elementType as any,
+        width: 250,
+        height: 48,
+      } as FormElement;
+  }
+
+  if (newElement) {
+    // Insert the element at the correct position
+    const elementsCopy = [...formBuilderStore.elements];
+    elementsCopy.splice(index, 0, newElement);
+    formBuilderStore.setFormElements(elementsCopy);
+    formBuilderStore.selectElement(newElement.id);
+  }
+
+  // Reset drop position
+  dropPosition.value = { index: -1, top: 0 };
+};
+
+// Handle fieldset element drop
+function handleElementDrop({
+  fieldsetId,
+  elementType,
+  position = 0, // Default to beginning of fieldset
+}: {
+  fieldsetId: string;
+  elementType: string;
+  position?: number;
+}) {
+  if (!fieldsetId || !elementType) return;
+
+  // Create a new element for the fieldset
+  const baseElementProps = {
+    id: uuidv4(),
+    label: `New ${elementType.charAt(0).toUpperCase() + elementType.slice(1)}`,
+    required: false,
+    order: 0,
+    x: 0,
+    y: 0,
+  };
+
+  let newElement: FormElement | null = null;
+
+  // Create element based on type
+  switch (elementType) {
+    case "input":
+      newElement = {
+        ...baseElementProps,
+        type: "input",
+        placeholder: "Enter text",
+        width: 250,
+        height: 48,
+      } as FormElement;
+      break;
+    case "textarea":
+      newElement = {
+        ...baseElementProps,
+        type: "textarea",
+        placeholder: "Enter text",
+        rows: 4,
+        width: 300,
+        height: 120,
+      } as FormElement;
+      break;
+    case "checkbox":
+      newElement = {
+        ...baseElementProps,
+        type: "checkbox",
+        checked: false,
+        width: 200,
+        height: 40,
+      } as FormElement;
+      break;
+    case "fieldset":
+      newElement = {
+        ...baseElementProps,
+        type: "fieldset",
+        children: [],
+        width: 400,
+        height: 200,
+      } as FormElement;
+      break;
+    case "button":
+      newElement = {
+        ...baseElementProps,
+        type: "button",
+        buttonType: "button",
+        width: 150,
+        height: 48,
+      } as FormElement;
+      break;
+    default:
+      newElement = {
+        ...baseElementProps,
+        type: elementType as any,
+        width: 250,
+        height: 48,
+      } as FormElement;
+  }
+
+  if (newElement) {
+    // Add the element to the fieldset at the specified position
+    formBuilderStore.addElementToFieldset(fieldsetId, newElement, position);
+  }
+}
+
+// Handle insertion point clicks
+function handleInsertPointClick({
+  index,
+}: {
+  index: number;
+  fieldsetId?: string;
+}) {
+  openInsertMenu(index);
+}
+
+// Open insert menu at specific position
+function openInsertMenu(index: number) {
+  console.log(`Opening insert menu at position ${index}`);
+
+  // Dispatch a custom event that will be listened to by the CommandPalette component
+  const event = new CustomEvent("openCommandPalette", {
+    detail: {
+      insertPosition: index,
+      mode: "insert",
+    },
+  });
+
+  window.dispatchEvent(event);
+}
+
+// Clean up any drag state when component is unmounted
 onMounted(() => {
-  watchEffect(() => {
-    updateNodes();
+  document.addEventListener("dragend", () => {
+    isDragging.value = false;
   });
 });
-
-function updateNodes() {
-  nodes.value = formBuilderStore.elements.map((element, index) => ({
-    id: element.id,
-    type: element.type,
-    position: {
-      x: element.x || 100,
-      y: element.y || 100 + index * 150,
-    } as XYPosition,
-    data: {
-      element,
-      inPreview: false,
-      onSelect: () => formBuilderStore.selectElement(element.id),
-      label: element.label,
-      width: element.width,
-      height: element.height,
-    } as NodeData,
-    parentNode: element.parentNode,
-  }));
-}
-
-const onDrop = (event: DragEvent) => {
-  isDraggingOver.value = false;
-  if (!event.dataTransfer) return;
-
-  event.preventDefault();
-
-  const elementType = event.dataTransfer.getData("elementType");
-  if (!elementType) return;
-
-  // TODO: Review offset calculation. These are likely rough estimates
-  // to account for UI elements like sidebar/header or mouse pointer position.
-  // A more robust method would transform clientX/clientY to VueFlow viewport coordinates.
-  const x = event.clientX - 200;
-  const y = event.clientY - 100;
-
-  formBuilderStore.createAndAddElement(elementType, x, y);
-};
-
-const onDragOver = (event: DragEvent) => {
-  event.preventDefault();
-  if (event.dataTransfer) {
-    isDraggingOver.value = true;
-    event.dataTransfer.dropEffect = "copy";
-  }
-};
-
-const onDragLeave = (event: DragEvent) => {
-  const flowHostElement = event.currentTarget as HTMLElement;
-  if (
-    event.relatedTarget === null ||
-    (event.relatedTarget instanceof Node &&
-      !flowHostElement.contains(event.relatedTarget))
-  ) {
-    isDraggingOver.value = false;
-  }
-};
-
-const handleNodesDragStop = ({ nodes: draggedNodes }: { nodes: Node[] }) => {
-  draggedNodes.forEach((node) => {
-    if (
-      node.position &&
-      typeof node.position.x === "number" &&
-      typeof node.position.y === "number"
-    ) {
-      formBuilderStore.updateElementPosition(
-        node.id,
-        node.position.x,
-        node.position.y
-      );
-    }
-  });
-};
 </script>
 
 <template>
-  <div class="form-canvas">
-    <VueFlow
-      class="form-canvas__flow"
-      :class="{ 'drag-over': isDraggingOver }"
-      :nodes="nodes"
-      :nodeTypes="nodeTypes"
-      :defaultZoom="1"
-      :minZoom="0.2"
-      :maxZoom="4"
-      :elementsSelectable="true"
-      @dragover="onDragOver"
-      @dragleave="onDragLeave"
-      @drop="onDrop"
-      @nodes-drag-stop="handleNodesDragStop"
+  <div class="canvas-container">
+    <div
+      class="canvas-stack"
+      @dragover="handleCanvasDragOver"
+      @dragleave="handleCanvasDragLeave"
+      @drop="handleCanvasDrop"
+      ref="canvasRef"
     >
-      <Background :pattern-color="'var(--theme-border)'" :gap="8" />
-      <Controls />
-      <MiniMap />
-
-      <div class="form-canvas__header">
-        <h2>Form Canvas</h2>
+      <!-- Empty state message -->
+      <div v-if="elements.length === 0" class="form-canvas__empty">
+        Drag and drop elements here to build your form or click on elements in
+        the sidebar
       </div>
 
-      <!-- Empty state -->
-      <div v-if="nodes.length === 0" class="form-canvas__empty">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="M3 3h7v7H3z" />
-          <path d="M14 3h7v7h-7z" />
-          <path d="M14 14h7v7h-7z" />
-          <path d="M3 14h7v7H3z" />
-        </svg>
-        <div>Drag and drop elements here to build your form</div>
-      </div>
-    </VueFlow>
+      <!-- Drop indicator when dragging -->
+      <div
+        v-if="isDragging && dropPosition.index >= 0"
+        class="drop-indicator"
+        :style="{ top: `${dropPosition.top}px` }"
+      ></div>
+
+      <template v-if="elements.length > 0">
+        <!-- Einfügepunkt am Anfang -->
+        <InsertionPoint :index="0" @insert="handleInsertPointClick" />
+
+        <!-- Elemente mit Einfügepunkten dazwischen -->
+        <template v-for="(element, index) in elements" :key="element.id">
+          <FormElementRenderer
+            :element="element"
+            @element-drop="handleElementDrop"
+          />
+          <InsertionPoint :index="index + 1" @insert="handleInsertPointClick" />
+        </template>
+      </template>
+    </div>
   </div>
 </template>
 
-<style lang="scss">
-@use "../../assets/scss/abstracts" as *; // Added for SCSS variables
+<style lang="scss" scoped>
+.canvas-container {
+  padding: 0.3rem;
+  flex: 1;
+  overflow: auto;
+}
 
-/* Component-specific styles for FormCanvas */
-.form-canvas {
+.canvas-stack {
+  max-width: 850px;
   width: 100%;
-  height: 100%;
-  background-color: var(--theme-bg);
+  margin: 1rem auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  position: relative;
+  min-height: 200px;
 
-  &__flow {
-    background-color: var(--theme-bg);
-    position: relative;
-
-    &.drag-over {
-      .vue-flow__viewport {
-        outline: 2px dashed var(--theme-primary);
-        outline-offset: -2px;
-      }
-    }
-  }
-
-  &__header {
-    position: absolute;
-    top: $spacing-md;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 10;
-    background-color: var(--theme-bg-surface);
-    padding: $spacing-sm $spacing-md;
-    border-radius: $border-radius;
-    box-shadow: 0 1px 3px 0 rgba(var(--theme-shadow-color-rgb), 0.1),
-      0 1px 2px 0 rgba(var(--theme-shadow-color-rgb), 0.08);
-
-    h2 {
-      font-size: 1.125rem;
-      font-weight: $font-weight-semibold;
-      margin: 0;
-      color: var(--theme-text);
-    }
-  }
-
-  &__empty {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 10;
-    background-color: var(--theme-bg-surface);
-    padding: $spacing-xl;
-    border-radius: $border-radius;
-    box-shadow: 0 1px 3px 0 rgba(var(--theme-shadow-color-rgb), 0.1),
-      0 1px 2px 0 rgba(var(--theme-shadow-color-rgb), 0.08);
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-
-    svg {
-      width: 4rem;
-      height: 4rem;
-      margin-bottom: $spacing-lg;
-      color: var(--theme-primary);
-    }
-
-    div {
-      color: var(--theme-text-muted);
-      padding: $spacing-sm 0;
-      font-size: $font-size-base;
-    }
+  &.two-column-layout {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.8rem;
   }
 }
 
-.vue-flow__node {
-  /* Let the custom node component define its entire appearance */
-  background-color: transparent;
-  border: none; /* Border will be handled by the custom node if needed, or by selection outline */
-  padding: 0; /* Custom node will handle its own padding */
-  min-width: auto; /* Allow custom node to dictate its own min-width if necessary */
-  /* border-radius: 4px; // Handled by custom node */
-  /* min-width: 150px; // Handled by custom node or its content */
+/* Drop indicator styling */
+.drop-indicator {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: var(--theme-primary, #1abc9c);
+  border-radius: 2px;
+  z-index: 100;
+  box-shadow: 0 0 8px 1px rgba(26, 188, 156, 0.6);
+  animation: pulse 1.5s infinite;
 }
 
-.vue-flow__node.selected {
-  /* VueFlow default selection style might be okay, or we can customize */
-  /* For now, let custom node handle its own selected appearance if needed, 
-     or rely on VueFlow's default. Let's ensure VueFlow default is visible. */
-  /* border: 2px solid var(--theme-primary); // This is a good default selection indicator */
-  outline: 2px solid var(--theme-primary, #007bff); /* Use outline to avoid layout shifts */
-  outline-offset: 2px;
+@keyframes pulse {
+  0% {
+    opacity: 0.7;
+    transform: scaleY(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleY(1.5);
+  }
+  100% {
+    opacity: 0.7;
+    transform: scaleY(1);
+  }
 }
 
-// Ensure MiniMap is above other overlays
-.vue-flow__minimap {
-  z-index: 25; // Higher than property panel (10) and element panel (20)
-  background-color: var(--theme-bg-alt);
-  border: 1px solid var(--theme-border);
+.form-canvas__empty {
+  text-align: center;
+  padding: 2rem;
+  border: 2px dashed var(--theme-border, #444);
+  border-radius: 8px;
+  color: var(--theme-text-muted, #aaa);
+  font-style: italic;
+  font-size: 0.9em;
 }
 </style>

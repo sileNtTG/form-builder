@@ -48,12 +48,23 @@ interface ServerAttribute {
   [key: string]: any;
 }
 
+interface ServerProcessor {
+  fqn: string;
+  name?: string;
+  minimum?: number;
+  maximum?: number;
+  initial?: number;
+  addButton?: string;
+  removeButton?: any;
+  [key: string]: any;
+}
+
 interface ServerElement {
   fqn: string;
   attributes?: ServerAttribute;
   children?: ServerElement[];
   html?: string; // For Markup elements
-  // 'processors' are ignored in this initial version
+  processors?: ServerProcessor[]; // Processors für Multiple usw.
 }
 
 // Helper to try and find a label for an input, typically a sibling Markup with a Label child
@@ -118,11 +129,30 @@ function transformServerElementsRecursive(
 
     let labelText = node.attributes?.label || node.attributes?.name;
     if (!labelText) {
-      labelText =
-        findAssociatedLabel(node, siblings) ||
-        `Untitled ${
-          node.fqn.split("\\\\").pop()?.replace("Input", "") || "Element"
-        }`;
+      // Try to find an associated label first
+      const associatedLabel = findAssociatedLabel(node, siblings);
+      if (associatedLabel) {
+        labelText = associatedLabel;
+      } else {
+        // For inputs, don't add "Untitled" prefix when inside a fieldset
+        if (
+          parentId &&
+          (node.fqn.includes("\\Input\\") ||
+            node.fqn.includes("\\Textarea") ||
+            node.fqn.endsWith("\\Input"))
+        ) {
+          // For inputs inside fieldsets, use name as label if present
+          labelText =
+            node.attributes?.name ||
+            node.fqn.split("\\").pop()?.replace("Input", "") ||
+            "Field";
+        } else {
+          // Regular untitled prefix for top-level elements
+          labelText = `Untitled ${
+            node.fqn.split("\\").pop()?.replace("Input", "") || "Element"
+          }`;
+        }
+      }
     }
 
     const baseComponentTypeFromAttributesCleaned =
@@ -145,7 +175,6 @@ function transformServerElementsRecursive(
     const serverFqnValue = node.fqn; // Keep original fqn for serverFqn prop
 
     const commonProps: Omit<BaseFormElement, "type" | "width" | "height"> & {
-      parentNode?: string;
       id: string;
       x: number;
       y: number;
@@ -157,8 +186,28 @@ function transformServerElementsRecursive(
       required: node.attributes?.required || false,
       order: visualElements.length,
       serverFqn: serverFqnValue,
-      parentNode: parentId,
     };
+
+    // Prüfe auf Multiple Processor, der zu duplizierenden Fieldsets führen könnte
+    if (node.fqn === "Easy\\Form\\Fieldset" && node.processors) {
+      const multipleProcessor = node.processors.find(
+        (p) => p.fqn === "Easy\\Form\\Support\\Processor\\Multiple"
+      );
+
+      // Wenn ein Multiple Processor gefunden wurde, merken wir uns das in den Attributen
+      // damit wir es später im UI speziell behandeln können, aber nicht duplizieren
+      if (multipleProcessor) {
+        // Wir fügen den Processor als Flag hinzu, aber stellen sicher, dass wir ihn nur einmal verarbeiten
+        if (!node.attributes) node.attributes = {};
+        node.attributes["_hasMultipleProcessor"] = true;
+        node.attributes["_multipleProcessorData"] =
+          JSON.stringify(multipleProcessor);
+        console.log(
+          "Multiple processor found in fieldset, marked for special handling",
+          multipleProcessor
+        );
+      }
+    }
 
     switch (typeKeyForSwitch) {
       case "Easy\\Form\\Item\\Input\\Text":
@@ -297,6 +346,34 @@ function transformServerElementsRecursive(
         break;
 
       case "Easy\\Form\\Fieldset":
+        // Prüfe auf Multiple Processor und vermeide doppelte Darstellung
+        const hasMultipleProcessor = node.processors?.some(
+          (p) => p.fqn === "Easy\\Form\\Support\\Processor\\Multiple"
+        );
+
+        if (hasMultipleProcessor) {
+          console.log(
+            "Processing fieldset with Multiple processor - ensuring single instance"
+          );
+          // Wir fügen eine besondere Eigenschaft hinzu, um dieses Fieldset zu kennzeichnen
+          if (!node.attributes) {
+            node.attributes = {};
+          }
+
+          // Markiere das Fieldset mit einem speziellen Attribut
+          node.attributes._hasMultipleProcessor = true;
+
+          // Finde den Multiple Processor und speichere dessen Daten
+          const multipleProcessor = node.processors?.find(
+            (p) => p.fqn === "Easy\\Form\\Support\\Processor\\Multiple"
+          );
+
+          if (multipleProcessor) {
+            node.attributes._multipleProcessorData =
+              JSON.stringify(multipleProcessor);
+          }
+        }
+
         const fieldsetInitialX = commonProps.x;
         const fieldsetInitialY = commonProps.y;
         const fieldsetLabelValue = commonProps.label;
@@ -318,8 +395,8 @@ function transformServerElementsRecursive(
           required: commonProps.required,
           order: commonProps.order,
           serverFqn: commonProps.serverFqn,
-          parentNode: commonProps.parentNode,
           type: "fieldset",
+          children: [], // Initialize the children array
         };
 
         // Add a placeholder for the fieldset; dimensions will be updated later.
@@ -328,8 +405,12 @@ function transformServerElementsRecursive(
           width: DEFAULT_INPUT_WIDTH, // Temporary placeholder
           height: DEFAULT_INPUT_HEIGHT, // Temporary placeholder
         };
-        visualElements.push(fieldsetPlaceholder);
-        const fieldsetIndex = visualElements.length - 1;
+
+        // Track the index where we'll place the fieldset
+        const fieldsetIndex = visualElements.length;
+
+        // Create temporary array to collect child elements
+        const childElements: FormElement[] = [];
 
         let childRelativeYOffset = 0; // Y offset for children, relative to fieldset's content area start (below label and top content padding)
 
@@ -340,10 +421,16 @@ function transformServerElementsRecursive(
           actualLabelRenderedHeight + // Use actual conditional height
           FIELDSET_CONTENT_PADDING_TOP;
 
+        // Process child elements and collect them
         if (node.children && node.children.length > 0) {
+          const childVisualElements: FormElement[] = [];
+
           node.children.forEach((child, index) => {
             const childAbsoluteX = contentAreaStartX; // Children align at the start of the content area X
             const childAbsoluteY = contentAreaStartY + childRelativeYOffset;
+
+            // Get the length before processing to track new elements
+            const preProcessLength = visualElements.length;
 
             const yAfterChildProcessing = processNode(
               child,
@@ -352,30 +439,32 @@ function transformServerElementsRecursive(
               childAbsoluteY,
               fieldsetElementBase.id // parentId is this fieldset
             );
+
+            // Collect new elements added during processing - these are our child elements
+            for (let i = preProcessLength; i < visualElements.length; i++) {
+              childElements.push(visualElements[i]);
+            }
+
+            // Reset visualElements to remove the children (they'll be added to the fieldset instead)
+            visualElements.splice(preProcessLength);
+
             const consumedHeightByChild =
               yAfterChildProcessing - childAbsoluteY;
             childRelativeYOffset += consumedHeightByChild;
           });
         }
 
-        // After all children are processed, find them and calculate fieldset dimensions.
-        const childrenOfThisFieldset = visualElements.filter(
-          (el) => el.parentNode === fieldsetElementBase.id
-        );
-
         let actualContentWidth = 0; // Width spanned by children elements
         let actualContentBlockHeight = 0; // Height spanned by children elements including their Y_SPACING
 
-        if (childrenOfThisFieldset.length > 0) {
-          const minChildX = Math.min(...childrenOfThisFieldset.map((c) => c.x));
+        if (childElements.length > 0) {
+          const minChildX = Math.min(...childElements.map((c) => c.x));
           const maxChildXPlusWidth = Math.max(
-            ...childrenOfThisFieldset.map((c) => c.x + c.width)
+            ...childElements.map((c) => c.x + c.width)
           );
           actualContentWidth = Math.max(0, maxChildXPlusWidth - minChildX); // Width of the block formed by children
 
           // Recalculate vertical span based on processed children relative Y positions
-          // childRelativeYOffset at this point holds the Y position for the *next* child *after* the last one,
-          // relative to the contentAreaStartY. So it represents the total height of children + all Y_SPACING.
           if (childRelativeYOffset > 0) {
             actualContentBlockHeight = childRelativeYOffset - Y_SPACING; // Subtract last Y_SPACING
           } else {
@@ -386,13 +475,13 @@ function transformServerElementsRecursive(
         }
 
         const finalFieldsetWidth =
-          childrenOfThisFieldset.length > 0
+          childElements.length > 0
             ? actualContentWidth + 2 * FIELDSET_CONTENT_PADDING_HORIZONTAL
             : DEFAULT_INPUT_WIDTH;
 
-        // Calculate height based on whether children exist to avoid negative heights if block height is 0
+        // Calculate height based on whether children exist
         let calculatedHeightBasedOnContent;
-        if (childrenOfThisFieldset.length > 0) {
+        if (childElements.length > 0) {
           calculatedHeightBasedOnContent =
             actualLabelRenderedHeight +
             FIELDSET_CONTENT_PADDING_TOP +
@@ -411,14 +500,18 @@ function transformServerElementsRecursive(
           calculatedHeightBasedOnContent
         );
 
-        visualElements[fieldsetIndex] = {
-          ...visualElements[fieldsetIndex], // Preserve other props like id, x, y
+        // Create the final fieldset with collected children
+        const finalFieldset: FieldsetElement = {
+          ...fieldsetElementBase,
           width: finalFieldsetWidth,
           height: finalFieldsetHeight,
-        } as FieldsetElement;
+          children: childElements,
+        };
+
+        // Add the fieldset with its children to visualElements
+        visualElements.push(finalFieldset);
 
         // The next element after this fieldset should start after its total height + spacing.
-        // The fieldset's own Y (commonProps.y or fieldsetInitialY) plus its calculated height.
         return fieldsetInitialY + finalFieldsetHeight + Y_SPACING;
 
       case "Easy\\Form\\Markup":

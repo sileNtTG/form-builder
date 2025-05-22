@@ -10,7 +10,6 @@ export interface BaseFormElement {
   width: number;
   height: number;
   validation?: ValidationRule[];
-  parentNode?: string;
 }
 
 export interface TextInputElement extends BaseFormElement {
@@ -70,11 +69,18 @@ export interface ButtonElement extends BaseFormElement {
 
 export interface FieldsetElement extends BaseFormElement {
   type: "fieldset";
+  children?: FormElement[];
 }
 
 export interface SelectOption {
   value: string;
   label: string;
+}
+
+export interface FormElementOption {
+  value: string;
+  label: string;
+  [key: string]: string;
 }
 
 export interface RadioElementOption {

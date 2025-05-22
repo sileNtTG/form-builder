@@ -48,11 +48,28 @@ export const useFormBuilderStore = defineStore("formBuilder", {
     },
     selectedElement(state): FormElement | null {
       if (!state.selectedElementId || !this.elements) return null;
-      return (
-        this.elements.find(
-          (el: FormElement) => el.id === state.selectedElementId
-        ) || null
-      );
+
+      // Rekursive Funktion zum Finden eines Elements nach ID
+      const findElementById = (
+        elements: FormElement[],
+        id: string
+      ): FormElement | null => {
+        // Zunächst in der aktuellen Ebene suchen
+        const element = elements.find((el) => el.id === id);
+        if (element) return element;
+
+        // Falls nicht gefunden, in Fieldset-Kindern suchen
+        for (const el of elements) {
+          if (el.type === "fieldset" && el.children && el.children.length > 0) {
+            const found = findElementById(el.children, id);
+            if (found) return found;
+          }
+        }
+
+        return null;
+      };
+
+      return findElementById(this.elements, state.selectedElementId);
     },
     formList(state): { id: string; name: string }[] {
       return state.forms.map((f) => ({ id: f.id, name: f.name }));
@@ -325,6 +342,15 @@ export const useFormBuilderStore = defineStore("formBuilder", {
             height: 80,
           } as FormElement;
           break;
+        case "fieldset":
+          newElement = {
+            ...baseElementProps,
+            type: "fieldset",
+            children: [],
+            width: 400,
+            height: 200,
+          } as FormElement;
+          break;
         default:
           console.warn(`Unknown element type: ${elementType}`);
           return null;
@@ -341,13 +367,37 @@ export const useFormBuilderStore = defineStore("formBuilder", {
     },
 
     updateElement(elementId: string, updates: Partial<FormElement>) {
-      const index = this.elements.findIndex((el) => el.id === elementId);
-      if (index !== -1) {
-        this.elements[index] = {
-          ...this.elements[index],
-          ...updates,
-        } as FormElement;
+      // Rekursiv Element finden und aktualisieren
+      const updateElementRecursive = (elements: FormElement[]): boolean => {
+        // Element in aktueller Ebene suchen
+        const index = elements.findIndex((el) => el.id === elementId);
+        if (index !== -1) {
+          elements[index] = {
+            ...elements[index],
+            ...updates,
+          } as FormElement;
+          return true;
+        }
+
+        // In Fieldset-Kindern suchen
+        for (const el of elements) {
+          if (el.type === "fieldset" && el.children && el.children.length > 0) {
+            if (updateElementRecursive(el.children)) {
+              return true;
+            }
+          }
+        }
+
+        return false;
+      };
+
+      // Aktualisieren ausführen
+      const wasUpdated = updateElementRecursive(this.elements);
+
+      if (wasUpdated) {
         this.syncActiveFormVisualsFromCanvas();
+      } else {
+        console.warn(`Element with id ${elementId} not found for update.`);
       }
     },
 
@@ -361,10 +411,38 @@ export const useFormBuilderStore = defineStore("formBuilder", {
     },
 
     removeElement(elementId: string) {
-      this.elements = this.elements.filter((el) => el.id !== elementId);
+      // Funktion zum rekursiven Löschen von Elementen (auch in verschachtelten Fieldsets)
+      const removeFromChildren = (elements: FormElement[]): boolean => {
+        // Direkt in diesem Array suchen
+        const directIndex = elements.findIndex((el) => el.id === elementId);
+        if (directIndex !== -1) {
+          elements.splice(directIndex, 1);
+          return true;
+        }
+
+        // In Kindern von Fieldsets suchen
+        for (const el of elements) {
+          if (el.type === "fieldset" && el.children && el.children.length > 0) {
+            if (removeFromChildren(el.children)) {
+              return true;
+            }
+          }
+        }
+
+        return false;
+      };
+
+      // Zuerst versuchen, in verschachtelten Elementen zu löschen
+      const wasRemoved = removeFromChildren(this.elements);
+
+      // Falls das Element nicht in verschachtelten Fieldsets gefunden wurde,
+      // war es wahrscheinlich schon auf Root-Ebene und wurde gelöscht
+
+      // Die Auswahl zurücksetzen, wenn das gelöschte Element ausgewählt war
       if (this.selectedElementId === elementId) {
         this.selectedElementId = null;
       }
+
       this.syncActiveFormVisualsFromCanvas();
     },
 
@@ -378,6 +456,46 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       } else {
         console.warn("No active form to save.");
       }
+    },
+
+    addElementToFieldset(
+      fieldsetId: string,
+      element: FormElement,
+      atIndex: number = 0
+    ) {
+      function findAndAdd(elements: FormElement[]): boolean {
+        for (const el of elements) {
+          if (el.type === "fieldset" && el.id === fieldsetId) {
+            if (!el.children) el.children = [];
+
+            // Add at specified index or default to beginning (index 0)
+            if (atIndex >= 0 && atIndex <= el.children.length) {
+              el.children.splice(atIndex, 0, element);
+            } else {
+              // Fallback to adding at the beginning if index is invalid
+              el.children.unshift(element);
+            }
+            return true;
+          } else if (el.type === "fieldset" && el.children) {
+            if (findAndAdd(el.children)) return true;
+          }
+        }
+        return false;
+      }
+      if (findAndAdd(this.elements)) {
+        this.syncActiveFormVisualsFromCanvas();
+        this.selectElement(element.id);
+      } else {
+        console.warn(`Fieldset with id ${fieldsetId} not found.`);
+      }
+    },
+
+    // Update a specific property of an element
+    updateElementProperty(elementId: string, key: string, value: any) {
+      const element = this.elements.find((el) => el.id === elementId);
+      if (!element) return;
+
+      (element as any)[key] = value;
     },
   },
 });

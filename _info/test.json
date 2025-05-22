@@ -1,0 +1,119 @@
+[
+  {
+    "id": "98679c1f-bc2d-4712-8c5a-de086b77ee43",
+    "label": "New Input11111",
+    "required": false,
+    "order": 0,
+    "x": 20,
+    "y": 0,
+    "type": "input",
+    "placeholder": "Enter text",
+    "width": 250,
+    "height": 48
+  },
+  {
+    "id": "72c5f495-c1b7-4503-84c4-dac01c914296",
+    "label": "Magic!",
+    "x": 50,
+    "y": 50,
+    "required": false,
+    "order": 0,
+    "serverFqn": "Easy\\Form\\Item\\Button",
+    "type": "button",
+    "width": 250,
+    "height": 40,
+    "buttonType": "button"
+  },
+  {
+    "id": "0fb6bc70-184c-4da7-a76a-9c962be65dff",
+    "label": "New Input",
+    "required": false,
+    "order": 0,
+    "x": 20,
+    "y": 0,
+    "type": "input",
+    "placeholder": "Enter text",
+    "width": 250,
+    "height": 48
+  },
+  {
+    "id": "e3055b2a-2dd4-46cf-ba63-61342ddf9a3b",
+    "label": "Untitled Fieldset",
+    "x": 50,
+    "y": 110,
+    "required": false,
+    "order": 1,
+    "serverFqn": "Easy\\Form\\Fieldset",
+    "type": "fieldset",
+    "children": [
+      {
+        "id": "name",
+        "label": "name",
+        "x": 65,
+        "y": 120,
+        "required": false,
+        "order": 1,
+        "serverFqn": "Easy\\Form\\Item\\Input\\Text",
+        "type": "input",
+        "width": 250,
+        "height": 85,
+        "placeholder": ""
+      },
+      {
+        "id": "message",
+        "label": "message",
+        "x": 65,
+        "y": 225,
+        "required": false,
+        "order": 1,
+        "serverFqn": "Easy\\Form\\Item\\Textarea",
+        "type": "textarea",
+        "width": 300,
+        "height": 120,
+        "placeholder": "",
+        "rows": "4"
+      }
+    ],
+    "width": 330,
+    "height": 245
+  },
+  {
+    "id": "newsletter",
+    "label": "newsletter",
+    "x": 50,
+    "y": 375,
+    "required": false,
+    "order": 2,
+    "serverFqn": "Easy\\Form\\Item\\Input\\Checkbox",
+    "type": "checkbox",
+    "width": 200,
+    "height": 40,
+    "checked": false
+  },
+  {
+    "id": "b2def386-fe7c-4a2d-9a2a-0e1b06f80007",
+    "label": "Submit",
+    "x": 50,
+    "y": 435,
+    "required": false,
+    "order": 3,
+    "serverFqn": "Easy\\Form\\Item\\Button",
+    "type": "button",
+    "width": 250,
+    "height": 40,
+    "buttonType": "button"
+  },
+  {
+    "id": "32a60875-c300-414b-a2dc-b978f9d20e22",
+    "label": "New Textarea",
+    "required": false,
+    "order": 0,
+    "x": 20,
+    "y": 0,
+    "type": "textarea",
+    "placeholder": "Enter text",
+    "rows": 4,
+    "width": 300,
+    "height": 120
+  }
+]
