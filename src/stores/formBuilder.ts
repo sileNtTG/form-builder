@@ -1,5 +1,13 @@
 import { defineStore } from "pinia";
-import type { FormElement } from "../models/FormElement";
+import type {
+  FormElement,
+  TextInputElement,
+  TextareaElement,
+  ButtonElement,
+  FieldsetElement,
+  CheckboxElement,
+  SelectElement, // Add other specific types if your createElement supports them
+} from "../models/FormElement";
 import { v4 as uuidv4 } from "uuid";
 import { useServerFormImporter } from "@/composables/useServerFormImporter";
 
@@ -27,12 +35,27 @@ export interface ManagedForm {
   filePath?: string;
 }
 
+// NEW: Interface for the result of finding an element, its parent, and container
+interface FoundElementInfo {
+  element: FormElement;
+  parent: FieldsetElement | null;
+  container: FormElement[];
+  indexInContainer: number;
+}
+
+// NEW: Interface for the result of extracting an element
+interface ExtractOperationResult {
+  extractedElement: FormElement | null;
+  remainingElements: FormElement[]; // The tree after extraction
+}
+
 export const useFormBuilderStore = defineStore("formBuilder", {
   state: () => ({
     forms: [] as ManagedForm[],
     activeFormId: null as string | null,
     elements: [] as FormElement[],
     selectedElementId: null as string | null,
+    isDragging: false as boolean, // Global flag for active drag operation
     canvasConfig: {
       // Flagged for potential unused state
       width: 1200,
@@ -77,6 +100,9 @@ export const useFormBuilderStore = defineStore("formBuilder", {
   },
 
   actions: {
+    setDragging(isDragging: boolean) {
+      this.isDragging = isDragging;
+    },
     async loadInitialForms() {
       const { transformServerFormToVisual } = useServerFormImporter();
 
@@ -109,7 +135,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
           this.forms.push(newManagedForm);
         } else {
           console.warn(
-            `Form with name "${newManagedForm.name}" from ${fileData.fileName} already exists or was loaded. Skipping.`
+            `Form with name "${newManagedForm.name}" from ${fileData.fileName} already exists. Skipping.`
           );
         }
       });
@@ -644,146 +670,336 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       }
     },
 
-    // Move element to new position (with parent support)
-    moveElementToPosition(
-      elementId: string,
-      toPosition: number,
-      toParentId: string | null = null
-    ) {
-      // Find and remove element from source
-      const sourceResult = this.findElementWithParent(elementId);
-      if (!sourceResult) {
-        console.error(`Element ${elementId} not found`);
-        return;
-      }
+    // --- REFACTORED HELPER FUNCTIONS FOR moveElementToPosition ---
 
-      const {
-        element: movedElement,
-        parent: sourceParent,
-        index: sourceIndex,
-      } = sourceResult;
+    // _findAndExtractElementRecursive:
+    // - Operates on a DEEP COPY of the elements array.
+    // - Returns an object: { extractedElement: FormElement | null, remainingElements: FormElement[] }
+    // - 'remainingElements' is the DEEP COPY of the tree *after* extraction.
+    // - Does NOT mutate the original store state.
+    _findAndExtractElementRecursive(
+      elementsToSearch: FormElement[], // This should be a deep copy
+      elementIdToExtract: string
+    ): ExtractOperationResult {
+      const result: ExtractOperationResult = {
+        extractedElement: null,
+        remainingElements: [], // Will be populated with the modified copy
+      };
 
-      // Remove from source array
-      let sourceArray: FormElement[];
-      if (
-        sourceParent &&
-        sourceParent.type === "fieldset" &&
-        sourceParent.children
-      ) {
-        sourceArray = sourceParent.children;
-      } else {
-        sourceArray = this.elements;
-      }
+      let foundAndExtracted = false;
 
-      sourceArray.splice(sourceIndex, 1);
+      function findAndExtract(
+        currentElements: FormElement[],
+        path: FormElement[]
+      ): FormElement[] {
+        const newArray: FormElement[] = [];
+        for (let i = 0; i < currentElements.length; i++) {
+          const el = JSON.parse(JSON.stringify(currentElements[i])); // Deep copy current element
 
-      // Insert at target position
-      if (toParentId) {
-        // Move to fieldset
-        const targetFieldset = this.findElementWithParent(toParentId);
-        if (!targetFieldset || targetFieldset.element.type !== "fieldset") {
-          console.error(`Target fieldset ${toParentId} not found`);
-          // Restore element to source
-          sourceArray.splice(sourceIndex, 0, movedElement);
-          return;
-        }
-
-        const targetElement = targetFieldset.element;
-        if (targetElement.type === "fieldset") {
-          if (!targetElement.children) {
-            targetElement.children = [];
+          if (el.id === elementIdToExtract && !foundAndExtracted) {
+            result.extractedElement = el;
+            foundAndExtracted = true;
+            // Don't add 'el' to newArray, effectively extracting it
+          } else {
+            if (el.type === "fieldset" && el.children) {
+              el.children = findAndExtract(el.children, [...path, el]);
+            }
+            newArray.push(el);
           }
-
-          const targetArray = targetElement.children;
-          const safePosition = Math.max(
-            0,
-            Math.min(toPosition, targetArray.length)
-          );
-          targetArray.splice(safePosition, 0, movedElement);
-
-          // Update order indices
-          targetArray.forEach((elem, index) => {
-            elem.order = index;
-          });
         }
-      } else {
-        // Move to root level
-        const elementsCopy = [...this.elements];
-        const safePosition = Math.max(
-          0,
-          Math.min(toPosition, elementsCopy.length)
-        );
-        elementsCopy.splice(safePosition, 0, movedElement);
-
-        // Update order indices
-        elementsCopy.forEach((elem, index) => {
-          elem.order = index;
-        });
-
-        this.setFormElements(elementsCopy);
+        return newArray;
       }
 
-      this.syncActiveFormVisualsFromCanvas();
-      this.selectElement(elementId);
+      result.remainingElements = findAndExtract(elementsToSearch, []);
+      return result;
     },
 
-    // Find element with parent information for hierarchical operations
-    findElementWithParent(elementId: string): {
-      element: FormElement;
-      parent: FormElement | null;
-      index: number;
-    } | null {
-      // Search in root level
-      const rootIndex = this.elements.findIndex((el) => el.id === elementId);
-      if (rootIndex !== -1) {
+    // _findTargetContainerRecursive:
+    // - Operates on a DEEP COPY of the elements array (the one potentially modified by extraction).
+    // - Returns an object: { targetContainer: FormElement[] | null, targetParent: FieldsetElement | null, success: boolean }
+    // - 'targetContainer' is a DIRECT REFERENCE to the children array within the DEEP COPY where the element should be inserted.
+    // - 'targetParent' is a DIRECT REFERENCE to the parent fieldset in the DEEP COPY.
+    // - Does NOT mutate the original store state.
+    _findTargetContainerRecursive(
+      elementsToSearchIn: FormElement[], // This should be the (potentially modified) deep copy
+      targetParentId: string | null
+    ): {
+      targetContainer: FormElement[] | null;
+      targetParent: FieldsetElement | null;
+      success: boolean;
+    } {
+      if (!targetParentId) {
+        // Target is root
         return {
-          element: this.elements[rootIndex],
-          parent: null,
-          index: rootIndex,
+          targetContainer: elementsToSearchIn, // The root of the deep copy
+          targetParent: null,
+          success: true,
         };
       }
 
-      // Recursively search in fieldsets
-      const searchInChildren = (
-        elements: FormElement[],
-        parent: FormElement | null = null
-      ): {
-        element: FormElement;
-        parent: FormElement | null;
-        index: number;
-      } | null => {
-        for (const element of elements) {
-          if (element.type === "fieldset" && element.children) {
-            // Search in direct children
-            const childIndex = element.children.findIndex(
-              (child) => child.id === elementId
-            );
-            if (childIndex !== -1) {
-              return {
-                element: element.children[childIndex],
-                parent: element,
-                index: childIndex,
-              };
-            }
+      for (const el of elementsToSearchIn) {
+        if (el.id === targetParentId && el.type === "fieldset") {
+          if (!el.children) el.children = []; // Ensure children array exists
+          return {
+            targetContainer: el.children,
+            targetParent: el as FieldsetElement,
+            success: true,
+          };
+        }
+        if (el.type === "fieldset" && el.children) {
+          const foundInChildren = this._findTargetContainerRecursive(
+            el.children,
+            targetParentId
+          );
+          if (foundInChildren.success) {
+            return foundInChildren;
+          }
+        }
+      }
+      return { targetContainer: null, targetParent: null, success: false };
+    },
 
-            // Search deeper levels recursively
-            const deepResult = searchInChildren(element.children, element);
-            if (deepResult) {
-              return deepResult;
-            }
+    // _insertElementIntoContainer:
+    // - DIRECTLY MUTATES the 'targetContainer' (which is part of the deep copy).
+    // - Inserts 'elementToMove' at 'insertAtIndex'.
+    _insertElementIntoContainer(
+      targetContainer: FormElement[], // Direct reference to a children array in the deep copy
+      elementToMove: FormElement,
+      insertAtIndex: number
+    ): void {
+      // Clamp insertAtIndex to be within valid bounds
+      const safeIndex = Math.max(
+        0,
+        Math.min(insertAtIndex, targetContainer.length)
+      );
+      targetContainer.splice(safeIndex, 0, elementToMove);
+    },
+
+    // _reorderAllElementsRecursive:
+    // - Operates on a DEEP COPY of the elements array.
+    // - MUTATES the 'order' property of elements within this deep copy.
+    _reorderAllElementsRecursive(elements: FormElement[]): void {
+      // Now mutates the copy directly
+      elements.forEach((el, index) => {
+        el.order = index;
+        if (el.type === "fieldset" && el.children) {
+          this._reorderAllElementsRecursive(el.children);
+        }
+      });
+    },
+
+    moveElementToPosition(
+      elementId: string,
+      toPosition: number, // This is the desired *visual* index in the target container
+      toParentId: string | null = null
+    ) {
+      console.log(
+        `Store: Attempting move: ${elementId.slice(-4)} to parent ${
+          toParentId?.slice(-4) || "root"
+        } at index ${toPosition}`
+      );
+
+      if (elementId === toParentId) {
+        console.error(
+          `Store: Cannot move element ${elementId.slice(-4)} into itself.`
+        );
+        return;
+      }
+
+      // 1. Create a deep working copy of the current elements state
+      let workingElementsCopy = JSON.parse(
+        JSON.stringify(this.elements)
+      ) as FormElement[];
+      console.log("Store: Created deep copy of elements for move operation.");
+
+      // 2. Find and extract the element from this working copy.
+      // _findAndExtractElementRecursive now returns the modified copy as 'remainingElements'.
+      const extractionResult = this._findAndExtractElementRecursive(
+        workingElementsCopy,
+        elementId
+      );
+
+      if (!extractionResult.extractedElement) {
+        console.error(
+          `Store: Element ${elementId.slice(
+            -4
+          )} not found for extraction. Aborting move.`
+        );
+        return;
+      }
+      const elementToMove = extractionResult.extractedElement;
+      workingElementsCopy = extractionResult.remainingElements; // Update working copy to be the one after extraction
+      console.log(
+        `Store: Extracted ${elementToMove.id.slice(
+          -4
+        )}. Remaining elements in copy: ${workingElementsCopy.length}`
+      );
+
+      // 3. Find the target container (and parent) within the (potentially modified) workingElementsCopy.
+      const targetSearchResult = this._findTargetContainerRecursive(
+        workingElementsCopy,
+        toParentId
+      );
+
+      if (!targetSearchResult.success || !targetSearchResult.targetContainer) {
+        console.error(
+          `Store: Target container for parent ${
+            toParentId?.slice(-4) || "root"
+          } not found. Aborting move.`
+        );
+        return;
+      }
+      const targetContainer = targetSearchResult.targetContainer; // This is a direct reference to an array *within* workingElementsCopy
+      console.log(
+        `Store: Found target container for parent ${
+          targetSearchResult.targetParent?.id.slice(-4) || "root"
+        }. Container items: ${targetContainer.length}`
+      );
+
+      // 4. Insert the extracted element into the identified target container at the correct position.
+      // The 'toPosition' is the visual index.
+      this._insertElementIntoContainer(
+        targetContainer,
+        elementToMove,
+        toPosition
+      );
+      console.log(
+        `Store: Inserted ${elementToMove.id.slice(
+          -4
+        )} into target container. New container items: ${
+          targetContainer.length
+        }`
+      );
+
+      // 5. Reorder all elements in the entire modified workingElementsCopy (this will update 'order' properties).
+      this._reorderAllElementsRecursive(workingElementsCopy);
+      console.log("Store: Reordered all elements in the working copy.");
+
+      // 6. If all steps were successful, update the main store's elements with the fully processed workingElementsCopy.
+      // setFormElements handles deep copying and syncing with activeForm.
+      this.setFormElements(workingElementsCopy);
+      console.log(
+        `Store: Move successful. Updated main store elements. Root elements count: ${this.elements.length}`
+      );
+
+      // Ensure the moved element is selected
+      this.selectElement(elementId);
+    },
+
+    findElementWithParent(elementId: string): FoundElementInfo | null {
+      const search = (
+        elements: FormElement[],
+        currentParent: FieldsetElement | null,
+        containerArr: FormElement[]
+      ): FoundElementInfo | null => {
+        for (let i = 0; i < elements.length; i++) {
+          const currentElement = elements[i];
+          if (currentElement.id === elementId) {
+            return {
+              element: currentElement,
+              parent: currentParent,
+              indexInContainer: i,
+              container: containerArr,
+            };
+          }
+          if (currentElement.type === "fieldset" && currentElement.children) {
+            const found = search(
+              currentElement.children,
+              currentElement as FieldsetElement,
+              currentElement.children
+            );
+            if (found) return found;
           }
         }
         return null;
       };
-
-      return searchInChildren(this.elements);
+      return search(this.elements, null, this.elements);
     },
 
     updateElementProperty(elementId: string, key: string, value: any) {
-      const element = this.elements.find((el) => el.id === elementId);
-      if (!element) return;
+      const info = this.findElementWithParent(elementId);
+      if (info && info.element) {
+        (info.element as any)[key] = value;
+        this.syncActiveFormVisualsFromCanvas();
+      }
+    },
 
-      (element as any)[key] = value;
+    createElement(elementType: string): FormElement {
+      const commonFields = {
+        id: uuidv4(),
+        required: false,
+        order: 0,
+        x: 0,
+        y: 0,
+        width: 200,
+        height: 40,
+        validation: [],
+      };
+
+      switch (elementType) {
+        case "input":
+          return {
+            ...commonFields,
+            type: "input",
+            label: "Text Input",
+            placeholder: "Enter text...",
+            defaultValue: "",
+          } as TextInputElement;
+        case "textarea":
+          return {
+            ...commonFields,
+            type: "textarea",
+            label: "Text Area",
+            placeholder: "Enter long text...",
+            defaultValue: "",
+            rows: 3,
+          } as TextareaElement;
+        case "button":
+          return {
+            ...commonFields,
+            type: "button",
+            label: "Button",
+            buttonType: "submit",
+          } as ButtonElement;
+        case "fieldset":
+          return {
+            ...commonFields,
+            width: 400,
+            height: 100,
+            type: "fieldset",
+            label: "Fieldset",
+            children: [],
+          } as FieldsetElement;
+        case "checkbox":
+          return {
+            ...commonFields,
+            type: "checkbox",
+            label: "Checkbox",
+            checked: false,
+          } as CheckboxElement;
+        case "select":
+          return {
+            ...commonFields,
+            type: "select",
+            label: "Select Menu",
+            options: [
+              { value: "opt1", label: "Option 1" },
+              { value: "opt2", label: "Option 2" },
+            ],
+            defaultValue: "opt1",
+          } as SelectElement;
+        default:
+          console.warn(
+            `createElement: Unknown element type "${elementType}". Defaulting to input.`
+          );
+          return {
+            ...commonFields,
+            type: "input",
+            label: "Text Input (Default)",
+            placeholder: "Enter text...",
+            defaultValue: "",
+          } as TextInputElement;
+      }
     },
   },
 });

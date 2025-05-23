@@ -1,28 +1,39 @@
 <script setup lang="ts">
+import { SvgIcon } from "@/components/common";
+
 const props = defineProps<{
   index: number;
   fieldsetId?: string;
+  isDragging?: boolean; // Global dragging state from parent
 }>();
 
-const emit = defineEmits(["insert"]);
+const emit = defineEmits<{
+  insert: [{ index: number; fieldsetId?: string }];
+}>();
 
-function handleInsert() {
-  emit("insert", { index: props.index, fieldsetId: props.fieldsetId });
+function handleClick() {
+  if (props.isDragging) return; // Don't handle clicks while dragging
+
+  emit("insert", {
+    index: props.index,
+    fieldsetId: props.fieldsetId,
+  });
 }
 </script>
 
 <template>
-  <div class="insertion-point-container">
+  <div
+    class="insertion-point-container"
+    :class="{ 'insertion-point--disabled': isDragging }"
+  >
     <div class="insertion-point">
       <div class="insertion-line"></div>
       <button
         class="insertion-button"
         title="Element einfügen"
-        @click="handleInsert"
+        @click="handleClick"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M12 5v14M5 12h14" stroke-width="2" stroke-linecap="round" />
-        </svg>
+        <SvgIcon name="plus" :size="18" />
       </button>
     </div>
   </div>
@@ -36,10 +47,11 @@ function handleInsert() {
   position: relative;
   width: 100%;
   pointer-events: all;
-  opacity: 0;
+  opacity: 0; /* Standardmäßig unsichtbar */
   transition: opacity 0.2s ease;
 
-  &:hover {
+  /* Nur bei Hover sichtbar, AUSSER beim Dragging */
+  &:hover:not(.insertion-point--disabled) {
     opacity: 1;
 
     .insertion-button {
@@ -47,85 +59,72 @@ function handleInsert() {
     }
   }
 
-  .insertion-point {
-    position: relative;
+  /* Beim Dragging komplett ausblenden */
+  &.insertion-point--disabled {
+    pointer-events: none;
+    opacity: 0 !important; /* Force unsichtbar beim Dragging */
+  }
+}
+
+.insertion-point {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+
+  .insertion-line {
+    flex: 1;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--theme-primary) 15%,
+      var(--theme-primary) 85%,
+      transparent 100%
+    );
+  }
+
+  .insertion-button {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) scale(0.7);
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: var(--theme-primary);
+    border: none;
+    cursor: pointer;
     display: flex;
     align-items: center;
-    width: 100%;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(26, 188, 156, 0.5);
+    transition: all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 5;
+    color: white;
 
-    .insertion-line {
-      flex: 1;
-      height: 2px;
-      background: linear-gradient(
-        90deg,
-        transparent 0%,
-        var(--theme-primary) 15%,
-        var(--theme-primary) 85%,
-        transparent 100%
-      );
+    svg {
+      width: 18px;
+      height: 18px;
+      stroke: white;
+      fill: none;
+      stroke-width: 2;
+      transition: transform 0.2s;
+      transform: translateX(-1px);
     }
 
-    .insertion-button {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%) scale(0.7);
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background-color: var(--theme-primary);
-      border: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 6px rgba(26, 188, 156, 0.5);
-      transition: all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      z-index: 5;
-      color: white;
+    &:hover:not(.insertion-point--disabled *) {
+      transform: translate(-50%, -50%) scale(1.15);
+      box-shadow: 0 3px 8px rgba(26, 188, 156, 0.7);
 
       svg {
-        width: 18px;
-        height: 18px;
-        stroke: white;
-        fill: none;
-        stroke-width: 2;
-        transition: transform 0.2s;
-      }
-
-      &:hover {
-        transform: translate(-50%, -50%) scale(1.15);
-        box-shadow: 0 3px 8px rgba(26, 188, 156, 0.7);
-
-        svg {
-          transform: rotate(90deg);
-        }
+        transform: translateX(-1px) rotate(90deg);
       }
     }
-  }
-}
 
-// Hover-Effekte auf Container-Ebene
-.canvas-stack {
-  &:hover {
-    .insertion-point-container {
-      opacity: 0;
-
-      &:hover {
-        opacity: 1;
-      }
-    }
-  }
-}
-
-.fieldset-content {
-  &:hover {
-    .insertion-point-container {
-      opacity: 0;
-
-      &:hover {
-        opacity: 1;
-      }
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
     }
   }
 }

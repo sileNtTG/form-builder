@@ -1,0 +1,120 @@
+useServerFormImporter.ts:205 Multiple processor found in fieldset, marked for special handling {fqn: 'Easy\\Form\\Support\\Processor\\Multiple', name: 'demo', minimum: 1, maximum: 3, initial: 1, …}
+useServerFormImporter.ts:355 Processing fieldset with Multiple processor - ensuring single instance
+useServerFormImporter.ts:205 Multiple processor found in fieldset, marked for special handling {fqn: 'Easy\\Form\\Support\\Processor\\Multiple', name: 'demo', minimum: 1, maximum: 3, initial: 1, …}
+useServerFormImporter.ts:355 Processing fieldset with Multiple processor - ensuring single instance
+SpacerWrapper.vue:18 SpacerWrapper DEBUG - index: 0, siblingId: 8aab158c, fieldsetId: none
+SpacerWrapper.vue:18 SpacerWrapper DEBUG - index: 1, siblingId: ebcb32d5, fieldsetId: none
+FormElementRenderer.vue:657 Fieldset 32d5 children (2):
+[
+  {
+    "id": "name",
+    "order": 1,
+    "label": "name",
+    "type": "input"
+  },
+  {
+    "id": "sage",
+    "order": 1,
+    "label": "message",
+    "type": "textarea"
+  }
+]
+FormElementRenderer.vue:663 Fieldset 32d5: First SpacerWrapper, siblingId: name
+FormElementRenderer.vue:686 Fieldset 32d5: Rendering child name at index 0
+FormElementRenderer.vue:705 Fieldset 32d5: SpacerWrapper after name, next siblingId: sage
+FormElementRenderer.vue:686 Fieldset 32d5: Rendering child sage at index 1
+FormElementRenderer.vue:728 Fieldset 32d5: Final SpacerWrapper, no siblingId
+SpacerWrapper.vue:18 SpacerWrapper DEBUG - index: 0, siblingId: name, fieldsetId: ebcb32d5
+SpacerWrapper.vue:18 SpacerWrapper DEBUG - index: 1, siblingId: message, fieldsetId: ebcb32d5
+SpacerWrapper.vue:18 SpacerWrapper DEBUG - index: 2, siblingId: none, fieldsetId: ebcb32d5
+SpacerWrapper.vue:18 SpacerWrapper DEBUG - index: 2, siblingId: wsletter, fieldsetId: none
+SpacerWrapper.vue:18 SpacerWrapper DEBUG - index: 3, siblingId: ecd070a9, fieldsetId: none
+SpacerWrapper.vue:18 SpacerWrapper DEBUG - index: 4, siblingId: none, fieldsetId: none
+useServerFormImporter.ts:205 Multiple processor found in fieldset, marked for special handling {fqn: 'Easy\\Form\\Support\\Processor\\Multiple', name: 'demo', minimum: 1, maximum: 3, initial: 1, …}
+useServerFormImporter.ts:355 Processing fieldset with Multiple processor - ensuring single instance
+useServerFormImporter.ts:205 Multiple processor found in fieldset, marked for special handling {fqn: 'Easy\\Form\\Support\\Processor\\Multiple', name: 'demo', minimum: 1, maximum: 3, initial: 1, …}
+useServerFormImporter.ts:355 Processing fieldset with Multiple processor - ensuring single instance
+useServerFormImporter.ts:205 Multiple processor found in fieldset, marked for special handling {fqn: 'Easy\\Form\\Support\\Processor\\Multiple', name: 'demo', minimum: 1, maximum: 3, initial: 1, …}
+useServerFormImporter.ts:355 Processing fieldset with Multiple processor - ensuring single instance
+useServerFormImporter.ts:205 Multiple processor found in fieldset, marked for special handling {fqn: 'Easy\\Form\\Support\\Processor\\Multiple', name: 'demo', minimum: 1, maximum: 3, initial: 1, …}
+useServerFormImporter.ts:355 Processing fieldset with Multiple processor - ensuring single instance
+FormElementRenderer.vue:657 Fieldset 32d5 children (2):
+[
+  {
+    "id": "name",
+    "order": 1,
+    "label": "name",
+    "type": "input"
+  },
+  {
+    "id": "sage",
+    "order": 1,
+    "label": "message",
+    "type": "textarea"
+  }
+]
+FormElementRenderer.vue:663 Fieldset 32d5: First SpacerWrapper, siblingId: name
+FormElementRenderer.vue:686 Fieldset 32d5: Rendering child name at index 0
+FormElementRenderer.vue:705 Fieldset 32d5: SpacerWrapper after name, next siblingId: sage
+FormElementRenderer.vue:686 Fieldset 32d5: Rendering child sage at index 1
+FormElementRenderer.vue:728 Fieldset 32d5: Final SpacerWrapper, no siblingId
+FormElementRenderer.vue:657 Fieldset 32d5 children (2):
+[
+  {
+    "id": "name",
+    "order": 1,
+    "label": "name",
+    "type": "input"
+  },
+  {
+    "id": "sage",
+    "order": 1,
+    "label": "message",
+    "type": "textarea"
+  }
+]
+FormElementRenderer.vue:663 Fieldset 32d5: First SpacerWrapper, siblingId: name
+FormElementRenderer.vue:686 Fieldset 32d5: Rendering child name at index 0
+FormElementRenderer.vue:705 Fieldset 32d5: SpacerWrapper after name, next siblingId: sage
+FormElementRenderer.vue:686 Fieldset 32d5: Rendering child sage at index 1
+FormElementRenderer.vue:728 Fieldset 32d5: Final SpacerWrapper, no siblingId
+FormElementRenderer.vue:657 Fieldset 32d5 children (2):
+[
+  {
+    "id": "name",
+    "order": 1,
+    "label": "name",
+    "type": "input"
+  },
+  {
+    "id": "sage",
+    "order": 1,
+    "label": "message",
+    "type": "textarea"
+  }
+]
+FormElementRenderer.vue:663 Fieldset 32d5: First SpacerWrapper, siblingId: name
+FormElementRenderer.vue:686 Fieldset 32d5: Rendering child name at index 0
+FormElementRenderer.vue:705 Fieldset 32d5: SpacerWrapper after name, next siblingId: sage
+FormElementRenderer.vue:686 Fieldset 32d5: Rendering child sage at index 1
+FormElementRenderer.vue:728 Fieldset 32d5: Final SpacerWrapper, no siblingId
+FormElementRenderer.vue:657 Fieldset 32d5 children (2):
+[
+  {
+    "id": "name",
+    "order": 1,
+    "label": "name",
+    "type": "input"
+  },
+  {
+    "id": "sage",
+    "order": 1,
+    "label": "message",
+    "type": "textarea"
+  }
+]
+FormElementRenderer.vue:663 Fieldset 32d5: First SpacerWrapper, siblingId: name
+FormElementRenderer.vue:686 Fieldset 32d5: Rendering child name at index 0
+FormElementRenderer.vue:705 Fieldset 32d5: SpacerWrapper after name, next siblingId: sage
+FormElementRenderer.vue:686 Fieldset 32d5: Rendering child sage at index 1
+FormElementRenderer.vue:728 Fieldset 32d5: Final SpacerWrapper, no siblingId

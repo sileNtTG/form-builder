@@ -333,18 +333,14 @@ function insertElement(elementType: string) {
   }
 
   if (newElement) {
-    // Check if we're adding to a fieldset
-    if (currentFieldsetId.value) {
-      formBuilderStore.addElementToFieldset(
-        currentFieldsetId.value,
+    // Use the new store function for consistent positioning
+    if (insertMode.value && currentInsertPosition.value !== null) {
+      // Insert at specific position (root or fieldset)
+      formBuilderStore.addElementAtPosition(
         newElement,
-        currentInsertPosition.value || 0
+        currentInsertPosition.value,
+        currentFieldsetId.value
       );
-    } else if (insertMode.value && currentInsertPosition.value !== null) {
-      // Insert at specific position in the main canvas
-      const elements = [...formBuilderStore.elements];
-      elements.splice(currentInsertPosition.value, 0, newElement);
-      formBuilderStore.setFormElements(elements);
     } else {
       // Add at the end of the main canvas
       formBuilderStore.addElement(newElement);

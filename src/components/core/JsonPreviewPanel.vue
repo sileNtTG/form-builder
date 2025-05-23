@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { useFormBuilderStore } from "../../stores/formBuilder";
+import { useFormBuilderStore } from "@/stores/formBuilder";
+import { SvgIcon } from "@/components/common";
 
 const formBuilderStore = useFormBuilderStore();
 const copySuccess = ref(false);
@@ -133,11 +134,7 @@ function toggleMaximize() {
           @click="toggleMaximize"
           :title="isMaximized ? 'Minimize' : 'Maximize'"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path
-              d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"
-            ></path>
-          </svg>
+          <SvgIcon name="maximize" :size="18" />
         </button>
         <button
           class="icon-button"
@@ -145,20 +142,8 @@ function toggleMaximize() {
           :class="{ 'copy-success': copySuccess }"
           :title="copySuccess ? 'Copied!' : 'Copy to clipboard'"
         >
-          <svg
-            v-if="!copySuccess"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-          >
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path
-              d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
-            ></path>
-          </svg>
-          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M20 6L9 17l-5-5"></path>
-          </svg>
+          <SvgIcon v-if="!copySuccess" name="copy" :size="18" />
+          <SvgIcon v-else name="check" :size="18" />
         </button>
       </div>
     </div>
@@ -189,30 +174,15 @@ function toggleMaximize() {
               :class="{ 'copy-success': copySuccess }"
               :title="copySuccess ? 'Copied!' : 'Copy to clipboard'"
             >
-              <svg
-                v-if="!copySuccess"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-              >
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path
-                  d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
-                ></path>
-              </svg>
-              <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M20 6L9 17l-5-5"></path>
-              </svg>
+              <SvgIcon v-if="!copySuccess" name="copy" :size="18" />
+              <SvgIcon v-else name="check" :size="18" />
             </button>
             <button
               class="icon-button icon-button--close"
               @click="toggleMaximize"
               title="Close"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M18 6L6 18"></path>
-                <path d="M6 6l12 12"></path>
-              </svg>
+              <SvgIcon name="x" :size="18" />
             </button>
           </div>
         </div>
