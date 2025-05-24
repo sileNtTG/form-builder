@@ -375,7 +375,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       element.order = this.elements.length;
       this.elements.push(element);
       this.syncActiveFormVisualsFromCanvas();
-      this.markElementAsChanged(element.dataId); // Track the new element as changed
+      this.markElementContentChanged(element.dataId); // Track the new element as content change
     },
 
     createAndAddElement(elementType: string, x: number, y: number) {
@@ -493,6 +493,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
         this.elements.push(newElement);
         this.syncActiveFormVisualsFromCanvas();
         this.selectElement(newElement.dataId);
+        this.markElementContentChanged(newElement.dataId); // Track new element as content change
         return newElement;
       }
 
@@ -505,7 +506,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
           if (element.dataId === elementId) {
             Object.assign(element, updates);
             this.syncActiveFormVisualsFromCanvas();
-            this.markElementAsChanged(elementId); // Track specific element change
+            this.markElementContentChanged(elementId); // Track specific element content change
             return true;
           }
           if (element.type === "fieldset" && element.children) {
@@ -526,6 +527,8 @@ export const useFormBuilderStore = defineStore("formBuilder", {
         element.x = x;
         element.y = y;
         this.syncActiveFormVisualsFromCanvas();
+        // Note: Position changes are not considered content changes
+        // so we don't mark the element as changed here
       }
     },
 
@@ -653,7 +656,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
 
       if (findAndAdd(this.elements)) {
         this.syncActiveFormVisualsFromCanvas();
-        this.markFormAsDirty(); // Track unsaved changes
+        this.markElementContentChanged(element.dataId); // Track new element as content change
       }
     },
 
@@ -675,7 +678,8 @@ export const useFormBuilderStore = defineStore("formBuilder", {
         this.elements.splice(clampedPosition, 0, element);
         this.syncActiveFormVisualsFromCanvas();
       }
-      this.markFormAsDirty(); // Track unsaved changes
+      // Mark new element as content change (not organizational change)
+      this.markElementContentChanged(element.dataId);
     },
 
     // --- REFACTORED HELPER FUNCTIONS FOR moveElementToPosition ---
@@ -881,7 +885,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       if (info && info.element) {
         (info.element as unknown as Record<string, unknown>)[key] = value;
         this.syncActiveFormVisualsFromCanvas();
-        this.markElementAsChanged(elementId); // Track specific element change
+        this.markElementContentChanged(elementId); // Track specific element content change
       }
     },
 
@@ -1019,6 +1023,13 @@ export const useFormBuilderStore = defineStore("formBuilder", {
     },
 
     markElementAsChanged(elementId: string) {
+      if (this.activeFormId) {
+        this.markFormAsDirtyById(this.activeFormId, elementId);
+      }
+    },
+
+    // NEW: Mark only content changes, not order/position changes
+    markElementContentChanged(elementId: string) {
       if (this.activeFormId) {
         this.markFormAsDirtyById(this.activeFormId, elementId);
       }
