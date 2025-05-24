@@ -129,7 +129,7 @@ const onCanvasDrop = (event: DragEvent) => {
     return;
   }
 
-  // Check if the drop target is a specific DropZone - if so, let it handle the drop
+  // Check if the drop target is a specific DropZone or SpacerWrapper - if so, let it handle the drop
   const target = event.target as HTMLElement;
   if (target.closest(".drop-zone-container, .spacer-wrapper")) {
     return; // Let the specific DropZone handle this
@@ -140,19 +140,25 @@ const onCanvasDrop = (event: DragEvent) => {
 
   // Only handle drops from external source (ElementPanel) to canvas background
   if (elementType && !elementId) {
-    // Add element to the end of the list
-    const dropData = {
-      position: "after" as const,
-      siblingId:
-        elements.value.length > 0
-          ? elements.value[elements.value.length - 1].dataId
-          : undefined,
-      parentId: undefined,
-      elementId: undefined,
-      elementType: elementType,
-    };
+    // Debug info
+    console.log("Canvas background drop:", {
+      elementType,
+      currentElementsCount: elements.value.length,
+    });
 
-    handleDrop(dropData);
+    // For canvas background drops, always add to the very end
+    const newElement = formBuilderStore.createElement(elementType);
+    if (newElement) {
+      // Simply add to end - don't use complex position calculation
+      formBuilderStore.addElementAtPosition(
+        newElement,
+        elements.value.length, // This should place it at the end
+        null // Root level
+      );
+
+      // Ensure the new element gets focus
+      formBuilderStore.selectElement(newElement.dataId);
+    }
   }
 };
 

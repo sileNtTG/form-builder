@@ -666,6 +666,14 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       position: number,
       parentId: string | null = null
     ) {
+      console.log("addElementAtPosition called:", {
+        elementId: element.dataId,
+        elementType: element.type,
+        position,
+        parentId,
+        currentElementsLength: this.elements.length,
+      });
+
       if (parentId) {
         // Add to specific fieldset
         this.addElementToFieldset(parentId, element, position);
@@ -675,11 +683,37 @@ export const useFormBuilderStore = defineStore("formBuilder", {
           0,
           Math.min(position, this.elements.length)
         );
+        console.log("Inserting at root level:", {
+          clampedPosition,
+          elementsLength: this.elements.length,
+        });
+
+        // Set the order property before inserting
+        element.order = clampedPosition;
         this.elements.splice(clampedPosition, 0, element);
+
+        // Reorder all elements to ensure correct order properties
+        this.elements.forEach((el, index) => {
+          el.order = index;
+        });
+
         this.syncActiveFormVisualsFromCanvas();
       }
       // Mark new element as content change (not organizational change)
       this.markElementContentChanged(element.dataId);
+
+      console.log(
+        "After addElementAtPosition, elements length:",
+        this.elements.length
+      );
+      console.log(
+        "Elements order:",
+        this.elements.map((el) => ({
+          id: el.dataId,
+          order: el.order,
+          type: el.type,
+        }))
+      );
     },
 
     // --- REFACTORED HELPER FUNCTIONS FOR moveElementToPosition ---
