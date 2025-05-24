@@ -1,0 +1,35 @@
+@use "abstracts" as *;
+
+// Canvas Navigation Highlight Effects
+.canvas-navigation-highlight {
+  @include transition(all, 0.3s);
+  box-shadow: 0 0 0 3px var(--theme-primary) !important;
+  border-radius: $border-radius-md !important;
+  position: relative;
+  z-index: 10;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border: 2px solid var(--theme-primary);
+    border-radius: $border-radius-md;
+    background: rgba(var(--theme-primary-rgb), 0.1);
+    pointer-events: none;
+    animation: canvas-highlight-pulse 0.6s ease-out;
+  }
+}
+
+@keyframes canvas-highlight-pulse {
+  0% {
+    transform: scale(1.1);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+}

@@ -28,7 +28,7 @@ const emit = defineEmits<{
 const hasChildren = computed(() => props.node.children.length > 0);
 
 const indentStyle = computed(() => ({
-  marginLeft: `${props.node.level * 1.5}rem`,
+  marginLeft: `${props.node.level * 0.75}rem`,
 }));
 
 const nodeLabel = computed(() => {
@@ -38,22 +38,23 @@ const nodeLabel = computed(() => {
 
 function getElementIcon(elementType: string): string {
   const iconMap: Record<string, string> = {
-    fieldset: "folder",
-    text: "type",
-    textarea: "file-text",
-    checkbox: "check-square",
-    select: "chevron-down",
-    radio: "circle",
-    button: "square",
-    date: "calendar",
-    number: "hash",
-    email: "at-sign",
+    fieldset: "fieldset",
+    text: "input",
+    input: "input",
+    textarea: "textarea",
+    checkbox: "checkbox",
+    select: "select",
+    radio: "radio",
+    button: "button",
+    date: "input",
+    number: "input",
+    email: "input",
     password: "key",
-    file: "upload",
-    hidden: "eye-off",
-    static: "file-text",
+    file: "input",
+    hidden: "input",
+    static: "input",
   };
-  return iconMap[elementType] || "circle";
+  return iconMap[elementType] || "input";
 }
 
 function handleToggle() {
@@ -85,10 +86,9 @@ function handleSelect() {
         class="tree-node__toggle"
         @click.stop="handleToggle"
       >
-        <SvgIcon
-          :name="expanded ? 'chevron-down' : 'chevron-right'"
-          :size="14"
-        />
+        <span class="tree-node__arrow">
+          {{ expanded ? "▼" : "▶" }}
+        </span>
       </button>
 
       <!-- Spacer for nodes without children -->
@@ -96,14 +96,14 @@ function handleSelect() {
 
       <!-- Element Icon -->
       <div class="tree-node__icon">
-        <SvgIcon :name="getElementIcon(node.element.type)" :size="16" />
+        <SvgIcon :name="getElementIcon(node.element.type)" :size="12" />
       </div>
 
       <!-- Element Label -->
       <span class="tree-node__label">{{ nodeLabel }}</span>
 
       <!-- Element Type Badge -->
-      <span class="tree-node__type">{{ node.element.type }}</span>
+      <!-- <span class="tree-node__type">{{ node.element.type }}</span> -->
     </div>
 
     <!-- Children Nodes (recursive) -->
@@ -131,11 +131,11 @@ function handleSelect() {
     display: flex;
     align-items: center;
     gap: $spacing-xs;
-    padding: $spacing-xs $spacing-sm;
+    padding: 2px 0;
     border-radius: $border-radius-sm;
     cursor: pointer;
     @include transition(all, $transition-fast);
-    min-height: 2rem;
+    min-height: 1.5rem;
 
     &:hover {
       background-color: var(--theme-bg-hover);
@@ -145,9 +145,21 @@ function handleSelect() {
       background-color: var(--theme-primary);
       color: white;
 
-      .tree-node__type {
-        background-color: rgba(255, 255, 255, 0.2);
+      .tree-node__label {
         color: white;
+      }
+
+      .tree-node__icon {
+        color: white;
+      }
+
+      .tree-node__toggle {
+        color: rgba(255, 255, 255, 0.8);
+
+        &:hover {
+          color: white;
+          background-color: rgba(255, 255, 255, 0.1);
+        }
       }
     }
 
@@ -163,28 +175,31 @@ function handleSelect() {
     border: none;
     color: var(--theme-text-muted);
     cursor: pointer;
-    padding: $spacing-xs;
+    padding: 0;
     border-radius: $border-radius-sm;
     display: flex;
     align-items: center;
     justify-content: center;
     @include transition(all, $transition-fast);
-    width: 1.25rem;
-    height: 1.25rem;
+    width: 1rem;
+    height: 1rem;
 
     &:hover {
       background-color: var(--theme-bg-alt);
       color: var(--theme-text);
     }
+  }
 
-    svg {
-      stroke-width: 2;
-    }
+  &__arrow {
+    font-size: 8px;
+    font-weight: bold;
+    color: var(--theme-text-muted);
+    @include transition(color, $transition-fast);
   }
 
   &__spacer {
-    width: 1.25rem;
-    height: 1.25rem;
+    width: 1rem;
+    height: 1rem;
   }
 
   &__icon {
@@ -201,60 +216,31 @@ function handleSelect() {
   }
 
   &__label {
-    @include text-small;
+    font-size: 12px;
     color: var(--theme-text);
     flex: 1;
     font-weight: 500;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  &__type {
-    @include text-small;
-    background-color: var(--theme-bg-alt);
-    color: var(--theme-text-muted);
-    padding: $spacing-xs $spacing-sm;
-    border-radius: $border-radius-sm;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    flex-shrink: 0;
+    margin-left: 4px;
   }
 
   &__children {
     position: relative;
+    margin-left: 0.75rem;
+    padding-left: 4px;
+    border-left: 1px solid var(--theme-border);
+    opacity: 0.7;
 
-    // Connection lines
     &::before {
       content: "";
       position: absolute;
-      left: calc(#{$spacing-sm} + 0.625rem); // Align with toggle button center
-      top: 0;
-      bottom: 0;
+      left: -1px;
+      top: -4px;
       width: 1px;
+      height: 4px;
       background-color: var(--theme-border);
-      opacity: 0.5;
-    }
-  }
-}
-
-// Selected state overrides
-.tree-node__item--selected {
-  .tree-node__label {
-    color: white;
-  }
-
-  .tree-node__icon {
-    color: white;
-  }
-
-  .tree-node__toggle {
-    color: rgba(255, 255, 255, 0.8);
-
-    &:hover {
-      color: white;
-      background-color: rgba(255, 255, 255, 0.1);
     }
   }
 }

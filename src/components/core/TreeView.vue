@@ -1,17 +1,31 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { useFormBuilderStore } from "@/stores/formBuilder";
+import { useCanvasNavigation } from "@/composables/useCanvasNavigation";
 import type { FormElement, FieldsetElement } from "@/models/FormElement";
 import { SvgIcon, ElementIcon } from "@/components/common";
+import TreeNode from "./TreeNode.vue";
 
 const formBuilderStore = useFormBuilderStore();
+const { scrollToElement, scrollToElementById } = useCanvasNavigation();
 
 // Track which nodes are expanded
 const expandedNodes = ref<Set<string>>(new Set());
 
 // Tree structure with element hierarchy
 const treeData = computed(() => {
-  return buildTreeStructure(formBuilderStore.elements);
+  const data = buildTreeStructure(formBuilderStore.elements);
+
+  // Auto-expand fieldsets on first load
+  if (expandedNodes.value.size === 0 && data.length > 0) {
+    data.forEach((node) => {
+      if (node.element.type === "fieldset") {
+        expandedNodes.value.add(node.element.dataId);
+      }
+    });
+  }
+
+  return data;
 });
 
 interface TreeNode {
@@ -22,15 +36,31 @@ interface TreeNode {
 }
 
 function buildTreeStructure(elements: FormElement[], level = 0): TreeNode[] {
-  return elements.map((element) => ({
-    element,
-    children:
-      element.type === "fieldset" && (element as FieldsetElement).children
-        ? buildTreeStructure((element as FieldsetElement).children!, level + 1)
-        : [],
-    level,
-    isRoot: level === 0,
-  }));
+  return elements.map((element) => {
+    let children: TreeNode[] = [];
+
+    // Check for different types of containers that can have children
+    if (element.type === "fieldset" && (element as FieldsetElement).children) {
+      children = buildTreeStructure(
+        (element as FieldsetElement).children!,
+        level + 1
+      );
+    }
+    // Add support for grid containers and other potential containers
+    else if (
+      (element as any).children &&
+      Array.isArray((element as any).children)
+    ) {
+      children = buildTreeStructure((element as any).children, level + 1);
+    }
+
+    return {
+      element,
+      children,
+      level,
+      isRoot: level === 0,
+    };
+  });
 }
 
 function toggleNode(elementId: string) {
@@ -43,6 +73,9 @@ function toggleNode(elementId: string) {
 
 function selectElement(elementId: string) {
   formBuilderStore.selectElement(elementId);
+
+  // Scroll to element in canvas using VueUse
+  scrollToElementById(elementId);
 }
 
 function isExpanded(elementId: string): boolean {
@@ -81,28 +114,49 @@ function hasChildren(node: TreeNode): boolean {
 <template>
   <div class="tree-view">
     <div class="tree-view__header">
-      <h3 class="tree-view__title">Structure</h3>
-      <div class="tree-view__actions">
-        <button
-          class="tree-action-btn"
-          @click="expandedNodes.clear()"
-          title="Collapse All"
-        >
-          <SvgIcon name="fold-vertical" :size="14" />
-        </button>
-        <button
-          class="tree-action-btn"
-          @click="
-            treeData.forEach((node) => expandedNodes.add(node.element.dataId))
-          "
-          title="Expand All"
-        >
-          <SvgIcon name="unfold-vertical" :size="14" />
-        </button>
-      </div>
+      <h3 class="tree-view__title">
+        {{ formBuilderStore.activeForm?.name || "No Form Selected" }}
+      </h3>
     </div>
 
     <div class="tree-view__content">
+      <!-- Debug info -->
+      <div
+        v-if="false && treeData.length > 0"
+        style="
+          font-size: 10px;
+          opacity: 0.5;
+          padding: 4px;
+          border: 1px solid #333;
+          margin: 4px;
+        "
+      >
+        <div>
+          Elements: {{ formBuilderStore.elements.length }}, Tree nodes:
+          {{ treeData.length }}
+        </div>
+        <div>Active Form: {{ formBuilderStore.activeFormId }}</div>
+        <div>
+          Form List:
+          {{ formBuilderStore.formList.map((f) => f.name).join(", ") }}
+        </div>
+        <div>
+          Active Form Name: {{ formBuilderStore.activeForm?.name || "None" }}
+        </div>
+        <div>
+          Element types:
+          {{ formBuilderStore.elements.map((e) => e.type).join(", ") }}
+        </div>
+        <div>
+          Element labels:
+          {{
+            formBuilderStore.elements
+              .map((e) => e.label || "No label")
+              .join(", ")
+          }}
+        </div>
+      </div>
+
       <template v-if="treeData.length === 0">
         <div class="tree-view__empty">
           <SvgIcon name="folder-open" :size="32" />
@@ -144,7 +198,7 @@ function hasChildren(node: TreeNode): boolean {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: $spacing-md $spacing-lg;
+    padding: $spacing-sm $spacing-md;
     border-bottom: 1px solid var(--theme-border);
   }
 
@@ -184,31 +238,33 @@ function hasChildren(node: TreeNode): boolean {
       font-style: italic;
     }
   }
-}
 
-.tree-action-btn {
-  background: none;
-  border: none;
-  color: var(--theme-text-muted);
-  cursor: pointer;
-  padding: $spacing-xs;
-  border-radius: $border-radius-sm;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  @include transition(all, $transition-fast);
+  // Tree action buttons (if we still need them)
+  .tree-action-btn {
+    background: none;
+    border: none;
+    color: var(--theme-text-muted);
+    cursor: pointer;
+    padding: $spacing-xs;
+    border-radius: $border-radius-sm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    @include transition(all, $transition-fast);
 
-  &:hover {
-    background: var(--theme-bg-alt);
-    color: var(--theme-primary);
+    &:hover {
+      background: var(--theme-bg-alt);
+      color: var(--theme-primary);
+
+      svg {
+        stroke-width: 2;
+      }
+    }
   }
 
-  svg {
-    stroke-width: 2;
+  // Tree node containers
+  .tree-node-container {
+    margin-bottom: $spacing-xs;
   }
-}
-
-.tree-node-container {
-  margin-bottom: $spacing-xs;
 }
 </style>

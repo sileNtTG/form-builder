@@ -3,6 +3,7 @@ import { computed } from "vue";
 import type { FormElement } from "@/models/FormElement";
 import { useDragAndDrop } from "@/composables";
 import { useFormBuilderStore } from "@/stores/formBuilder";
+import { useNavigationStore } from "@/stores/navigation";
 import { SvgIcon } from "@/components/common";
 import SpacerWrapper from "./SpacerWrapper.vue";
 
@@ -28,6 +29,7 @@ const emit = defineEmits<{
 
 const { startInternalDrag, endDrag } = useDragAndDrop();
 const formBuilderStore = useFormBuilderStore();
+const navigationStore = useNavigationStore();
 
 // Use computed property for selection state
 const isSelected = computed(() => {
@@ -91,6 +93,9 @@ function handleElementClick(elementId: string) {
 function handleEdit(e: Event) {
   e.stopPropagation();
   formBuilderStore.selectElement(props.element.dataId);
+
+  // Switch to Properties tab using navigation store
+  navigationStore.switchToPropertiesTab();
 }
 
 function handleDelete(e: Event) {

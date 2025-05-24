@@ -114,11 +114,12 @@ function onInsert(data: { index: number; fieldsetId?: string }) {
 }
 
 onMounted(() => {
-  formBuilderStore.loadInitialForms();
-  const formIdToLoad = formBuilderStore.formList[0]?.id || null;
-  if (formIdToLoad) {
-    formBuilderStore.setActiveForm(formIdToLoad);
-  }
+  formBuilderStore.loadInitialForms().then(() => {
+    const formIdToLoad = formBuilderStore.formList[0]?.id || null;
+    if (formIdToLoad) {
+      formBuilderStore.setActiveForm(formIdToLoad);
+    }
+  });
 });
 </script>
 

@@ -7,7 +7,8 @@ import type { FormElement } from "@/models/FormElement";
 // This imports all .json files from the specified directory as raw strings.
 const userJsonModules = import.meta.glob("/src/test-files/user/**/*.json", {
   eager: true,
-  as: "raw",
+  query: "?raw",
+  import: "default",
 });
 
 export interface UserFormListItem {
@@ -23,7 +24,7 @@ export function useUserForms() {
     const forms: UserFormListItem[] = [];
     for (const path in userJsonModules) {
       try {
-        const rawJson = userJsonModules[path];
+        const rawJson = userJsonModules[path] as string;
         const serverJson = JSON.parse(rawJson);
         const displayName =
           serverJson.attributes?.name ||
@@ -40,7 +41,7 @@ export function useUserForms() {
 
   async function loadAndSetUserForm(fileName: string): Promise<boolean> {
     const pathKey = `/src/test-files/user/${fileName}`;
-    const rawJson = userJsonModules[pathKey];
+    const rawJson = userJsonModules[pathKey] as string;
 
     if (!rawJson) {
       console.error(
