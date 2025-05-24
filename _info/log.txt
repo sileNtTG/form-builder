@@ -1,0 +1,182 @@
+FormCanvas.vue:17 🎯 FormCanvas: isDragging changed to false
+DropZone.vue:46 %Dropzone color: deepink; font-weight: bold;
+DropZone.vue:47 InsertionPoint
+DropZone.vue:48 %Dropzone color: deepink; font-weight: bold;
+useServerFormImporter.ts:205 Multiple processor found in fieldset, marked for special handling {fqn: 'Easy\\Form\\Support\\Processor\\Multiple', name: 'demo', minimum: 1, maximum: 3, initial: 1, …}
+useServerFormImporter.ts:355 Processing fieldset with Multiple processor - ensuring single instance
+useServerFormImporter.ts:205 Multiple processor found in fieldset, marked for special handling {fqn: 'Easy\\Form\\Support\\Processor\\Multiple', name: 'demo', minimum: 1, maximum: 3, initial: 1, …}
+useServerFormImporter.ts:355 Processing fieldset with Multiple processor - ensuring single instance
+useServerFormImporter.ts:205 Multiple processor found in fieldset, marked for special handling {fqn: 'Easy\\Form\\Support\\Processor\\Multiple', name: 'demo', minimum: 1, maximum: 3, initial: 1, …}
+useServerFormImporter.ts:355 Processing fieldset with Multiple processor - ensuring single instance
+useServerFormImporter.ts:205 Multiple processor found in fieldset, marked for special handling {fqn: 'Easy\\Form\\Support\\Processor\\Multiple', name: 'demo', minimum: 1, maximum: 3, initial: 1, …}
+useServerFormImporter.ts:355 Processing fieldset with Multiple processor - ensuring single instance
+SpacerWrapper.vue:18 SpacerWrapper DEBUG - index: 0, siblingId: none, fieldsetId: none
+SpacerWrapper.vue:18 SpacerWrapper DEBUG - index: 1, siblingId: 37cd71a5, fieldsetId: none
+SpacerWrapper.vue:18 SpacerWrapper DEBUG - index: 0, siblingId: 77af86ad, fieldsetId: f00122e3
+SpacerWrapper.vue:18 SpacerWrapper DEBUG - index: 1, siblingId: 06aeadde, fieldsetId: f00122e3
+SpacerWrapper.vue:18 SpacerWrapper DEBUG - index: 2, siblingId: none, fieldsetId: f00122e3
+SpacerWrapper.vue:18 SpacerWrapper DEBUG - index: 2, siblingId: f00122e3, fieldsetId: none
+SpacerWrapper.vue:18 SpacerWrapper DEBUG - index: 3, siblingId: 6c808575, fieldsetId: none
+SpacerWrapper.vue:18 SpacerWrapper DEBUG - index: 4, siblingId: 757dd2fb, fieldsetId: none
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: true, draggedElementId: 'e4a5615b-1996-4826-8fd8-aa796c808575', draggedElementType: 'checkbox', dragSource: 'internal'}
+useDragAndDrop.ts:88 useDragAndDrop
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: true, draggedElementId: 'e4a5615b-1996-4826-8fd8-aa796c808575', draggedElementType: 'checkbox', dragSource: 'internal'}
+useDragAndDrop.ts:88 useDragAndDrop
+FormCanvas.vue:17 🎯 FormCanvas: isDragging changed to true
+FormCanvas.vue:94 FormCanvas
+FormCanvas.vue:95 🎯 FormCanvas: isDragging changed to true
+FormCanvas.vue:96 FormCanvas
+DropZone.vue:46 %Dropzone color: deepink; font-weight: bold;
+DropZone.vue:47 InsertionPoint
+DropZone.vue:48 %Dropzone color: deepink; font-weight: bold;
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: true, draggedElementId: 'e4a5615b-1996-4826-8fd8-aa796c808575', draggedElementType: 'checkbox', dragSource: 'internal'}
+useDragAndDrop.ts:88 useDragAndDrop
+DropZone.vue:46 %Dropzone color: deepink; font-weight: bold;
+DropZone.vue:47 InsertionPoint
+DropZone.vue:48 %Dropzone color: deepink; font-weight: bold;
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: true, draggedElementId: 'e4a5615b-1996-4826-8fd8-aa796c808575', draggedElementType: 'checkbox', dragSource: 'internal'}
+useDragAndDrop.ts:88 useDragAndDrop
+DropZone.vue:46 %Dropzone color: deepink; font-weight: bold;
+DropZone.vue:47 InsertionPoint
+DropZone.vue:48 %Dropzone color: deepink; font-weight: bold;
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: true, draggedElementId: 'e4a5615b-1996-4826-8fd8-aa796c808575', draggedElementType: 'checkbox', dragSource: 'internal'}
+useDragAndDrop.ts:88 useDragAndDrop
+DropZone.vue:46 %Dropzone color: deepink; font-weight: bold;
+DropZone.vue:47 InsertionPoint
+DropZone.vue:48 %Dropzone color: deepink; font-weight: bold;
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: true, draggedElementId: 'e4a5615b-1996-4826-8fd8-aa796c808575', draggedElementType: 'checkbox', dragSource: 'internal'}
+useDragAndDrop.ts:88 useDragAndDrop
+DropZone.vue:46 %Dropzone color: deepink; font-weight: bold;
+DropZone.vue:47 InsertionPoint
+DropZone.vue:48 %Dropzone color: deepink; font-weight: bold;
+DropZone.vue:46 %Dropzone color: deepink; font-weight: bold;
+DropZone.vue:47 InsertionPoint
+DropZone.vue:48 %Dropzone color: deepink; font-weight: bold;
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: true, draggedElementId: 'e4a5615b-1996-4826-8fd8-aa796c808575', draggedElementType: 'checkbox', dragSource: 'internal'}
+useDragAndDrop.ts:88 useDragAndDrop
+DropZone.vue:46 %Dropzone color: deepink; font-weight: bold;
+DropZone.vue:47 InsertionPoint
+DropZone.vue:48 %Dropzone color: deepink; font-weight: bold;
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: true, draggedElementId: 'e4a5615b-1996-4826-8fd8-aa796c808575', draggedElementType: 'checkbox', dragSource: 'internal'}
+useDragAndDrop.ts:88 useDragAndDrop
+DropZone.vue:46 %Dropzone color: deepink; font-weight: bold;
+DropZone.vue:47 InsertionPoint
+DropZone.vue:48 %Dropzone color: deepink; font-weight: bold;
+FormElementRenderer.vue:66 🎯 FormElementRenderer: Ending drag for element 6c808575
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: false, draggedElementId: null, draggedElementType: null, dragSource: null}
+useDragAndDrop.ts:88 useDragAndDrop
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: false, draggedElementId: null, draggedElementType: null, dragSource: null}
+useDragAndDrop.ts:88 useDragAndDrop
+FormCanvas.vue:17 🎯 FormCanvas: isDragging changed to false
+FormCanvas.vue:94 FormCanvas
+FormCanvas.vue:95 🎯 FormCanvas: isDragging changed to false
+FormCanvas.vue:96 FormCanvas
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: false, draggedElementId: null, draggedElementType: null, dragSource: null}
+useDragAndDrop.ts:88 useDragAndDrop
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: false, draggedElementId: null, draggedElementType: null, dragSource: null}
+useDragAndDrop.ts:88 useDragAndDrop
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: false, draggedElementId: null, draggedElementType: null, dragSource: null}
+useDragAndDrop.ts:88 useDragAndDrop
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: false, draggedElementId: null, draggedElementType: null, dragSource: null}
+useDragAndDrop.ts:88 useDragAndDrop
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: false, draggedElementId: null, draggedElementType: null, dragSource: null}
+useDragAndDrop.ts:88 useDragAndDrop
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: false, draggedElementId: null, draggedElementType: null, dragSource: null}
+useDragAndDrop.ts:88 useDragAndDrop
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: true, draggedElementId: 'e4a5615b-1996-4826-8fd8-aa796c808575', draggedElementType: 'checkbox', dragSource: 'internal'}
+useDragAndDrop.ts:88 useDragAndDrop
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: true, draggedElementId: 'e4a5615b-1996-4826-8fd8-aa796c808575', draggedElementType: 'checkbox', dragSource: 'internal'}
+useDragAndDrop.ts:88 useDragAndDrop
+FormCanvas.vue:17 🎯 FormCanvas: isDragging changed to true
+FormCanvas.vue:94 FormCanvas
+FormCanvas.vue:95 🎯 FormCanvas: isDragging changed to true
+FormCanvas.vue:96 FormCanvas
+DropZone.vue:46 %Dropzone color: deepink; font-weight: bold;
+DropZone.vue:47 InsertionPoint
+DropZone.vue:48 %Dropzone color: deepink; font-weight: bold;
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: true, draggedElementId: 'e4a5615b-1996-4826-8fd8-aa796c808575', draggedElementType: 'checkbox', dragSource: 'internal'}
+useDragAndDrop.ts:88 useDragAndDrop
+DropZone.vue:46 %Dropzone color: deepink; font-weight: bold;
+DropZone.vue:47 InsertionPoint
+DropZone.vue:48 %Dropzone color: deepink; font-weight: bold;
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: true, draggedElementId: 'e4a5615b-1996-4826-8fd8-aa796c808575', draggedElementType: 'checkbox', dragSource: 'internal'}
+useDragAndDrop.ts:88 useDragAndDrop
+DropZone.vue:46 %Dropzone color: deepink; font-weight: bold;
+DropZone.vue:47 InsertionPoint
+DropZone.vue:48 %Dropzone color: deepink; font-weight: bold;
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: true, draggedElementId: 'e4a5615b-1996-4826-8fd8-aa796c808575', draggedElementType: 'checkbox', dragSource: 'internal'}
+useDragAndDrop.ts:88 useDragAndDrop
+DropZone.vue:46 %Dropzone color: deepink; font-weight: bold;
+DropZone.vue:47 InsertionPoint
+DropZone.vue:48 %Dropzone color: deepink; font-weight: bold;
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: true, draggedElementId: 'e4a5615b-1996-4826-8fd8-aa796c808575', draggedElementType: 'checkbox', dragSource: 'internal'}
+useDragAndDrop.ts:88 useDragAndDrop
+DropZone.vue:46 %Dropzone color: deepink; font-weight: bold;
+DropZone.vue:47 InsertionPoint
+DropZone.vue:48 %Dropzone color: deepink; font-weight: bold;
+DropZone.vue:46 %Dropzone color: deepink; font-weight: bold;
+DropZone.vue:47 InsertionPoint
+DropZone.vue:48 %Dropzone color: deepink; font-weight: bold;
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: true, draggedElementId: 'e4a5615b-1996-4826-8fd8-aa796c808575', draggedElementType: 'checkbox', dragSource: 'internal'}
+useDragAndDrop.ts:88 useDragAndDrop
+DropZone.vue:46 %Dropzone color: deepink; font-weight: bold;
+DropZone.vue:47 InsertionPoint
+DropZone.vue:48 %Dropzone color: deepink; font-weight: bold;
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: true, draggedElementId: 'e4a5615b-1996-4826-8fd8-aa796c808575', draggedElementType: 'checkbox', dragSource: 'internal'}
+useDragAndDrop.ts:88 useDragAndDrop
+DropZone.vue:46 %Dropzone color: deepink; font-weight: bold;
+DropZone.vue:47 InsertionPoint
+DropZone.vue:48 %Dropzone color: deepink; font-weight: bold;
+FormElementRenderer.vue:66 🎯 FormElementRenderer: Ending drag for element 6c808575
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: false, draggedElementId: null, draggedElementType: null, dragSource: null}
+useDragAndDrop.ts:88 useDragAndDrop
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: false, draggedElementId: null, draggedElementType: null, dragSource: null}
+useDragAndDrop.ts:88 useDragAndDrop
+FormCanvas.vue:17 🎯 FormCanvas: isDragging changed to false
+FormCanvas.vue:94 FormCanvas
+FormCanvas.vue:95 🎯 FormCanvas: isDragging changed to false
+FormCanvas.vue:96 FormCanvas
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: false, draggedElementId: null, draggedElementType: null, dragSource: null}
+useDragAndDrop.ts:88 useDragAndDrop
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: false, draggedElementId: null, draggedElementType: null, dragSource: null}
+useDragAndDrop.ts:88 useDragAndDrop
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: false, draggedElementId: null, draggedElementType: null, dragSource: null}
+useDragAndDrop.ts:88 useDragAndDrop
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: false, draggedElementId: null, draggedElementType: null, dragSource: null}
+useDragAndDrop.ts:88 useDragAndDrop
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: false, draggedElementId: null, draggedElementType: null, dragSource: null}
+useDragAndDrop.ts:88 useDragAndDrop
+useDragAndDrop.ts:86 useDragAndDrop
+useDragAndDrop.ts:87 🎯 useDragAndDrop: dragState changed to Proxy(Object) {isDragging: false, draggedElementId: null, draggedElementType: null, dragSource: null}
+useDragAndDrop.ts:88 useDragAndDrop

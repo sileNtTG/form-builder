@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { useFormBuilderStore } from "../../stores/formBuilder";
+import { useFormBuilderStore } from "@/stores/formBuilder";
+import type { FormElement } from "@/models/FormElement";
+import { SvgIcon } from "@/components/common";
 
 const formBuilderStore = useFormBuilderStore();
 const copySuccess = ref(false);
@@ -34,50 +36,51 @@ const formJson = computed(() => {
   return JSON.stringify(formBuilderStore.elements, null, 2);
 });
 
-function transformToServerFormat(element: any): any {
-  let serverElement: any = {
-    fqn: getServerFqn(element.type),
-    attributes: {},
+function transformToServerFormat(
+  element: FormElement
+): Record<string, unknown> {
+  const serverElement: Record<string, unknown> = {
+    fqn:
+      element.serverFqn ||
+      `Easy\\Form\\Item\\${
+        element.type.charAt(0).toUpperCase() + element.type.slice(1)
+      }`,
+    attributes: {
+      name: element.label?.toLowerCase().replace(/\s+/g, "_") || element.type,
+      label: element.label,
+      required: element.required,
+    } as Record<string, unknown>,
   };
 
+  const attributes = serverElement.attributes as Record<string, unknown>;
+
   // Handle common attributes
-  if (element.label) {
-    serverElement.attributes.title = element.label;
-  }
-  if (element.required) {
-    serverElement.attributes.required = "required";
-  }
-  if (element.placeholder) {
-    serverElement.attributes.placeholder = element.placeholder;
+  if ("placeholder" in element && element.placeholder) {
+    attributes.placeholder = element.placeholder;
   }
 
   // Type specific transformations
   switch (element.type) {
     case "input":
-      serverElement.fqn = "Easy\\Form\\Item\\Input\\Text";
-      serverElement.attributes.type = "text";
+      attributes.type = "text";
       break;
     case "textarea":
-      serverElement.fqn = "Easy\\Form\\Item\\Textarea";
       if (element.rows) {
-        serverElement.attributes.rows = element.rows;
+        attributes.rows = element.rows;
       }
       break;
     case "checkbox":
-      serverElement.fqn = "Easy\\Form\\Item\\Input\\Checkbox";
-      serverElement.attributes.type = "checkbox";
+      attributes.type = "checkbox";
       if (element.checked) {
-        serverElement.attributes.checked = "checked";
+        attributes.checked = "checked";
       }
       break;
     case "fieldset":
-      serverElement.fqn = "Easy\\Form\\Fieldset";
       if (element.children && element.children.length > 0) {
         serverElement.children = element.children.map(transformToServerFormat);
       }
       break;
     case "button":
-      serverElement.fqn = "Easy\\Form\\Item\\Button";
       serverElement.children = [
         {
           fqn: "Easy\\Form\\Markup",
@@ -133,11 +136,7 @@ function toggleMaximize() {
           @click="toggleMaximize"
           :title="isMaximized ? 'Minimize' : 'Maximize'"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path
-              d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"
-            ></path>
-          </svg>
+          <SvgIcon name="maximize" :size="18" />
         </button>
         <button
           class="icon-button"
@@ -145,20 +144,8 @@ function toggleMaximize() {
           :class="{ 'copy-success': copySuccess }"
           :title="copySuccess ? 'Copied!' : 'Copy to clipboard'"
         >
-          <svg
-            v-if="!copySuccess"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-          >
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path
-              d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
-            ></path>
-          </svg>
-          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M20 6L9 17l-5-5"></path>
-          </svg>
+          <SvgIcon v-if="!copySuccess" name="copy" :size="18" />
+          <SvgIcon v-else name="check" :size="18" />
         </button>
       </div>
     </div>
@@ -189,30 +176,15 @@ function toggleMaximize() {
               :class="{ 'copy-success': copySuccess }"
               :title="copySuccess ? 'Copied!' : 'Copy to clipboard'"
             >
-              <svg
-                v-if="!copySuccess"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-              >
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path
-                  d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
-                ></path>
-              </svg>
-              <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M20 6L9 17l-5-5"></path>
-              </svg>
+              <SvgIcon v-if="!copySuccess" name="copy" :size="18" />
+              <SvgIcon v-else name="check" :size="18" />
             </button>
             <button
               class="icon-button icon-button--close"
               @click="toggleMaximize"
               title="Close"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M18 6L6 18"></path>
-                <path d="M6 6l12 12"></path>
-              </svg>
+              <SvgIcon name="x" :size="18" />
             </button>
           </div>
         </div>

@@ -1,471 +1,297 @@
 <script setup lang="ts">
-import type { FormElement } from "../../models/FormElement";
-import { ref, computed, watch, onMounted } from "vue";
-import { useFormBuilderStore } from "../../stores/formBuilder";
+import { computed } from "vue";
+import type { FormElement } from "@/models/FormElement";
+import { useDragAndDrop } from "@/composables";
+import { useFormBuilderStore } from "@/stores/formBuilder";
+import { SvgIcon } from "@/components/common";
+import SpacerWrapper from "./SpacerWrapper.vue";
 
-const props = defineProps<{ element: FormElement }>();
-const emit = defineEmits(["drag-start", "click"]);
+interface Props {
+  element: FormElement;
+  isDragging?: boolean; // Global dragging state from parent
+}
 
+const props = defineProps<Props>();
+const emit = defineEmits<{
+  click: [];
+  "fieldset-drop": [
+    data: {
+      position: "before" | "after";
+      siblingId?: string;
+      parentId?: string;
+      elementId?: string;
+      elementType?: string;
+    }
+  ];
+  insert: [data: { index: number; fieldsetId?: string }];
+}>();
+
+const { startInternalDrag, endDrag } = useDragAndDrop();
 const formBuilderStore = useFormBuilderStore();
-const isDragging = ref(false);
-
-// Fieldset drag and drop state
-const isFieldsetDragOver = ref(false);
-const fieldsetDropIndex = ref(-1);
 
 // Use computed property for selection state
 const isSelected = computed(() => {
-  return formBuilderStore.selectedElementId === props.element.id;
+  return formBuilderStore.selectedElementId === props.element.dataId;
 });
 
-// Handle element selection
-function selectElement(event: Event) {
-  event.stopPropagation();
-  emit("click");
+const elementTitle = computed(() => {
+  const type =
+    props.element.type.charAt(0).toUpperCase() + props.element.type.slice(1);
+  const label = props.element.label ? `: ${props.element.label}` : "";
+  return `${type}${label}`;
+});
 
-  // Force immediate selection in the store for better reactivity
-  formBuilderStore.selectElement(props.element.id);
+function handleDragStart(event: DragEvent) {
+  const elementId = props.element.dataId;
+  const elementType = props.element.type;
+
+  // Stop propagation to prevent parent fieldset from handling the drag
+  event.stopPropagation();
+
+  // Add dragging class to the element
+  const target = event.target as HTMLElement;
+  target.classList.add("dragging");
+
+  // Set drag data for compatibility
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = "all";
+    event.dataTransfer.setData("application/x-element-id", elementId);
+    event.dataTransfer.setData("text/plain", elementType);
+  }
+
+  // Start internal drag
+  startInternalDrag(elementId, elementType);
+}
+
+function handleDragEnd(event: DragEvent) {
+  // Stop propagation to prevent parent fieldset from handling the drag end
+  event.stopPropagation();
+
+  // Nur endDrag() aufrufen wenn das Event vom DIESEM Element kommt
+  const target = event.target as HTMLElement;
+  const elementId = target.getAttribute("data-element-id");
+
+  // Remove dragging class
+  target.classList.remove("dragging");
+
+  // Nur reset wenn es UNSER Element ist
+  if (elementId === props.element.dataId) {
+    endDrag();
+  }
+}
+
+function handleClick() {
+  formBuilderStore.selectElement(props.element.dataId);
+}
+
+function handleElementClick(elementId: string) {
+  formBuilderStore.selectElement(elementId);
 }
 
 function handleEdit(e: Event) {
   e.stopPropagation();
-  formBuilderStore.selectElement(props.element.id);
+  formBuilderStore.selectElement(props.element.dataId);
 }
 
 function handleDelete(e: Event) {
   e.stopPropagation();
-  formBuilderStore.removeElement(props.element.id);
+  formBuilderStore.removeElement(props.element.dataId);
 }
 
-function handleDragStart(e: DragEvent) {
-  if (!e.dataTransfer) return;
-
-  isDragging.value = true;
-
-  // Set data for HTML5 drag & drop with multiple formats for compatibility
-  try {
-    e.dataTransfer.setData("text/plain", props.element.id);
-    e.dataTransfer.setData("application/element-type", props.element.type);
-    e.dataTransfer.setData("application/element-id", props.element.id);
-  } catch (err) {
-    // Fallback for restrictive browsers
-    e.dataTransfer.setData("text", props.element.id);
-  }
-
-  e.dataTransfer.effectAllowed = "move";
-  emit("drag-start", props.element.id);
-
-  if (e.target instanceof HTMLElement) {
-    e.target.classList.add("dragging");
-
-    // Create enhanced drag image
-    try {
-      const ghost = e.target.cloneNode(true) as HTMLElement;
-      ghost.style.transform = "scale(0.8)";
-      ghost.style.opacity = "0.8";
-      ghost.style.position = "absolute";
-      ghost.style.top = "-1000px";
-      ghost.style.left = "-1000px";
-      document.body.appendChild(ghost);
-
-      e.dataTransfer.setDragImage(ghost, 20, 20);
-
-      setTimeout(() => {
-        document.body.removeChild(ghost);
-      }, 100);
-    } catch (err) {
-      console.error("Error creating drag image:", err);
-    }
-  }
+function handleInsertPointClick(data: { index: number; fieldsetId?: string }) {
+  emit("insert", data);
 }
 
-// Reset drag state
-function handleDragEnd(e: DragEvent) {
-  isDragging.value = false;
-
-  if (e.target instanceof HTMLElement) {
-    e.target.classList.remove("dragging");
-  }
-}
-
-function stopPropagation(e: Event) {
-  e.stopPropagation();
-}
-
-// Watch for selection changes and force component update
-watch(
-  () => formBuilderStore.selectedElementId,
-  (newId) => {
-    if (newId === props.element.id) {
-      console.log(`Element ${props.element.id} is now selected`);
-    }
-  }
-);
-
-// When the component is mounted, check if it should be selected
-onMounted(() => {
-  if (formBuilderStore.selectedElementId === props.element.id) {
-    console.log(`Element ${props.element.id} is initially selected`);
-  }
-});
-
-// Neue Funktionen für Fieldset-Drag-and-Drop
-function handleFieldsetDragOver(e: DragEvent) {
-  if (props.element.type !== "fieldset") return;
-
-  e.preventDefault();
-  e.stopPropagation();
-
-  isFieldsetDragOver.value = true;
-
-  // Berechne Drop-Index innerhalb des Fieldsets
-  const dropIndex = calculateFieldsetDropIndex(e);
-  fieldsetDropIndex.value = dropIndex;
-
-  if (e.dataTransfer) {
-    e.dataTransfer.dropEffect = "copy";
-  }
-}
-
-function handleFieldsetDragEnter(e: DragEvent) {
-  if (props.element.type !== "fieldset") return;
-
-  e.preventDefault();
-  e.stopPropagation();
-  isFieldsetDragOver.value = true;
-}
-
-function handleFieldsetDragLeave(e: DragEvent) {
-  if (props.element.type !== "fieldset") return;
-
-  const related = e.relatedTarget as HTMLElement;
-  const fieldsetElement = e.currentTarget as HTMLElement;
-
-  // Nur zurücksetzen wenn wir das Fieldset wirklich verlassen
-  if (!fieldsetElement.contains(related)) {
-    isFieldsetDragOver.value = false;
-    fieldsetDropIndex.value = -1;
-  }
-}
-
-function handleFieldsetDrop(e: DragEvent) {
-  if (props.element.type !== "fieldset") return;
-
-  e.preventDefault();
-  e.stopPropagation();
-
-  const dropIndex = fieldsetDropIndex.value;
-
-  console.log(`Drop in fieldset ${props.element.id} at position ${dropIndex}`);
-
-  if (e.dataTransfer) {
-    try {
-      const elementType =
-        e.dataTransfer.getData("text/plain") ||
-        e.dataTransfer.getData("application/element-type");
-
-      const elementId = e.dataTransfer.getData("application/element-id");
-
-      if (elementId) {
-        // Element verschieben
-        console.log(
-          `Moving element ${elementId} to fieldset ${props.element.id} at position ${dropIndex}`
-        );
-        formBuilderStore.moveElementToPosition(
-          elementId,
-          dropIndex,
-          props.element.id
-        );
-      } else if (
-        elementType &&
-        [
-          "input",
-          "textarea",
-          "checkbox",
-          "select",
-          "radio",
-          "fieldset",
-          "button",
-          "date",
-          "number",
-        ].includes(elementType)
-      ) {
-        // Neues Element erstellen
-        console.log(
-          `Creating new ${elementType} in fieldset ${props.element.id} at position ${dropIndex}`
-        );
-        const newElement = createElementByType(elementType, dropIndex);
-        if (newElement) {
-          formBuilderStore.addElementAtPosition(
-            newElement,
-            dropIndex,
-            props.element.id
-          );
-        }
-      }
-    } catch (err) {
-      console.error("Error handling fieldset drop:", err);
-    }
-  }
-
-  // Reset
-  isFieldsetDragOver.value = false;
-  fieldsetDropIndex.value = -1;
-}
-
-function calculateFieldsetDropIndex(e: DragEvent): number {
-  if (props.element.type !== "fieldset" || !props.element.children) return 0;
-
-  const fieldsetContent = (e.currentTarget as HTMLElement).querySelector(
-    ".fieldset-content"
-  );
-  if (!fieldsetContent) return 0;
-
-  const rect = fieldsetContent.getBoundingClientRect();
-  const relativeY = e.clientY - rect.top;
-
-  const childCards = Array.from(
-    fieldsetContent.querySelectorAll(".element-card")
-  );
-
-  if (childCards.length === 0) return 0;
-
-  for (let i = 0; i < childCards.length; i++) {
-    const card = childCards[i] as HTMLElement;
-    const cardRect = card.getBoundingClientRect();
-    const cardTop = cardRect.top - rect.top;
-    const cardMiddle = cardTop + cardRect.height / 2;
-
-    if (relativeY < cardMiddle) {
-      return i;
-    }
-  }
-
-  return childCards.length;
-}
-
-// Hilfsfunktion zum Erstellen von Elementen (aus FormCanvas kopiert)
-function createElementByType(
-  type: string,
-  position: number
-): FormElement | null {
-  const baseProps = {
-    id: crypto.randomUUID(),
-    label: `Neues ${type.charAt(0).toUpperCase() + type.slice(1)}`,
-    required: false,
-    order: position,
-    x: 0,
-    y: 0,
-    width: 250,
-    height: 48,
+function handleFieldsetDropZoneDrop(data: {
+  position: "before" | "after";
+  siblingId?: string;
+  parentId?: string;
+  elementId?: string;
+  elementType?: string;
+}) {
+  // Ensure the parentId is THIS fieldset's ID when emitting
+  const eventData = {
+    ...data,
+    parentId: props.element.dataId, // Override with THIS fieldset's ID
   };
 
-  switch (type) {
-    case "input":
-      return {
-        ...baseProps,
-        type: "input",
-        placeholder: "Text eingeben",
-      } as FormElement;
-    case "textarea":
-      return {
-        ...baseProps,
-        type: "textarea",
-        placeholder: "Text eingeben",
-        rows: 4,
-        width: 300,
-        height: 120,
-      } as FormElement;
-    case "checkbox":
-      return {
-        ...baseProps,
-        type: "checkbox",
-        checked: false,
-        width: 200,
-        height: 40,
-      } as FormElement;
-    case "select":
-      return {
-        ...baseProps,
-        type: "select",
-        options: [
-          { value: "option1", label: "Option 1" },
-          { value: "option2", label: "Option 2" },
-        ],
-        width: 250,
-        height: 48,
-      } as FormElement;
-    case "fieldset":
-      return {
-        ...baseProps,
-        type: "fieldset",
-        children: [],
-        width: 400,
-        height: 200,
-      } as FormElement;
-    default:
-      return null;
-  }
+  // Emit to parent FormCanvas to handle the actual logic
+  emit("fieldset-drop", eventData);
 }
 </script>
 
 <template>
   <div
+    v-if="element.type !== 'fieldset'"
     class="element-card"
     :class="{
       selected: isSelected,
-      dragging: isDragging,
     }"
-    @click="selectElement"
     draggable="true"
+    :data-element-id="element.dataId"
+    :data-element-type="element.type"
     @dragstart="handleDragStart"
     @dragend="handleDragEnd"
-    :data-element-id="element.id"
-    :data-element-type="element.type"
+    @click.stop="handleClick"
   >
     <div class="element-card__header">
-      <div class="element-card__drag-handle" title="Drag to reorder">
-        <svg viewBox="0 0 24 24">
-          <path d="M8 9h8M8 12h8M8 15h8" />
-        </svg>
+      <div class="element-card__drag-handle">
+        <SvgIcon name="grip-vertical" :size="16" />
       </div>
-      <span class="element-card__title">
-        {{ element.type.charAt(0).toUpperCase() + element.type.slice(1) }}
-        <span v-if="element.label">: {{ element.label }}</span>
-      </span>
+
+      <span class="element-card__title">{{ elementTitle }}</span>
+
       <div class="element-card__actions">
-        <button class="icon-btn" title="Edit" @click="handleEdit">
-          <svg viewBox="0 0 24 24">
-            <path
-              d="M16.475 5.408l2.117 2.117a2.121 2.121 0 0 1 0 3l-9.192 9.192a2 2 0 0 1-1.414.586H5v-2.586a2 2 0 0 1 .586-1.414l9.192-9.192a2.121 2.121 0 0 1 3 0z"
-            />
-            <path d="M15 7l2 2" />
-          </svg>
+        <button class="icon-btn" @click.stop="handleEdit" title="Edit">
+          <SvgIcon name="edit" :size="14" />
         </button>
-        <button class="icon-btn" title="Delete" @click="handleDelete">
-          <svg viewBox="0 0 24 24">
-            <path d="M4 7h16" />
-            <path d="M10 11v6" />
-            <path d="M14 11v6" />
-            <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12" />
-            <path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3" />
-          </svg>
+        <button class="icon-btn" @click.stop="handleDelete" title="Delete">
+          <SvgIcon name="trash" :size="14" />
         </button>
       </div>
     </div>
+
     <div class="element-card__body">
+      <!-- Regular element rendering with original styles -->
       <template v-if="element.type === 'input'">
-        <input
-          type="text"
-          :placeholder="element.placeholder"
-          disabled
-          @click="stopPropagation"
-        />
+        <input type="text" :placeholder="element.placeholder" disabled />
       </template>
       <template v-else-if="element.type === 'textarea'">
         <textarea
           :placeholder="element.placeholder"
+          :rows="element.rows || 4"
           disabled
-          @click="stopPropagation"
         ></textarea>
       </template>
       <template v-else-if="element.type === 'checkbox'">
-        <label class="checkbox-label" @click="stopPropagation">
-          <input
-            type="checkbox"
-            :checked="element.checked"
-            disabled
-            @click="stopPropagation"
-          />
+        <label class="checkbox-label">
+          <input type="checkbox" :checked="element.checked" disabled />
           {{ element.label }}
         </label>
       </template>
       <template v-else-if="element.type === 'select'">
-        <select disabled @click="stopPropagation">
+        <select disabled>
           <option
             v-for="option in element.options"
             :key="option.value"
             :value="option.value"
-            @click="stopPropagation"
           >
             {{ option.label }}
           </option>
         </select>
       </template>
       <template v-else-if="element.type === 'radio'">
-        <div class="radio-group" @click="stopPropagation">
+        <div class="radio-group">
           <label
             v-for="option in element.options"
             :key="option.value"
             class="radio-label"
-            @click="stopPropagation"
           >
             <input
               type="radio"
-              :name="element.id"
+              :name="element.dataId"
               :value="option.value"
               :checked="option.value === element.defaultValue"
               disabled
-              @click="stopPropagation"
             />
             {{ option.label }}
           </label>
         </div>
       </template>
       <template v-else-if="element.type === 'button'">
-        <button
-          :type="element.buttonType || 'button'"
-          disabled
-          @click="stopPropagation"
-        >
+        <button :type="element.buttonType || 'button'" disabled>
           {{ element.label }}
         </button>
       </template>
-      <template v-else-if="element.type === 'fieldset'">
-        <div
-          class="element-fieldset"
-          :class="{ 'fieldset-drag-over': isFieldsetDragOver }"
-          @dragover="handleFieldsetDragOver"
-          @dragenter="handleFieldsetDragEnter"
-          @dragleave="handleFieldsetDragLeave"
-          @drop="handleFieldsetDrop"
-        >
-          <div class="fieldset-legend">{{ element.label }}</div>
-          <div class="fieldset-content">
-            <!-- Drop-Indikator am Anfang -->
-            <div
-              v-if="isFieldsetDragOver && fieldsetDropIndex === 0"
-              class="fieldset-drop-indicator"
-            ></div>
-
-            <template v-if="element.children && element.children.length > 0">
-              <template
-                v-for="(child, childIndex) in element.children"
-                :key="child.id"
-              >
-                <FormElementRenderer
-                  :element="child"
-                  @drag-start="$emit('drag-start', $event)"
-                />
-                <!-- Drop-Indikator zwischen Elementen -->
-                <div
-                  v-if="
-                    isFieldsetDragOver && fieldsetDropIndex === childIndex + 1
-                  "
-                  class="fieldset-drop-indicator"
-                ></div>
-              </template>
-            </template>
-            <div v-else class="fieldset-empty" @click="stopPropagation">
-              Drop elements here
-            </div>
-          </div>
-        </div>
+      <template v-else-if="element.type === 'number'">
+        <input type="number" :min="element.min" :max="element.max" disabled />
+      </template>
+      <template v-else-if="element.type === 'date'">
+        <input type="date" disabled />
       </template>
       <template v-else>
-        <div @click="stopPropagation">
-          {{ element.label }} ({{ element.type }})
-        </div>
+        <div>{{ element.label || element.type }}</div>
+      </template>
+    </div>
+  </div>
+
+  <!-- Fieldset elements - separate structure -->
+  <div
+    v-else
+    class="fieldset-container"
+    :class="{ selected: isSelected }"
+    :data-element-id="element.dataId"
+    :data-element-type="element.type"
+    @click="handleClick"
+  >
+    <div
+      class="fieldset-header"
+      draggable="true"
+      @dragstart="handleDragStart"
+      @dragend="handleDragEnd"
+    >
+      <div class="fieldset-drag-handle">
+        <SvgIcon name="grip-vertical" :size="16" />
+      </div>
+      <h3 class="fieldset-title">{{ element.label || "Untitled Fieldset" }}</h3>
+      <div class="fieldset-actions">
+        <button class="icon-btn" @click.stop="handleEdit" title="Edit Fieldset">
+          <SvgIcon name="edit" :size="14" />
+        </button>
+        <button
+          class="icon-btn"
+          @click.stop="handleDelete"
+          title="Delete Fieldset"
+        >
+          <SvgIcon name="trash" :size="14" />
+        </button>
+      </div>
+    </div>
+    <div class="fieldset-content">
+      <template v-if="element.children && element.children.length > 0">
+        <!-- First spacer: before first child -->
+        <SpacerWrapper
+          :index="0"
+          :fieldset-id="element.dataId"
+          :is-dragging="isDragging"
+          position="before"
+          :sibling-id="element.children[0]?.dataId"
+          @insert="handleInsertPointClick"
+          @drop="handleFieldsetDropZoneDrop"
+        />
+        <!-- Child elements with spacers between them -->
+        <template
+          v-for="(child, childIndex) in element.children"
+          :key="child.dataId"
+        >
+          <FormElementRenderer
+            :element="child"
+            :is-dragging="isDragging"
+            @fieldset-drop="handleFieldsetDropZoneDrop"
+            @insert="handleInsertPointClick"
+          />
+          <!-- Spacer after each element (including the last) -->
+          <SpacerWrapper
+            :index="childIndex + 1"
+            :fieldset-id="element.dataId"
+            :is-dragging="isDragging"
+            position="after"
+            :sibling-id="child.dataId"
+            @insert="handleInsertPointClick"
+            @drop="handleFieldsetDropZoneDrop"
+          />
+        </template>
+      </template>
+      <!-- Empty fieldset with single SpacerWrapper -->
+      <template v-else>
+        <SpacerWrapper
+          :index="0"
+          :fieldset-id="element.dataId"
+          :is-dragging="isDragging"
+          position="before"
+          @insert="handleInsertPointClick"
+          @drop="handleFieldsetDropZoneDrop"
+        />
       </template>
     </div>
   </div>
@@ -480,7 +306,6 @@ function createElementByType(
   transition: all 0.2s;
   width: 100%;
   overflow: hidden;
-  margin-bottom: 0.5rem;
   cursor: pointer;
 
   &.selected {
@@ -490,10 +315,9 @@ function createElementByType(
 
   &.dragging {
     opacity: 0.5;
-    transform: scale(0.98);
     border: 1px dashed var(--theme-primary, #1abc9c);
     position: relative;
-    z-index: 10;
+    z-index: 1;
   }
 
   &__header {
@@ -508,84 +332,36 @@ function createElementByType(
 
   &__drag-handle {
     cursor: grab;
-    margin-right: 0.5rem;
-    display: flex;
-    align-items: center;
-    background: rgba(0, 0, 0, 0.15);
-    padding: 5px;
-    border-radius: 3px;
-    transition: all 0.2s;
-
-    svg {
-      width: 16px;
-      height: 16px;
-      stroke: var(--theme-text-muted, #aaa);
-      stroke-width: 2;
-      fill: none;
-    }
+    color: #a0aec0;
+    transition: color 0.2s;
 
     &:hover {
-      background: rgba(26, 188, 156, 0.2);
-      transform: scale(1.05);
-
-      svg {
-        stroke: var(--theme-primary, #1abc9c);
-      }
-    }
-
-    &:active {
-      cursor: grabbing;
-      background: rgba(26, 188, 156, 0.3);
+      color: #1abc9c;
     }
   }
 
   &__title {
-    font-size: 0.85em;
-    color: var(--theme-text, #fff);
+    font-size: 0.85rem;
     font-weight: 500;
-    flex-grow: 1;
+    flex: 1;
+    margin-left: 0.5rem;
   }
 
   &__actions {
     display: flex;
-    gap: 0.15rem;
-
-    .icon-btn {
-      background: none;
-      border: none;
-      color: var(--theme-text-muted, #aaa);
-      font-size: 0.9em;
-      cursor: pointer;
-      padding: 0.2em;
-      border-radius: 3px;
-      transition: all 0.15s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      &:hover {
-        color: var(--theme-primary, #1abc9c);
-        background: rgba(26, 188, 156, 0.1);
-      }
-    }
-
-    svg {
-      width: 16px;
-      height: 16px;
-      stroke-width: 1.7;
-      stroke: currentColor;
-      fill: none;
-      display: block;
-    }
+    gap: 0.2rem;
   }
 
   &__body {
-    padding: 0.5rem 0.6rem;
-    background: transparent;
+    padding: 0.6rem;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
 
-    textarea,
-    input,
-    select {
+    // Form element styles nested inside body
+    > input,
+    > textarea,
+    > select {
       width: 100%;
       background: rgba(0, 0, 0, 0.15);
       color: var(--theme-text, #fff);
@@ -600,7 +376,8 @@ function createElementByType(
       }
     }
 
-    button {
+    > button {
+      width: 100%;
       background: var(--theme-primary, #1abc9c);
       color: #fff;
       border: none;
@@ -613,104 +390,242 @@ function createElementByType(
       margin-top: 0.2rem;
     }
 
-    .checkbox-label {
+    > .checkbox-label,
+    > .radio-label {
       display: flex;
       align-items: center;
       gap: 0.4rem;
+      color: var(--theme-text, #fff);
+      cursor: pointer;
       font-size: 0.9em;
 
-      input[type="checkbox"] {
+      > input[type="checkbox"],
+      > input[type="radio"] {
+        width: auto;
+        margin: 0;
+      }
+
+      > input[type="checkbox"] {
         accent-color: var(--theme-primary, #1abc9c);
         width: 0.9em;
         height: 0.9em;
       }
     }
 
-    .radio-group {
+    > .radio-group {
       display: flex;
       flex-direction: column;
       gap: 0.2rem;
-
-      .radio-label {
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-        font-size: 0.9em;
-      }
     }
   }
 }
 
-.element-fieldset {
-  border: 1px solid var(--theme-border, #444);
-  border-radius: 6px;
-  padding: 0.6rem;
-  background: rgba(44, 49, 60, 0.3);
-  min-height: 70px;
-  position: relative;
-  transition: all 0.2s ease;
+.icon-btn {
+  background: none;
+  border: none;
+  color: #a0aec0;
+  cursor: pointer;
+  padding: 0.2rem;
+  border-radius: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
 
-  &.fieldset-drag-over {
+  &:hover {
+    color: #1abc9c;
     background: rgba(26, 188, 156, 0.1);
-    border: 2px dashed var(--theme-primary, #1abc9c);
   }
 }
 
-.fieldset-legend {
+.fieldset-container {
+  border: 1px solid var(--theme-border, #3a3f4a);
+  border-radius: 8px;
+  background: var(--theme-bg-surface, #232834);
+  min-height: 100px;
+  transition: all 0.2s ease;
+  width: 100%;
+  overflow: hidden;
+
+  &:hover {
+    border-color: var(--theme-border-hover, #4a5568);
+  }
+
+  &.selected {
+    border: 1px solid var(--theme-primary, #1abc9c);
+    box-shadow: 0 0 0 1px rgba(26, 188, 156, 0.4);
+  }
+
+  &.dragging {
+    opacity: 0.5;
+    border: 1px dashed var(--theme-primary, #1abc9c);
+    position: relative;
+    z-index: 1;
+  }
+}
+
+.fieldset-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(to right, #2c313c, #343b48);
+  padding: 0.5rem 0.8rem;
   font-weight: 500;
   color: var(--theme-text, #fff);
-  padding: 0 0.4rem;
-  position: absolute;
-  top: -7px;
-  font-size: 0.8em;
-  background: var(--theme-bg-surface, #232834);
-  margin-left: 8px;
+  border-bottom: 1px solid var(--theme-border, #3a3f4a);
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.fieldset-drag-handle {
+  cursor: grab;
+  color: #a0aec0;
+  transition: color 0.2s;
+  margin-right: 0.5rem;
+
+  &:hover {
+    color: #1abc9c;
+  }
+}
+
+.fieldset-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  flex: 1;
+  margin: 0;
+}
+
+.fieldset-actions {
+  display: flex;
+  gap: 0.2rem;
 }
 
 .fieldset-content {
   position: relative;
   width: 100%;
-  min-height: 40px;
+  min-height: 60px;
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
-  padding-top: 0.2rem;
-}
+  gap: 0;
+  padding: 0.8rem;
+  padding-left: 1.2rem;
 
-.fieldset-empty {
-  color: var(--theme-text-muted);
-  text-align: center;
-  padding: 0.6rem;
-  font-style: italic;
-  font-size: 0.8em;
-  border: 1px dashed var(--theme-border);
-  border-radius: 4px;
-  transition: all 0.2s;
+  // Nesting indicator line at the left edge
+  &::before {
+    content: "";
+    position: absolute;
+    left: 8px;
+    top: 1rem;
+    bottom: 1rem;
+    width: 2px;
+    background: rgba(26, 188, 156, 0.3);
+    border-radius: 1px;
+  }
 
-  &:hover {
-    background: rgba(26, 188, 156, 0.05);
-    border-color: var(--theme-primary);
+  // Child elements styling with proper nesting
+  > .element-card {
+    margin-bottom: 0;
+    margin-left: 0;
+    border-left: none;
+    position: relative;
+
+    // Remove any additional styling that creates visual noise
+    &::before {
+      display: none;
+    }
   }
 }
 
-.fieldset-drop-indicator {
-  height: 3px;
-  background-color: var(--theme-primary, #1abc9c);
-  border-radius: 2px;
-  margin: 4px 0;
-  animation: pulse 1.5s infinite;
-  opacity: 0.8;
-}
+// Light theme styles with proper nesting
+:global(.theme-light) {
+  .element-card {
+    background: white;
+    border-color: #e2e8f0;
 
-@keyframes pulse {
-  0% {
-    opacity: 0.4;
+    &.selected {
+      border-color: #059669;
+      box-shadow: 0 0 0 1px rgba(5, 150, 105, 0.4);
+    }
+
+    &__header {
+      background: linear-gradient(to right, #f8fafc, #f1f5f9);
+      color: #1e293b;
+    }
+
+    &__drag-handle {
+      color: #64748b;
+
+      &:hover {
+        color: #059669;
+      }
+    }
+
+    &__body {
+      > input,
+      > textarea,
+      > select,
+      > button {
+        background: #f8fafc;
+        border-color: #e2e8f0;
+        color: #1e293b;
+      }
+
+      > .checkbox-label,
+      > .radio-label {
+        color: #1e293b;
+      }
+    }
   }
-  50% {
-    opacity: 1;
+
+  .icon-btn {
+    color: #64748b;
+
+    &:hover {
+      color: #059669;
+      background: rgba(5, 150, 105, 0.1);
+    }
   }
-  100% {
-    opacity: 0.4;
+
+  .fieldset-container {
+    background: white;
+    border-color: #e2e8f0;
+
+    &.selected {
+      border-color: #059669;
+      box-shadow: 0 0 0 1px rgba(5, 150, 105, 0.4);
+    }
+  }
+
+  .fieldset-header {
+    background: linear-gradient(to right, #f8fafc, #f1f5f9);
+    color: #1e293b;
+    border-color: #e2e8f0;
+    cursor: grab;
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
+
+  .fieldset-drag-handle {
+    color: #64748b;
+
+    &:hover {
+      color: #059669;
+    }
+  }
+
+  .fieldset-title {
+    color: #1e293b;
+  }
+
+  .fieldset-content {
+    &::before {
+      background: rgba(5, 150, 105, 0.3);
+    }
   }
 }
 </style>

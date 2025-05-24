@@ -19,6 +19,14 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve("./src"),
+      "@/components": path.resolve("./src/components"),
+      "@/assets": path.resolve("./src/assets"),
+      "@/icons": path.resolve("./src/assets/icons"),
+      "@/images": path.resolve("./src/assets/images"),
+      "@/stores": path.resolve("./src/stores"),
+      "@/models": path.resolve("./src/models"),
+      "@/views": path.resolve("./src/views"),
+      "@/common": path.resolve("./src/components/common"),
     },
   },
   css: {

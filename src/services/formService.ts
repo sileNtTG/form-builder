@@ -111,7 +111,7 @@ export const formService = {
   async deleteForm(id: string): Promise<void> {
     try {
       // await axios.delete(`${API_URL}/forms/${id}`);
-      console.log(`Form ${id} deleted`);
+      // Form deleted successfully
     } catch (error) {
       console.error(`Error deleting form ${id}:`, error);
       throw error;

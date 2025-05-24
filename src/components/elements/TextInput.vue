@@ -51,7 +51,7 @@ const handleClick = () => {
   >
     <label
       v-if="localElement.label"
-      :for="localElement.id"
+      :for="localElement.dataId"
       class="form-element__label"
     >
       {{ localElement.label }}
@@ -59,7 +59,7 @@ const handleClick = () => {
     </label>
 
     <input
-      :id="localElement.id"
+      :id="localElement.dataId"
       type="text"
       v-model="inputValue"
       :placeholder="localElement.placeholder"

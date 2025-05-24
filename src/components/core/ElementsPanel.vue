@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import { v4 as uuidv4 } from "uuid";
-import { useFormBuilderStore } from "../../stores/formBuilder";
-import type { FormElement } from "../../models/FormElement";
+import { useFormBuilderStore } from "@/stores/formBuilder";
+import type { FormElement } from "@/models/FormElement";
+import { SvgIcon, ElementIcon } from "@/components/common";
+import { useDragAndDrop } from "@/composables";
 
 const formBuilderStore = useFormBuilderStore();
+const { startExternalDrag, endDrag } = useDragAndDrop();
 const searchQuery = ref("");
 const activeCategory = ref("all");
 
@@ -23,53 +26,42 @@ const elementDefinitions = [
     category: "basic",
     label: "Text Input",
     description: "Einfaches Textfeld",
-    icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M7 9h10M7 13h6" /></svg>`,
   },
   {
     type: "textarea",
     category: "basic",
     label: "Textbereich",
     description: "Mehrzeiliges Textfeld",
-    icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M7 9h10M7 13h10M7 17h6" /></svg>`,
   },
   {
     type: "checkbox",
     category: "basic",
     label: "Checkbox",
     description: "Ja/Nein Auswahl",
-    icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="5" width="14" height="14" rx="2" /><path d="M9 12l2 2 4-4" /></svg>`,
   },
   {
     type: "select",
     category: "advanced",
     label: "Dropdown",
     description: "Auswahl aus einer Liste",
-    icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M8 10h8M8 14h4M16 10l-2 4" /></svg>`,
   },
   {
     type: "radio",
     category: "advanced",
     label: "Radio Gruppe",
     description: "Einzelauswahl",
-    icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="12" cy="7" r="4" />
-      <circle cx="12" cy="7" r="1.5" />
-      <circle cx="12" cy="17" r="4" />
-    </svg>`,
   },
   {
     type: "fieldset",
     category: "layout",
     label: "Gruppe",
     description: "Gruppieren von Elementen",
-    icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 3v18" /></svg>`,
   },
   {
     type: "button",
     category: "basic",
     label: "Button",
     description: "Klickbarer Button",
-    icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M9 12h6" /></svg>`,
   },
 ];
 
@@ -100,7 +92,7 @@ const filteredElements = computed(() => {
 function insertElement(elementType: string) {
   // Create the element
   const baseElementProps = {
-    id: uuidv4(),
+    dataId: uuidv4(),
     label: `Neues ${
       elementType.charAt(0).toUpperCase() + elementType.slice(1)
     }`,
@@ -192,13 +184,22 @@ function insertElement(elementType: string) {
     // Add the element
     formBuilderStore.addElement(newElement);
     // Select the new element
-    formBuilderStore.selectElement(newElement.id);
+    formBuilderStore.selectElement(newElement.dataId);
   }
 }
 
 // Start drag for an element
 function startDrag(event: DragEvent, elementType: string) {
+  // console.log(`%c##### File: ElementsPanel.vue | Line 193 ####`, 'color: deeppink;');
+  // console.log(`startDrag ||  ||`, elementType);
+  // console.log(`startDrag ||  ||`, event);
+  // console.log(`startDrag ||  ||`, event.dataTransfer);
+  // console.log(`%c#####################################`, 'color: deeppink;');
   if (event.dataTransfer) {
+    // WICHTIG: Synchronisiere beide Drag-State-Systeme!
+    formBuilderStore.setDragging(true);
+    startExternalDrag(elementType); // Verwende useDragAndDrop State
+
     // Setze die Drag-Operation
     event.dataTransfer.effectAllowed = "copy";
 
@@ -211,7 +212,7 @@ function startDrag(event: DragEvent, elementType: string) {
       event.dataTransfer.setData("application/element-type", elementType);
       event.dataTransfer.setData("text", elementType);
     } catch (e) {
-      console.error("Fehler beim Setzen der Drag-Daten:", e);
+      // console.error("Fehler beim Setzen der Drag-Daten:", e);
       // Einfacher Fallback
       event.dataTransfer.setData("text", elementType);
     }
@@ -246,6 +247,8 @@ function startDrag(event: DragEvent, elementType: string) {
       // Event, um Drag-End zu verarbeiten
       const handleDragEnd = () => {
         elementCard.classList.remove("dragging");
+        formBuilderStore.setDragging(false);
+        endDrag(); // Synchronisiere useDragAndDrop State
         document.removeEventListener("dragend", handleDragEnd);
       };
 
@@ -266,22 +269,18 @@ function startDrag(event: DragEvent, elementType: string) {
           placeholder="Elemente suchen..."
           class="elements-panel__search-input"
         />
-        <svg
+        <SvgIcon
           v-if="!searchQuery"
+          name="search"
+          :size="14"
           class="elements-panel__search-icon"
-          viewBox="0 0 24 24"
-        >
-          <circle cx="11" cy="11" r="8" />
-          <path d="M21 21l-4.35-4.35" />
-        </svg>
+        />
         <button
           v-else
           class="elements-panel__search-clear"
           @click="searchQuery = ''"
         >
-          <svg viewBox="0 0 24 24">
-            <path d="M18 6L6 18M6 6l12 12" />
-          </svg>
+          <SvgIcon name="x" :size="14" />
         </button>
       </div>
     </div>
@@ -307,31 +306,22 @@ function startDrag(event: DragEvent, elementType: string) {
         @dragstart="startDrag($event, element.type)"
         @click="insertElement(element.type)"
       >
-        <div class="element-card__icon" v-html="element.icon"></div>
+        <div class="element-card__icon">
+          <ElementIcon :type="element.type" :size="32" />
+        </div>
         <div class="element-card__content">
           <div class="element-card__title">{{ element.label }}</div>
           <div class="element-card__description">{{ element.description }}</div>
         </div>
         <div class="element-card__actions">
           <div class="drag-handle" title="Ziehen zum Hinzufügen">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path d="M5 9h14M5 15h14" />
-            </svg>
+            <SvgIcon name="menu" :size="16" />
           </div>
         </div>
       </div>
 
       <div v-if="filteredElements.length === 0" class="elements-panel__empty">
-        <svg viewBox="0 0 24 24">
-          <path
-            d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M12 2a10 10 0 110 20 10 10 0 010-20z"
-          />
-        </svg>
+        <SvgIcon name="sad-face" :size="40" />
         <span>Keine Elemente gefunden</span>
         <button
           @click="
@@ -529,37 +519,16 @@ function startDrag(event: DragEvent, elementType: string) {
   background-color: var(--theme-bg-alt);
   border: 1px solid var(--theme-border);
   border-radius: 6px;
-  margin-bottom: 0.5rem;
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
 
-  &::after {
-    content: "Hinzufügen";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: rgba(26, 188, 156, 0.9);
-    color: white;
-    font-weight: 500;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-  }
-
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     border-color: var(--theme-primary, #1abc9c);
-
-    &::after {
-      opacity: 1;
-    }
+    background-color: rgba(26, 188, 156, 0.1);
   }
 
   &:active {

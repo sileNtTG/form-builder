@@ -237,7 +237,7 @@ function insertElement(elementType: string) {
 
   // Create the element
   const baseElementProps = {
-    id: uuidv4(),
+    dataId: uuidv4(),
     label: `New ${elementType.charAt(0).toUpperCase() + elementType.slice(1)}`,
     required: false,
     order: 0,
@@ -333,25 +333,21 @@ function insertElement(elementType: string) {
   }
 
   if (newElement) {
-    // Check if we're adding to a fieldset
-    if (currentFieldsetId.value) {
-      formBuilderStore.addElementToFieldset(
-        currentFieldsetId.value,
+    // Use the new store function for consistent positioning
+    if (insertMode.value && currentInsertPosition.value !== null) {
+      // Insert at specific position (root or fieldset)
+      formBuilderStore.addElementAtPosition(
         newElement,
-        currentInsertPosition.value || 0
+        currentInsertPosition.value,
+        currentFieldsetId.value
       );
-    } else if (insertMode.value && currentInsertPosition.value !== null) {
-      // Insert at specific position in the main canvas
-      const elements = [...formBuilderStore.elements];
-      elements.splice(currentInsertPosition.value, 0, newElement);
-      formBuilderStore.setFormElements(elements);
     } else {
       // Add at the end of the main canvas
       formBuilderStore.addElement(newElement);
     }
 
     // Select the new element
-    formBuilderStore.selectElement(newElement.id);
+    formBuilderStore.selectElement(newElement.dataId);
   }
 
   // Reset insertion state

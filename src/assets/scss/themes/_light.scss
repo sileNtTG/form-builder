@@ -6,21 +6,22 @@
 // LIGHT THEME PALETTE
 // ==========================================================================
 
-$bg-main-light: base.$white;
-$bg-surface-light: base.$gray-50;
-$bg-alt-light: base.$gray-100;
-$bg-hover-light: color.adjust(base.$gray-50, $lightness: -5%);
-$bg-input-light: base.$white;
+$bg-main-light: #ffffff;
+$bg-surface-light: #f8fafc;
+$bg-alt-light: #f1f5f9;
+$bg-hover-light: #e2e8f0;
+$bg-input-light: #ffffff;
+$bg-sidebar-light: #ffffff; // Make sidebar light too
 
-$text-primary-light: base.$gray-900;
-$text-secondary-light: base.$gray-700;
-$text-muted-light: base.$gray-500;
-$text-disabled-light: base.$gray-400;
-$text-inverse-light: base.$white;
-$text-code-light: base.$vue-blue-darker;
+$text-primary-light: #1e293b;
+$text-secondary-light: #475569;
+$text-muted-light: #64748b;
+$text-disabled-light: #94a3b8;
+$text-inverse-light: #ffffff;
+$text-code-light: #1e293b;
 
-$border-color-light: base.$gray-300;
-$border-input-light: base.$gray-400;
+$border-color-light: #e2e8f0;
+$border-input-light: #cbd5e1;
 $select-arrow-color-light: $text-muted-light;
 $select-arrow-bg-light: $bg-input-light;
 $select-arrow-hover-bg-light: color.adjust($bg-input-light, $lightness: -5%);
@@ -46,17 +47,18 @@ $light-theme-variables: (
   "bg-alt": $bg-alt-light,
   "bg-hover": $bg-hover-light,
   "bg-input": $bg-input-light,
+  "sidebar-bg": $bg-sidebar-light,
   "panel-bg": $bg-surface-light,
-  "item-bg": base.$white,
-  "item-hover-bg": color.adjust(base.$white, $lightness: -3%),
+  "item-bg": $bg-main-light,
+  "item-hover-bg": $bg-hover-light,
   "border": $border-color-light,
   "border-input": $border-input-light,
   "select-arrow-color": $select-arrow-color-light,
   "select-arrow-bg": $select-arrow-bg-light,
   "select-arrow-hover-bg": $select-arrow-hover-bg-light,
-  "button-default-bg": base.$gray-200,
+  "button-default-bg": #f1f5f9,
   "button-default-text": $text-primary-light,
-  "button-default-border": base.$gray-400,
+  "button-default-border": $border-color-light,
   "button-default-hover-bg": $button-default-bg-hover-light,
   "primary": base.$primary,
   "primary-rgb":
@@ -97,7 +99,7 @@ $light-theme-variables: (
     ),
   "warning-light": base.$warning-light,
   "warning-dark": base.$warning-dark,
-  "warning-contrast": base.$gray-900,
+  "warning-contrast": #1e293b,
   "success": base.$success,
   "success-rgb":
     string.unquote(
@@ -118,21 +120,20 @@ $light-theme-variables: (
   "link-hover": base.$primary-dark,
   "shadow-color-rgb": base.$shadow-color-rgb-light,
 
-  // Sidebar specific colors - Light Theme (Sidebar background remains dark)
-  "sidebar-heading-text": base.$vue-green,
-  "sidebar-toggle-icon": base.$vue-green,
-  "sidebar-section-text": base.$vue-green,
-  "sidebar-section-icon": base.$vue-green,
-  "sidebar-item-text": base.$white,
-  "sidebar-item-icon": base.$white,
-  "sidebar-item-hover-text": base.$white,
-  "sidebar-item-hover-icon": base.$white,
-  "sidebar-item-active-bg": base.$primary-dark,
-  // Active item bg on dark sidebar
-  "sidebar-item-active-text": base.$white,
-  "sidebar-item-active-icon": base.$white,
+  // Sidebar specific colors - Light Theme (Sidebar is now also light)
+  "sidebar-heading-text": base.$primary,
+  "sidebar-toggle-icon": $text-muted-light,
+  "sidebar-section-text": $text-primary-light,
+  "sidebar-section-icon": $text-muted-light,
+  "sidebar-item-text": $text-secondary-light,
+  "sidebar-item-icon": $text-muted-light,
+  "sidebar-item-hover-text": $text-primary-light,
+  "sidebar-item-hover-icon": base.$primary,
+  "sidebar-item-active-bg": rgba(65, 184, 131, 0.1),
+  "sidebar-item-active-text": base.$primary,
+  "sidebar-item-active-icon": base.$primary,
 
   // Element Panel specific
-  "element-icon-bg": base.$gray-50,
-  "element-icon-color": base.$primary-light,
+  "element-icon-bg": #f1f5f9,
+  "element-icon-color": base.$primary,
 );

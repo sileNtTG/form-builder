@@ -1,36 +1,45 @@
 <script setup lang="ts">
 import { computed, watch, ref } from "vue";
-import { useFormBuilderStore } from "../../stores/formBuilder";
+import { useFormBuilderStore } from "@/stores/formBuilder";
 import type {
   FormElement,
   FormElementOption,
   SelectOption,
   RadioElementOption,
-} from "../../models/FormElement";
+} from "@/models/FormElement";
+import { SvgIcon } from "@/components/common";
 
 const formBuilderStore = useFormBuilderStore();
 const selectedElement = computed(() => formBuilderStore.selectedElement);
 
 // Handle updates to the selected element
-function updateElementProperty(key: string, value: any) {
-  if (!selectedElement.value) return;
-  formBuilderStore.updateElementProperty(selectedElement.value.id, key, value);
+function updateElementProperty(
+  key: string,
+  value: string | number | boolean | null
+) {
+  if (selectedElement.value) {
+    formBuilderStore.updateElementProperty(
+      selectedElement.value.dataId,
+      key,
+      value
+    );
+  }
 }
 
 // Special handler for options (select, radio)
 function updateElementOptions(options: FormElementOption[]) {
   if (!selectedElement.value) return;
   formBuilderStore.updateElementProperty(
-    selectedElement.value.id,
+    selectedElement.value.dataId,
     "options",
-    options
+    options as any
   );
 }
 
 // Delete element
 function deleteElement() {
   if (!selectedElement.value) return;
-  formBuilderStore.removeElement(selectedElement.value.id);
+  formBuilderStore.removeElement(selectedElement.value.dataId);
 }
 
 // Options management for select/radio elements
@@ -78,11 +87,7 @@ function removeOption(index: number) {
   <div class="property-panel">
     <div v-if="!selectedElement" class="property-panel__empty">
       <div class="property-panel__empty-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path
-            d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm0 14a1 1 0 1 1 1-1 1 1 0 0 1-1 1Zm1-4a1 1 0 0 1-2 0V8a1 1 0 0 1 2 0Z"
-          />
-        </svg>
+        <SvgIcon name="info" :size="32" />
       </div>
       <div class="property-panel__empty-text">
         Wähle ein Element aus, um seine Eigenschaften zu bearbeiten
@@ -328,15 +333,11 @@ function removeOption(index: number) {
                 @click="removeOption(index)"
                 title="Remove option"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
+                <SvgIcon name="x" :size="16" />
               </button>
             </div>
             <button type="button" class="add-option-btn" @click="addOption">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M12 5v14M5 12h14" />
-              </svg>
+              <SvgIcon name="plus" :size="16" />
               <span>Add Option</span>
             </button>
           </div>
@@ -435,13 +436,7 @@ function removeOption(index: number) {
       <!-- Delete Button -->
       <div class="property-panel__actions">
         <button type="button" class="delete-button" @click="deleteElement">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M4 7h16" />
-            <path d="M10 11v6" />
-            <path d="M14 11v6" />
-            <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12" />
-            <path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3" />
-          </svg>
+          <SvgIcon name="trash" :size="18" />
           <span>Delete Element</span>
         </button>
       </div>

@@ -1,5 +1,5 @@
 export interface BaseFormElement {
-  id: string;
+  dataId: string;
   type: string;
   serverFqn?: string;
   label: string;
