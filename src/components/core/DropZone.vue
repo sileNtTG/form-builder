@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { useDragAndDrop } from "@/composables/useDragAndDrop";
+import { useDragAndDrop } from "@/composables";
 
 interface Props {
   position: "before" | "after";

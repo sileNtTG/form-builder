@@ -27,7 +27,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
-import { useTheme, type Theme } from "../../composables/useTheme";
+import { useTheme, type Theme } from "@/composables";
 import { SvgIcon } from "@/components/common";
 
 const { theme, setTheme, getThemeLabel } = useTheme();

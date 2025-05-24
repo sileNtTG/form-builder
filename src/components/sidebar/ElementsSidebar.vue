@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useDragAndDrop } from "@/composables/useDragAndDrop";
+import { useDragAndDrop } from "@/composables";
 
 const { startExternalDrag, endDrag } = useDragAndDrop();
 

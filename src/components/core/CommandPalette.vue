@@ -237,7 +237,7 @@ function insertElement(elementType: string) {
 
   // Create the element
   const baseElementProps = {
-    id: uuidv4(),
+    dataId: uuidv4(),
     label: `New ${elementType.charAt(0).toUpperCase() + elementType.slice(1)}`,
     required: false,
     order: 0,
@@ -347,7 +347,7 @@ function insertElement(elementType: string) {
     }
 
     // Select the new element
-    formBuilderStore.selectElement(newElement.id);
+    formBuilderStore.selectElement(newElement.dataId);
   }
 
   // Reset insertion state

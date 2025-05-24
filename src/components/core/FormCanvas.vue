@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, watch } from "vue";
 import { useFormBuilderStore } from "@/stores/formBuilder";
-import { useDragAndDrop } from "@/composables/useDragAndDrop";
+import { useDragAndDrop, type DropTarget } from "@/composables";
 import FormElementRenderer from "./FormElementRenderer.vue";
 import SpacerWrapper from "./SpacerWrapper.vue";
 import DropZone from "./DropZone.vue";
-import type { DropTarget } from "@/composables/useDragAndDrop";
 import type { FieldsetElement } from "@/models/FormElement";
 
 const formBuilderStore = useFormBuilderStore();

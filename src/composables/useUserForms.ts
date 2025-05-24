@@ -1,6 +1,6 @@
 import { ref, computed } from "vue";
 import { useFormBuilderStore } from "@/stores/formBuilder";
-import { useServerFormImporter } from "@/composables/useServerFormImporter";
+import { useServerFormImporter } from "@/composables";
 import type { FormElement } from "@/models/FormElement";
 
 // Vite's import.meta.glob for raw JSON content

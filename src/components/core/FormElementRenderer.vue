@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { FormElement } from "@/models/FormElement";
-import { useDragAndDrop } from "@/composables/useDragAndDrop";
+import { useDragAndDrop } from "@/composables";
 import { useFormBuilderStore } from "@/stores/formBuilder";
 import { SvgIcon } from "@/components/common";
 import SpacerWrapper from "./SpacerWrapper.vue";

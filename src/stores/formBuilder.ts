@@ -9,7 +9,7 @@ import type {
   SelectElement, // Add other specific types if your createElement supports them
 } from "../models/FormElement";
 import { v4 as uuidv4 } from "uuid";
-import { useServerFormImporter } from "@/composables/useServerFormImporter";
+import { useServerFormImporter } from "@/composables";
 
 // @ts-ignore
 import responseJson from "@/test-files/user/Response.json";

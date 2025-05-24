@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, watchEffect, onMounted, onUnmounted, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
-import { useLocalStorage } from "../../composables/useLocalStorage";
-import { useFormBuilderStore } from "../../stores/formBuilder";
+import { useLocalStorage } from "@/composables";
+import { useFormBuilderStore } from "@/stores/formBuilder";
 import { SvgIcon } from "@/components/common";
 
 // Router und Route

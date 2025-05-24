@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import { useFormBuilderStore } from "@/stores/formBuilder";
 import type { FormElement } from "@/models/FormElement";
 import { SvgIcon, ElementIcon } from "@/components/common";
-import { useDragAndDrop } from "@/composables/useDragAndDrop";
+import { useDragAndDrop } from "@/composables";
 
 const formBuilderStore = useFormBuilderStore();
 const { startExternalDrag, endDrag } = useDragAndDrop();

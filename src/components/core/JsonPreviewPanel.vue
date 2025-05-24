@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { useFormBuilderStore } from "@/stores/formBuilder";
+import type { FormElement } from "@/models/FormElement";
 import { SvgIcon } from "@/components/common";
 
 const formBuilderStore = useFormBuilderStore();
@@ -38,7 +39,7 @@ const formJson = computed(() => {
 function transformToServerFormat(
   element: FormElement
 ): Record<string, unknown> {
-  let serverElement: Record<string, unknown> = {
+  const serverElement: Record<string, unknown> = {
     fqn:
       element.serverFqn ||
       `Easy\\Form\\Item\\${
@@ -48,28 +49,30 @@ function transformToServerFormat(
       name: element.label?.toLowerCase().replace(/\s+/g, "_") || element.type,
       label: element.label,
       required: element.required,
-    },
+    } as Record<string, unknown>,
   };
 
+  const attributes = serverElement.attributes as Record<string, unknown>;
+
   // Handle common attributes
-  if (element.placeholder) {
-    serverElement.attributes.placeholder = element.placeholder;
+  if ("placeholder" in element && element.placeholder) {
+    attributes.placeholder = element.placeholder;
   }
 
   // Type specific transformations
   switch (element.type) {
     case "input":
-      serverElement.attributes.type = "text";
+      attributes.type = "text";
       break;
     case "textarea":
       if (element.rows) {
-        serverElement.attributes.rows = element.rows;
+        attributes.rows = element.rows;
       }
       break;
     case "checkbox":
-      serverElement.attributes.type = "checkbox";
+      attributes.type = "checkbox";
       if (element.checked) {
-        serverElement.attributes.checked = "checked";
+        attributes.checked = "checked";
       }
       break;
     case "fieldset":
