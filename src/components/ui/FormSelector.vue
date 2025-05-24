@@ -20,7 +20,12 @@
             <polyline points="10,9 9,9 8,9" />
           </svg>
           <EditableTitle
-            :value="activeForm?.name || 'Kein Formular ausgewählt'"
+            :value="
+              activeForm?.name ||
+              (forms.length > 0
+                ? 'Kein Formular ausgewählt'
+                : 'Noch keine Formulare erstellt')
+            "
             placeholder="Neues Formular"
             edit-tooltip="Formularnamen bearbeiten"
             @update="handleNameUpdate"
@@ -52,7 +57,7 @@
               Neu
             </button>
           </div>
-          <div class="forms-list">
+          <div v-if="forms.length > 0" class="forms-list">
             <div
               v-for="form in forms"
               :key="form.id"
@@ -94,10 +99,15 @@
               </div>
             </div>
           </div>
+          <div v-else class="empty-forms-message">
+            <p>Noch keine Formulare vorhanden.</p>
+            <p>Klicken Sie auf "Neu" um zu beginnen.</p>
+          </div>
         </div>
       </div>
 
-      <div class="form-actions">
+      <!-- Form Actions - only show when forms exist and one is active -->
+      <div v-if="forms.length > 0 && activeForm" class="form-actions">
         <button @click="saveForm" class="action-btn" title="Formular speichern">
           <svg
             width="16"
@@ -129,15 +139,16 @@
             stroke-width="2"
           >
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2 2v1" />
           </svg>
           Duplizieren
         </button>
       </div>
     </div>
 
-    <div class="form-selector-right">
-      <div v-if="activeForm" class="current-form-status">
+    <!-- Right Section - only show when forms exist and one is active -->
+    <div v-if="forms.length > 0 && activeForm" class="form-selector-right">
+      <div class="current-form-status">
         <PublishStatus
           :published="activeForm.published || false"
           :published-at="activeForm.publishedAt"
@@ -162,7 +173,6 @@
       </button>
 
       <PublishActions
-        v-if="activeForm"
         :published="activeForm.published || false"
         :loading="isPublishing"
         variant="button"
@@ -448,6 +458,18 @@ onUnmounted(() => {
 .form-item-elements {
   font-size: $font-size-xs;
   color: var(--theme-text-muted);
+}
+
+.empty-forms-message {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--theme-text-muted);
+
+  p {
+    margin: 0.25rem 0;
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
 }
 
 .form-actions {
