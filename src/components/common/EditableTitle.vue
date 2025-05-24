@@ -116,17 +116,12 @@ const cancelEdit = () => {
     color: var(--theme-text-muted);
     cursor: pointer;
     border-radius: $border-radius-sm;
-    opacity: 0;
     @include transition(all, $transition-fast);
 
     &:hover {
       color: var(--theme-primary); // Green hover like other icons
       background: rgba(26, 188, 156, 0.1); // Green background on hover
     }
-  }
-
-  &__display:hover &__edit-btn {
-    opacity: 1;
   }
 
   &__input {
