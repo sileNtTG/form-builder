@@ -76,12 +76,17 @@
               <div class="form-item-content">
                 <div class="form-item-header">
                   <span class="form-item-name">{{ form.name }}</span>
-                  <PublishStatus
-                    :published="form.published || false"
-                    :published-at="form.publishedAt"
-                    size="sm"
-                    :show-text="false"
-                  />
+                  <div class="form-item-status">
+                    <OrangeIndicator
+                      :show="formBuilderStore.formHasUnsavedChanges(form.id)"
+                    />
+                    <PublishStatus
+                      :published="form.published || false"
+                      :published-at="form.publishedAt"
+                      size="sm"
+                      :show-text="false"
+                    />
+                  </div>
                 </div>
                 <span class="form-item-elements"
                   >{{ form.visualElements?.length || 0 }} Elemente</span
@@ -204,6 +209,7 @@ import {
   PublishActions,
   Modal,
   EditableTitle,
+  OrangeIndicator,
 } from "@/components/common";
 import { useFormPersistenceIntegration } from "@/examples/useFormPersistenceExample";
 
@@ -434,6 +440,12 @@ onUnmounted(() => {
 .form-item-name {
   @include text-small;
   font-weight: $font-weight-medium;
+}
+
+.form-item-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .form-item-elements {

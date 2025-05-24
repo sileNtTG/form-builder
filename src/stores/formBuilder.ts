@@ -70,6 +70,16 @@ export const useFormBuilderStore = defineStore("formBuilder", {
     selectedElementId: null as string | null,
     isDragging: false as boolean, // Global flag for active drag operation
     hasUnsavedChanges: false, // Track if current form has unsaved changes
+    // NEW: Track unsaved changes per form and per element
+    unsavedFormChanges: new Map<
+      string,
+      {
+        hasChanges: boolean;
+        changedElements: Set<string>; // Element IDs that have been modified
+        nameChanged: boolean; // Whether the form name has been changed
+        lastModified: number; // Timestamp of last modification
+      }
+    >(),
     canvasConfig: {
       // Flagged for potential unused state
       width: 1200,
@@ -110,6 +120,38 @@ export const useFormBuilderStore = defineStore("formBuilder", {
     },
     formList(state): { id: string; name: string }[] {
       return state.forms.map((f) => ({ id: f.id, name: f.name }));
+    },
+    // NEW: Check if a specific form has unsaved changes
+    formHasUnsavedChanges:
+      (state) =>
+      (formId: string): boolean => {
+        const formChanges = state.unsavedFormChanges.get(formId);
+        return formChanges?.hasChanges || false;
+      },
+    // NEW: Check if a specific element has unsaved changes
+    elementHasUnsavedChanges:
+      (state) =>
+      (elementId: string): boolean => {
+        if (!state.activeFormId) return false;
+        const formChanges = state.unsavedFormChanges.get(state.activeFormId);
+        return formChanges?.changedElements.has(elementId) || false;
+      },
+    // NEW: Check if active form name has been changed
+    activeFormNameChanged(state): boolean {
+      if (!state.activeFormId) return false;
+      const formChanges = state.unsavedFormChanges.get(state.activeFormId);
+      return formChanges?.nameChanged || false;
+    },
+    // NEW: Get all forms with their unsaved status
+    formsWithUnsavedStatus(
+      state
+    ): Array<{ id: string; name: string; hasUnsavedChanges: boolean }> {
+      return state.forms.map((form) => ({
+        id: form.id,
+        name: form.name,
+        hasUnsavedChanges:
+          state.unsavedFormChanges.get(form.id)?.hasChanges || false,
+      }));
     },
   },
 
@@ -202,7 +244,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
         this.activeFormId = null;
         this.elements = [];
         this.selectedElementId = null;
-        this.markFormAsClean(); // Clean state when no form is active
+        this.hasUnsavedChanges = false; // Clean state when no form is active
         return;
       }
 
@@ -215,7 +257,10 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       this.activeFormId = formId;
       this.elements = [...targetForm.visualElements];
       this.selectedElementId = null;
-      this.markFormAsClean(); // Reset unsaved changes when switching forms
+
+      // Load the unsaved changes state for this form
+      const formChanges = this.unsavedFormChanges.get(formId);
+      this.hasUnsavedChanges = formChanges?.hasChanges || false;
     },
 
     deleteForm(formId: string) {
@@ -240,7 +285,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
         if (activeForm) {
           activeForm.name = newName;
           activeForm.rawServerData.attributes.name = newName;
-          this.markFormAsDirty(); // Track unsaved changes
+          this.markFormNameAsChanged(); // Track form name change specifically
         }
       }
     },
@@ -821,7 +866,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       if (info && info.element) {
         (info.element as unknown as Record<string, unknown>)[key] = value;
         this.syncActiveFormVisualsFromCanvas();
-        this.markFormAsDirty(); // Track unsaved changes
+        this.markElementAsChanged(elementId); // Track specific element change
       }
     },
 
@@ -905,10 +950,101 @@ export const useFormBuilderStore = defineStore("formBuilder", {
 
     markFormAsDirty() {
       this.hasUnsavedChanges = true;
+      // NEW: Also track per form
+      if (this.activeFormId) {
+        this.markFormAsDirtyById(this.activeFormId);
+      }
     },
 
     markFormAsClean() {
       this.hasUnsavedChanges = false;
+      // NEW: Also clean per form
+      if (this.activeFormId) {
+        this.markFormAsCleanById(this.activeFormId);
+      }
+    },
+
+    // NEW: Enhanced unsaved changes tracking methods
+    markFormAsDirtyById(formId: string, elementId?: string) {
+      const existingChanges = this.unsavedFormChanges.get(formId);
+
+      if (existingChanges) {
+        existingChanges.hasChanges = true;
+        existingChanges.lastModified = Date.now();
+        if (elementId) {
+          existingChanges.changedElements.add(elementId);
+        }
+      } else {
+        this.unsavedFormChanges.set(formId, {
+          hasChanges: true,
+          changedElements: elementId ? new Set([elementId]) : new Set(),
+          nameChanged: false,
+          lastModified: Date.now(),
+        });
+      }
+
+      // Update global flag if this is the active form
+      if (formId === this.activeFormId) {
+        this.hasUnsavedChanges = true;
+      }
+    },
+
+    markFormAsCleanById(formId: string) {
+      this.unsavedFormChanges.set(formId, {
+        hasChanges: false,
+        changedElements: new Set(),
+        nameChanged: false,
+        lastModified: Date.now(),
+      });
+
+      // Update global flag if this is the active form
+      if (formId === this.activeFormId) {
+        this.hasUnsavedChanges = false;
+      }
+    },
+
+    markElementAsChanged(elementId: string) {
+      if (this.activeFormId) {
+        this.markFormAsDirtyById(this.activeFormId, elementId);
+      }
+    },
+
+    markFormNameAsChanged() {
+      if (this.activeFormId) {
+        const existingChanges = this.unsavedFormChanges.get(this.activeFormId);
+
+        if (existingChanges) {
+          existingChanges.hasChanges = true;
+          existingChanges.nameChanged = true;
+          existingChanges.lastModified = Date.now();
+        } else {
+          this.unsavedFormChanges.set(this.activeFormId, {
+            hasChanges: true,
+            changedElements: new Set(),
+            nameChanged: true,
+            lastModified: Date.now(),
+          });
+        }
+
+        this.hasUnsavedChanges = true;
+      }
+    },
+
+    clearElementChanges(elementId: string) {
+      if (this.activeFormId) {
+        const formChanges = this.unsavedFormChanges.get(this.activeFormId);
+        if (formChanges) {
+          formChanges.changedElements.delete(elementId);
+
+          // If no more changes, mark form as clean
+          if (
+            formChanges.changedElements.size === 0 &&
+            !formChanges.nameChanged
+          ) {
+            this.markFormAsCleanById(this.activeFormId);
+          }
+        }
+      }
     },
   },
 });

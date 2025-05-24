@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { FormElement } from "@/models/FormElement";
-import { SvgIcon, ElementIcon } from "@/components/common";
+import { SvgIcon, ElementIcon, OrangeIndicator } from "@/components/common";
+import { useFormBuilderStore } from "@/stores/formBuilder";
 
 interface TreeNode {
   element: FormElement;
@@ -24,6 +25,8 @@ const emit = defineEmits<{
   toggle: [elementId: string];
   select: [elementId: string];
 }>();
+
+const formBuilderStore = useFormBuilderStore();
 
 const hasChildren = computed(() => props.node.children.length > 0);
 
@@ -101,6 +104,11 @@ function handleSelect() {
 
       <!-- Element Label -->
       <span class="tree-node__label">{{ nodeLabel }}</span>
+
+      <!-- Orange Indicator for unsaved changes -->
+      <OrangeIndicator
+        :show="formBuilderStore.elementHasUnsavedChanges(node.element.dataId)"
+      />
 
       <!-- Element Type Badge -->
       <!-- <span class="tree-node__type">{{ node.element.type }}</span> -->

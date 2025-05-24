@@ -4,7 +4,12 @@ import { useFormBuilderStore } from "@/stores/formBuilder";
 import { useToastStore } from "@/stores/toast";
 import { useCanvasNavigation } from "@/composables/useCanvasNavigation";
 import type { FormElement, FieldsetElement } from "@/models/FormElement";
-import { SvgIcon, ElementIcon, EditableTitle } from "@/components/common";
+import {
+  SvgIcon,
+  ElementIcon,
+  EditableTitle,
+  OrangeIndicator,
+} from "@/components/common";
 import TreeNode from "./TreeNode.vue";
 
 const formBuilderStore = useFormBuilderStore();
@@ -121,13 +126,16 @@ function handleFormNameUpdate(newName: string) {
 <template>
   <div class="tree-view">
     <div class="tree-view__header">
-      <EditableTitle
-        :value="formBuilderStore.activeForm?.name || 'No Form Selected'"
-        placeholder="Neues Formular"
-        edit-tooltip="Formularnamen bearbeiten"
-        @update="handleFormNameUpdate"
-        class="tree-view__title-editable"
-      />
+      <div class="tree-view__header-content">
+        <EditableTitle
+          :value="formBuilderStore.activeForm?.name || 'No Form Selected'"
+          placeholder="Neues Formular"
+          edit-tooltip="Formularnamen bearbeiten"
+          @update="handleFormNameUpdate"
+          class="tree-view__title-editable"
+        />
+        <OrangeIndicator :show="formBuilderStore.activeFormNameChanged" />
+      </div>
     </div>
 
     <div class="tree-view__content">
@@ -212,8 +220,14 @@ function handleFormNameUpdate(newName: string) {
     @include transition(all, $transition-fast);
   }
 
+  &__header-content {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+  }
+
   &__title-editable {
-    width: 100%;
+    flex: 1;
   }
 
   &__title {
