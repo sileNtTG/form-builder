@@ -137,7 +137,7 @@ function removeOption(index: number) {
       </div>
 
       <!-- Type-specific Properties -->
-      <div v-if="selectedElement.type === 'input'" class="property-section">
+      <div v-if="selectedElement.type === 'text'" class="property-section">
         <h3 class="property-section__title">Text Input Properties</h3>
         <div class="property-fields">
           <!-- Placeholder Field -->
@@ -146,7 +146,7 @@ function removeOption(index: number) {
             <input
               type="text"
               class="form-field__input"
-              :value="selectedElement.placeholder"
+              :value="(selectedElement as any).placeholder"
               @input="
                 updateElementProperty(
                   'placeholder',
@@ -163,7 +163,7 @@ function removeOption(index: number) {
               <input
                 type="number"
                 class="form-field__input"
-                :value="selectedElement.minLength"
+                :value="(selectedElement as any).minLength"
                 @input="
                   updateElementProperty(
                     'minLength',
@@ -178,7 +178,7 @@ function removeOption(index: number) {
               <input
                 type="number"
                 class="form-field__input"
-                :value="selectedElement.maxLength"
+                :value="(selectedElement as any).maxLength"
                 @input="
                   updateElementProperty(
                     'maxLength',
@@ -204,7 +204,7 @@ function removeOption(index: number) {
             <input
               type="text"
               class="form-field__input"
-              :value="selectedElement.placeholder"
+              :value="(selectedElement as any).placeholder"
               @input="
                 updateElementProperty(
                   'placeholder',
@@ -220,7 +220,7 @@ function removeOption(index: number) {
             <input
               type="number"
               class="form-field__input"
-              :value="selectedElement.rows"
+              :value="(selectedElement as any).rows"
               @input="
                 updateElementProperty(
                   'rows',
@@ -245,7 +245,7 @@ function removeOption(index: number) {
               type="checkbox"
               id="default-checked"
               class="form-field__checkbox"
-              :checked="selectedElement.checked"
+              :checked="(selectedElement as any).checked"
               @change="
                 updateElementProperty(
                   'checked',
@@ -271,27 +271,6 @@ function removeOption(index: number) {
           Options
         </h3>
         <div class="property-fields">
-          <div
-            v-if="selectedElement.type === 'select'"
-            class="form-field form-field--checkbox"
-          >
-            <input
-              type="checkbox"
-              id="multiple-select"
-              class="form-field__checkbox"
-              :checked="selectedElement.multiple"
-              @change="
-                updateElementProperty(
-                  'multiple',
-                  ($event.target as HTMLInputElement).checked
-                )
-              "
-            />
-            <label for="multiple-select" class="form-field__checkbox-label"
-              >Allow multiple selection</label
-            >
-          </div>
-
           <!-- Options List -->
           <div class="options-list">
             <div
