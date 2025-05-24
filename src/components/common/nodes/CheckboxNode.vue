@@ -1,10 +1,11 @@
 // @ts-nocheck
 <script setup lang="ts">
 import { computed } from "vue";
-import type { CheckboxElement } from "@/models";
+// import type { CheckboxElement } from "@/models";
 
 interface Props {
-  element: CheckboxElement;
+  // element: CheckboxElement;
+  element: any;
   modelValue?: boolean;
   mode?: "preview" | "interactive";
   disabled?: boolean;

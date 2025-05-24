@@ -1,11 +1,12 @@
 // @ts-nocheck
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import type { PasswordInputElement } from "@/models";
+// import type { PasswordInputElement } from "@/models";
 import { SvgIcon } from "@/components/common";
 
 interface Props {
-  element: PasswordInputElement;
+  // element: PasswordInputElement;
+  element: any;
   modelValue?: string;
   disabled?: boolean;
   readonly?: boolean;

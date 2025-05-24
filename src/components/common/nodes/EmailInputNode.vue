@@ -1,10 +1,11 @@
 // @ts-nocheck
 <script setup lang="ts">
 import { computed } from "vue";
-import type { EmailInputElement } from "@/models";
+// import type { EmailInputElement } from "@/models";
 
 interface Props {
-  element: EmailInputElement;
+  // element: EmailInputElement;
+  element: any;
   modelValue?: string;
   disabled?: boolean;
   readonly?: boolean;
