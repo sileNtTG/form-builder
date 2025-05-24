@@ -702,6 +702,9 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       // Mark new element as content change (not organizational change)
       this.markElementContentChanged(element.dataId);
 
+      // Automatically select the newly added element
+      this.selectElement(element.dataId);
+
       console.log(
         "After addElementAtPosition, elements length:",
         this.elements.length

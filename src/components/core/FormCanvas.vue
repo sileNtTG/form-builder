@@ -155,9 +155,7 @@ const onCanvasDrop = (event: DragEvent) => {
         elements.value.length, // This should place it at the end
         null // Root level
       );
-
-      // Ensure the new element gets focus
-      formBuilderStore.selectElement(newElement.dataId);
+      // Note: addElementAtPosition now automatically selects the element
     }
   }
 };
