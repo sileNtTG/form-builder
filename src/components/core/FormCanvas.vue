@@ -6,6 +6,7 @@ import FormElementRenderer from "./FormElementRenderer.vue";
 import SpacerWrapper from "./SpacerWrapper.vue";
 import DropZone from "./DropZone.vue";
 import type { DropTarget } from "@/composables/useDragAndDrop";
+import type { FieldsetElement } from "@/models/FormElement";
 
 const formBuilderStore = useFormBuilderStore();
 const { isDragging, registerCallbacks } = useDragAndDrop();
@@ -26,9 +27,9 @@ function calculateTargetIndex(target: DropTarget): number {
     if (
       parentFieldset &&
       parentFieldset.type === "fieldset" &&
-      (parentFieldset as any).children
+      (parentFieldset as FieldsetElement).children
     ) {
-      searchList = (parentFieldset as any).children;
+      searchList = (parentFieldset as FieldsetElement).children || [];
     } else {
       return 0;
     }
@@ -91,7 +92,13 @@ function handleElementClick(id: string) {
 }
 
 // Handle drop events from SpacerWrapper
-function onDrop(data: any) {
+function onDrop(data: {
+  position: "before" | "after";
+  siblingId?: string;
+  parentId?: string;
+  elementId?: string;
+  elementType?: string;
+}) {
   // The existing drag and drop logic will handle this via the registerCallbacks
 }
 

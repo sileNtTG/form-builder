@@ -13,7 +13,15 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   insert: [data: { index: number; fieldsetId?: string }];
-  drop: [data: any];
+  drop: [
+    data: {
+      position: "before" | "after";
+      siblingId?: string;
+      parentId?: string;
+      elementId?: string;
+      elementType?: string;
+    }
+  ];
 }>();
 
 // watch(props, (newValue) => {

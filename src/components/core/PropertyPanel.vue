@@ -13,25 +13,33 @@ const formBuilderStore = useFormBuilderStore();
 const selectedElement = computed(() => formBuilderStore.selectedElement);
 
 // Handle updates to the selected element
-function updateElementProperty(key: string, value: any) {
-  if (!selectedElement.value) return;
-  formBuilderStore.updateElementProperty(selectedElement.value.id, key, value);
+function updateElementProperty(
+  key: string,
+  value: string | number | boolean | null
+) {
+  if (selectedElement.value) {
+    formBuilderStore.updateElementProperty(
+      selectedElement.value.dataId,
+      key,
+      value
+    );
+  }
 }
 
 // Special handler for options (select, radio)
 function updateElementOptions(options: FormElementOption[]) {
   if (!selectedElement.value) return;
   formBuilderStore.updateElementProperty(
-    selectedElement.value.id,
+    selectedElement.value.dataId,
     "options",
-    options
+    options as any
   );
 }
 
 // Delete element
 function deleteElement() {
   if (!selectedElement.value) return;
-  formBuilderStore.removeElement(selectedElement.value.id);
+  formBuilderStore.removeElement(selectedElement.value.dataId);
 }
 
 // Options management for select/radio elements

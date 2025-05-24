@@ -35,19 +35,23 @@ const formJson = computed(() => {
   return JSON.stringify(formBuilderStore.elements, null, 2);
 });
 
-function transformToServerFormat(element: any): any {
-  let serverElement: any = {
-    fqn: getServerFqn(element.type),
-    attributes: {},
+function transformToServerFormat(
+  element: FormElement
+): Record<string, unknown> {
+  let serverElement: Record<string, unknown> = {
+    fqn:
+      element.serverFqn ||
+      `Easy\\Form\\Item\\${
+        element.type.charAt(0).toUpperCase() + element.type.slice(1)
+      }`,
+    attributes: {
+      name: element.label?.toLowerCase().replace(/\s+/g, "_") || element.type,
+      label: element.label,
+      required: element.required,
+    },
   };
 
   // Handle common attributes
-  if (element.label) {
-    serverElement.attributes.title = element.label;
-  }
-  if (element.required) {
-    serverElement.attributes.required = "required";
-  }
   if (element.placeholder) {
     serverElement.attributes.placeholder = element.placeholder;
   }
@@ -55,30 +59,25 @@ function transformToServerFormat(element: any): any {
   // Type specific transformations
   switch (element.type) {
     case "input":
-      serverElement.fqn = "Easy\\Form\\Item\\Input\\Text";
       serverElement.attributes.type = "text";
       break;
     case "textarea":
-      serverElement.fqn = "Easy\\Form\\Item\\Textarea";
       if (element.rows) {
         serverElement.attributes.rows = element.rows;
       }
       break;
     case "checkbox":
-      serverElement.fqn = "Easy\\Form\\Item\\Input\\Checkbox";
       serverElement.attributes.type = "checkbox";
       if (element.checked) {
         serverElement.attributes.checked = "checked";
       }
       break;
     case "fieldset":
-      serverElement.fqn = "Easy\\Form\\Fieldset";
       if (element.children && element.children.length > 0) {
         serverElement.children = element.children.map(transformToServerFormat);
       }
       break;
     case "button":
-      serverElement.fqn = "Easy\\Form\\Item\\Button";
       serverElement.children = [
         {
           fqn: "Easy\\Form\\Markup",

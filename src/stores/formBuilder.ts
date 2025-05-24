@@ -16,15 +16,23 @@ import responseJson from "@/test-files/user/Response.json";
 // @ts-ignore
 import responseWithAddedElementsJson from "@/test-files/user/Response-with-added-elements.json";
 
+interface ServerElement {
+  fqn: string;
+  attributes?: Record<string, unknown>;
+  children?: ServerElement[];
+  html?: string;
+  processors?: Array<{ fqn: string; [key: string]: unknown }>;
+}
+
 export interface ServerRawDataFormat {
   version: string;
   fqn: string;
   attributes: {
     name: string;
-    [key: string]: any;
+    [key: string]: string | number | boolean | null | undefined;
   };
-  processors?: any[];
-  children: any[];
+  processors?: Array<{ fqn: string; [key: string]: unknown }>;
+  children: ServerElement[];
 }
 
 export interface ManagedForm {
@@ -842,10 +850,10 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       return search(this.elements, null, this.elements);
     },
 
-    updateElementProperty(elementId: string, key: string, value: any) {
+    updateElementProperty(elementId: string, key: string, value: unknown) {
       const info = this.findElementWithParent(elementId);
       if (info && info.element) {
-        (info.element as any)[key] = value;
+        (info.element as unknown as Record<string, unknown>)[key] = value;
         this.syncActiveFormVisualsFromCanvas();
       }
     },
