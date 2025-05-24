@@ -25,10 +25,9 @@ const goToForms = () => {
   router.push("/");
 };
 
-// Show FormSelector only on form-related routes
+// Show FormSelector only on the main form builder page
 const showFormSelector = computed(() => {
-  const formRoutes = ["/", "/builder", "/preview"];
-  return formRoutes.some((path) => route.path.startsWith(path));
+  return route.path === "/";
 });
 
 // Unsaved changes handling
@@ -50,7 +49,7 @@ const handleSave = async () => {
 };
 
 const handleDiscardChanges = () => {
-  // For the orange banner - restore original state without clearing toasts
+  // Custom discard function for orange banner - doesn't clear all toasts
   if (formBuilderStore.activeFormId) {
     const restored = formBuilderStore.restoreOriginalFormState(
       formBuilderStore.activeFormId

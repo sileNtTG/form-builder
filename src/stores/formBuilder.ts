@@ -868,6 +868,30 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       toPosition: number, // This is the desired *visual* index in the target container
       toParentId: string | null = null
     ) {
+      // FIRST: Find the current position of the element to be moved
+      const sourceInfo = this.findElementWithParent(elementId);
+      if (!sourceInfo) {
+        console.warn(`Element ${elementId} not found`);
+        return;
+      }
+
+      // Determine source and target container information
+      const sourceParentId = sourceInfo.parent?.dataId || null;
+      const sourceIndex = sourceInfo.indexInContainer;
+
+      // Check if moving within the same container
+      const movingWithinSameContainer = sourceParentId === toParentId;
+
+      // ADJUST TARGET INDEX: If moving within same container and moving down,
+      // we need to adjust the target index because the source element will be removed first
+      let adjustedToPosition = toPosition;
+      if (movingWithinSameContainer && toPosition > sourceIndex) {
+        adjustedToPosition = toPosition - 1;
+        console.log(
+          `Adjusting target index from ${toPosition} to ${adjustedToPosition} (moving down within same container)`
+        );
+      }
+
       // Tiefe Kopie erstellen, um sicherzustellen, dass Modifikationen isoliert sind
       const workingCopy = JSON.parse(JSON.stringify(this.elements));
 
@@ -878,6 +902,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       );
 
       if (!extractResult.extractedElement) {
+        console.warn(`Failed to extract element ${elementId}`);
         return;
       }
 
@@ -891,14 +916,17 @@ export const useFormBuilderStore = defineStore("formBuilder", {
         !targetContainerResult.success ||
         !targetContainerResult.targetContainer
       ) {
+        console.warn(
+          `Failed to find target container for parentId: ${toParentId}`
+        );
         return;
       }
 
-      // Schritt 3: Element in Ziel-Container einfügen
+      // Schritt 3: Element in Ziel-Container einfügen (mit angepasstem Index)
       this._insertElementIntoContainer(
         targetContainerResult.targetContainer,
         extractResult.extractedElement,
-        toPosition
+        adjustedToPosition
       );
 
       // Schritt 4: Alle Ordnungszahlen rekursiv neu zuweisen
@@ -911,6 +939,10 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       );
 
       this.markFormAsDirty(); // Track unsaved changes
+
+      console.log(
+        `Moved element ${elementId} from index ${sourceIndex} to ${adjustedToPosition} (original target: ${toPosition})`
+      );
     },
 
     findElementWithParent(elementId: string): FoundElementInfo | null {
