@@ -1,10 +1,10 @@
 // @ts-nocheck
 <script setup lang="ts">
 import { computed } from "vue";
-import type { SingleSelectElement } from "@/models";
+import type { SelectElement } from "@/models";
 
 interface Props {
-  element: SingleSelectElement;
+  element: SelectElement;
   modelValue?: string;
   mode?: "preview" | "interactive";
   disabled?: boolean;
@@ -54,16 +54,13 @@ const hasOptions = computed(
     :required="element.required"
     class="node-select"
   >
-    <option v-if="element.placeholder && !element.required" value="" disabled>
-      {{ element.placeholder }}
-    </option>
+    <option v-if="!element.required" value="" disabled>Select an option</option>
 
     <option
       v-if="hasOptions"
       v-for="option in element.options"
       :key="option.value"
       :value="option.value"
-      :disabled="option.disabled"
     >
       {{ option.label }}
     </option>

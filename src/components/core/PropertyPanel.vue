@@ -137,7 +137,7 @@ function removeOption(index: number) {
       </div>
 
       <!-- Type-specific Properties -->
-      <div v-if="selectedElement.type === 'text'" class="property-section">
+      <div v-if="selectedElement.type === 'input'" class="property-section">
         <h3 class="property-section__title">Text Input Properties</h3>
         <div class="property-fields">
           <!-- Placeholder Field -->
