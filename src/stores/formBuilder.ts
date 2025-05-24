@@ -373,7 +373,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
     addElement(element: FormElement) {
       this.elements.push(element);
       this.syncActiveFormVisualsFromCanvas();
-      this.markFormAsDirty(); // Track unsaved changes
+      this.markElementAsChanged(element.dataId); // Track the new element as changed
     },
 
     createAndAddElement(elementType: string, x: number, y: number) {
@@ -503,7 +503,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
           if (element.dataId === elementId) {
             Object.assign(element, updates);
             this.syncActiveFormVisualsFromCanvas();
-            this.markFormAsDirty(); // Track unsaved changes
+            this.markElementAsChanged(elementId); // Track specific element change
             return true;
           }
           if (element.type === "fieldset" && element.children) {
