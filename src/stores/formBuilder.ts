@@ -41,6 +41,11 @@ export interface ManagedForm {
   rawServerData: ServerRawDataFormat;
   visualElements: FormElement[];
   filePath?: string;
+  createdAt?: string;
+  lastModified?: string;
+  version?: string;
+  published?: boolean;
+  publishedAt?: string;
 }
 
 // NEW: Interface for the result of finding an element, its parent, and container

@@ -6,9 +6,10 @@ import FormElementRenderer from "./FormElementRenderer.vue";
 import SpacerWrapper from "./SpacerWrapper.vue";
 import DropZone from "./DropZone.vue";
 import type { FieldsetElement } from "@/models/FormElement";
+import { SvgIcon } from "@/components/common";
 
 const formBuilderStore = useFormBuilderStore();
-const { isDragging, registerCallbacks } = useDragAndDrop();
+const { isDragging, registerCallbacks, handleDrop } = useDragAndDrop();
 
 // Simple computed for sorted elements
 const elements = computed(() => {
@@ -113,6 +114,48 @@ function onInsert(data: { index: number; fieldsetId?: string }) {
   window.dispatchEvent(event);
 }
 
+// Canvas drop handlers - make the entire canvas a drop target
+const onCanvasDragOver = (event: DragEvent) => {
+  event.preventDefault();
+  if (isDragging.value) {
+    event.dataTransfer!.dropEffect = "copy";
+  }
+};
+
+const onCanvasDrop = (event: DragEvent) => {
+  event.preventDefault();
+
+  if (!isDragging.value) {
+    return;
+  }
+
+  // Check if the drop target is a specific DropZone - if so, let it handle the drop
+  const target = event.target as HTMLElement;
+  if (target.closest(".drop-zone-container, .spacer-wrapper")) {
+    return; // Let the specific DropZone handle this
+  }
+
+  const elementType = event.dataTransfer?.getData("text/plain");
+  const elementId = event.dataTransfer?.getData("application/x-element-id");
+
+  // Only handle drops from external source (ElementPanel) to canvas background
+  if (elementType && !elementId) {
+    // Add element to the end of the list
+    const dropData = {
+      position: "after" as const,
+      siblingId:
+        elements.value.length > 0
+          ? elements.value[elements.value.length - 1].dataId
+          : undefined,
+      parentId: undefined,
+      elementId: undefined,
+      elementType: elementType,
+    };
+
+    handleDrop(dropData);
+  }
+};
+
 onMounted(() => {
   formBuilderStore.loadInitialForms().then(() => {
     const formIdToLoad = formBuilderStore.formList[0]?.id || null;
@@ -125,11 +168,20 @@ onMounted(() => {
 
 <template>
   <div class="canvas-container">
-    <div class="form-canvas" :class="{ 'dragging-active': isDragging }">
+    <div
+      class="form-canvas"
+      :class="{ 'dragging-active': isDragging }"
+      @dragover="onCanvasDragOver"
+      @drop="onCanvasDrop"
+    >
       <!-- Empty state -->
       <div v-if="elements.length === 0" class="form-canvas__empty">
         <DropZone position="before" class="empty-drop-zone" />
-        Drag elements from the sidebar here to create your form
+        <div class="empty-message">
+          <SvgIcon name="plus-circle" :size="48" class="empty-icon" />
+          <h3>Start building your form</h3>
+          <p>Drag elements from the sidebar to create your form</p>
+        </div>
       </div>
 
       <!-- Elements with spacer wrappers -->
@@ -184,6 +236,7 @@ onMounted(() => {
   border-radius: 8px;
   padding: 1.5rem;
   background: var(--theme-bg-surface, #1a1e29);
+  transition: all 0.2s ease;
 
   &__content {
     display: flex;
@@ -196,6 +249,21 @@ onMounted(() => {
   &.dragging-active {
     background-color: rgba(26, 188, 156, 0.05);
     border: 2px dashed rgba(26, 188, 156, 0.7);
+
+    &::after {
+      content: "Drop here to add element";
+      position: absolute;
+      bottom: 1rem;
+      right: 1rem;
+      padding: 0.5rem 1rem;
+      background: rgba(26, 188, 156, 0.2);
+      border: 1px solid rgba(26, 188, 156, 0.5);
+      border-radius: 4px;
+      color: rgba(26, 188, 156, 1);
+      font-size: 0.85rem;
+      pointer-events: none;
+      opacity: 0.8;
+    }
   }
 }
 
@@ -207,10 +275,40 @@ onMounted(() => {
   font-size: 0.9em;
   position: relative;
   min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .empty-drop-zone {
   position: absolute;
   inset: 0;
+}
+
+.empty-message {
+  text-align: center;
+  color: var(--theme-text-muted, #aaa);
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+
+  h3 {
+    margin: 1rem 0 0.5rem 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--theme-text);
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+    opacity: 0.8;
+  }
+}
+
+.empty-icon {
+  margin-bottom: 1rem;
+  color: var(--theme-primary, #1abc9c);
+  opacity: 0.6;
 }
 </style>
