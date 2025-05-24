@@ -78,7 +78,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
         id: string
       ): FormElement | null => {
         // Zunächst in der aktuellen Ebene suchen
-        const element = elements.find((el) => el.id === id);
+        const element = elements.find((el) => el.dataId === id);
         if (element) return element;
 
         // Falls nicht gefunden, in Fieldset-Kindern suchen
@@ -141,7 +141,6 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       });
 
       if (this.forms.length === 0) {
-        console.log("No JSON forms loaded, creating a default blank form.");
         this.createBlankForm("My First Form");
       }
 
@@ -249,8 +248,6 @@ export const useFormBuilderStore = defineStore("formBuilder", {
 
     syncActiveFormVisualsFromCanvas() {
       if (this.activeForm) {
-        console.log(`Syncing ${this.elements.length} elements to active form`);
-
         // Tiefe Kopie erstellen, um sicherzustellen, dass die Referenzen unterschiedlich sind
         const elementsCopy = JSON.parse(JSON.stringify(this.elements));
 
@@ -261,11 +258,6 @@ export const useFormBuilderStore = defineStore("formBuilder", {
 
         // Aktives Formular aktualisieren mit der korrigierten Kopie
         this.activeForm.visualElements = elementsCopy;
-
-        // Debug-Info für ausgewähltes Element
-        if (this.selectedElementId) {
-          console.log(`Current selected element: ${this.selectedElementId}`);
-        }
       } else {
         console.warn("No active form to sync visual elements to");
       }
@@ -280,8 +272,6 @@ export const useFormBuilderStore = defineStore("formBuilder", {
 
     setFormElements(elements: FormElement[]) {
       // Klare Zuweisung, um sicherzustellen, dass die Änderungen überall übernommen werden
-      console.log(`Store: Setting ${elements.length} elements`);
-
       // Tiefe Kopie der Elemente erstellen, um sicherzustellen, dass es eine neue Referenz ist
       this.elements = JSON.parse(JSON.stringify(elements));
 
@@ -304,10 +294,6 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       elements: FormElement[],
       elementToSelectId: string
     ) {
-      console.log(
-        `Store: Setting ${elements.length} elements and selecting ${elementToSelectId}`
-      );
-
       // ID des zu selektierenden Elements merken
       const idToSelect = elementToSelectId;
 
@@ -329,7 +315,6 @@ export const useFormBuilderStore = defineStore("formBuilder", {
 
         // Sicherstellen, dass die Auswahl nach der Synchronisierung gesetzt wird
         setTimeout(() => {
-          console.log(`Ensuring selection of ${idToSelect} is maintained`);
           this.selectedElementId = idToSelect;
         }, 50);
       }, 0);
@@ -342,7 +327,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
 
     createAndAddElement(elementType: string, x: number, y: number) {
       const baseElementProps = {
-        id: uuidv4(),
+        dataId: uuidv4(),
         label: `New ${
           elementType.charAt(0).toUpperCase() + elementType.slice(1)
         }`,
@@ -454,7 +439,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       if (newElement) {
         this.elements.push(newElement);
         this.syncActiveFormVisualsFromCanvas();
-        this.selectElement(newElement.id);
+        this.selectElement(newElement.dataId);
         return newElement;
       }
 
@@ -465,7 +450,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       // Rekursiv Element finden und aktualisieren
       const updateElementRecursive = (elements: FormElement[]): boolean => {
         // Element in aktueller Ebene suchen
-        const index = elements.findIndex((el) => el.id === elementId);
+        const index = elements.findIndex((el) => el.dataId === elementId);
         if (index !== -1) {
           elements[index] = {
             ...elements[index],
@@ -497,7 +482,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
     },
 
     updateElementPosition(elementId: string, x: number, y: number) {
-      const element = this.elements.find((el) => el.id === elementId);
+      const element = this.elements.find((el) => el.dataId === elementId);
       if (element) {
         element.x = x;
         element.y = y;
@@ -509,7 +494,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       // Funktion zum rekursiven Löschen von Elementen (auch in verschachtelten Fieldsets)
       const removeFromChildren = (elements: FormElement[]): boolean => {
         // Direkt in diesem Array suchen
-        const directIndex = elements.findIndex((el) => el.id === elementId);
+        const directIndex = elements.findIndex((el) => el.dataId === elementId);
         if (directIndex !== -1) {
           elements.splice(directIndex, 1);
           return true;
@@ -542,50 +527,41 @@ export const useFormBuilderStore = defineStore("formBuilder", {
     },
 
     selectElement(elementId: string | null) {
-      console.log(`Selecting element: ${elementId}`);
+      if (!elementId) {
+        this.selectedElementId = null;
+        return;
+      }
 
-      // Clear current selection first
-      this.selectedElementId = null;
-
-      // Use setTimeout to ensure the selection happens after UI updates
-      setTimeout(() => {
-        // Set the new selection
-        this.selectedElementId = elementId;
-
-        // If element ID is provided, let's try to find it to confirm it exists
-        if (elementId) {
-          const findElementById = (
-            elements: FormElement[],
-            id: string
-          ): FormElement | null => {
-            const element = elements.find((el) => el.id === id);
-            if (element) return element;
-
-            // Check in fieldset children
-            for (const el of elements) {
-              if (
-                el.type === "fieldset" &&
-                el.children &&
-                el.children.length > 0
-              ) {
-                const found = findElementById(el.children, id);
-                if (found) return found;
-              }
+      // Zunächst prüfen, ob Element existiert
+      if (this.elements && this.elements.length > 0) {
+        // Funktion für rekursive Suche nach Element-ID
+        const findElementById = (
+          elements: FormElement[],
+          id: string
+        ): FormElement | null => {
+          for (const element of elements) {
+            if (element.dataId === id) {
+              return element;
             }
 
-            return null;
-          };
-
-          const foundElement = findElementById(this.elements, elementId);
-          if (foundElement) {
-            console.log(
-              `Selected element found: ${foundElement.type} (${elementId})`
-            );
-          } else {
-            console.warn(`Selected element not found: ${elementId}`);
+            // Bei Fieldset auch in children suchen
+            if (element.type === "fieldset" && element.children) {
+              const found = findElementById(element.children, id);
+              if (found) return found;
+            }
           }
+          return null;
+        };
+
+        const foundElement = findElementById(this.elements, elementId);
+        if (foundElement) {
+          this.selectedElementId = elementId;
+        } else {
+          this.selectedElementId = null;
         }
-      }, 0);
+      } else {
+        this.selectedElementId = null;
+      }
     },
 
     async saveForm() {
@@ -603,7 +579,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
     ) {
       function findAndAdd(elements: FormElement[]): boolean {
         for (const el of elements) {
-          if (el.id === fieldsetId && el.type === "fieldset") {
+          if (el.dataId === fieldsetId && el.type === "fieldset") {
             if (!el.children) {
               el.children = [];
             }
@@ -636,7 +612,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       const success = findAndAdd(this.elements);
       if (success) {
         this.syncActiveFormVisualsFromCanvas();
-        this.selectElement(element.id);
+        this.selectElement(element.dataId);
       } else {
         console.error(`Fieldset with id ${fieldsetId} not found`);
       }
@@ -666,7 +642,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
           elem.order = index;
         });
 
-        this.setFormElementsAndSelect(elementsCopy, element.id);
+        this.setFormElementsAndSelect(elementsCopy, element.dataId);
       }
     },
 
@@ -696,7 +672,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
         for (let i = 0; i < currentElements.length; i++) {
           const el = JSON.parse(JSON.stringify(currentElements[i])); // Deep copy current element
 
-          if (el.id === elementIdToExtract && !foundAndExtracted) {
+          if (el.dataId === elementIdToExtract && !foundAndExtracted) {
             result.extractedElement = el;
             foundAndExtracted = true;
             // Don't add 'el' to newArray, effectively extracting it
@@ -738,7 +714,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       }
 
       for (const el of elementsToSearchIn) {
-        if (el.id === targetParentId && el.type === "fieldset") {
+        if (el.dataId === targetParentId && el.type === "fieldset") {
           if (!el.children) el.children = []; // Ensure children array exists
           return {
             targetContainer: el.children,
@@ -793,97 +769,47 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       toPosition: number, // This is the desired *visual* index in the target container
       toParentId: string | null = null
     ) {
-      console.log(
-        `Store: Attempting move: ${elementId.slice(-4)} to parent ${
-          toParentId?.slice(-4) || "root"
-        } at index ${toPosition}`
-      );
+      // Tiefe Kopie erstellen, um sicherzustellen, dass Modifikationen isoliert sind
+      const workingCopy = JSON.parse(JSON.stringify(this.elements));
 
-      if (elementId === toParentId) {
-        console.error(
-          `Store: Cannot move element ${elementId.slice(-4)} into itself.`
-        );
-        return;
-      }
-
-      // 1. Create a deep working copy of the current elements state
-      let workingElementsCopy = JSON.parse(
-        JSON.stringify(this.elements)
-      ) as FormElement[];
-      console.log("Store: Created deep copy of elements for move operation.");
-
-      // 2. Find and extract the element from this working copy.
-      // _findAndExtractElementRecursive now returns the modified copy as 'remainingElements'.
-      const extractionResult = this._findAndExtractElementRecursive(
-        workingElementsCopy,
+      // Schritt 1: Element aus ursprünglicher Position extrahieren
+      const extractResult = this._findAndExtractElementRecursive(
+        workingCopy,
         elementId
       );
 
-      if (!extractionResult.extractedElement) {
-        console.error(
-          `Store: Element ${elementId.slice(
-            -4
-          )} not found for extraction. Aborting move.`
-        );
+      if (!extractResult.extractedElement) {
         return;
       }
-      const elementToMove = extractionResult.extractedElement;
-      workingElementsCopy = extractionResult.remainingElements; // Update working copy to be the one after extraction
-      console.log(
-        `Store: Extracted ${elementToMove.id.slice(
-          -4
-        )}. Remaining elements in copy: ${workingElementsCopy.length}`
-      );
 
-      // 3. Find the target container (and parent) within the (potentially modified) workingElementsCopy.
-      const targetSearchResult = this._findTargetContainerRecursive(
-        workingElementsCopy,
+      // Schritt 2: Ziel-Container finden
+      const targetContainerResult = this._findTargetContainerRecursive(
+        extractResult.remainingElements,
         toParentId
       );
 
-      if (!targetSearchResult.success || !targetSearchResult.targetContainer) {
-        console.error(
-          `Store: Target container for parent ${
-            toParentId?.slice(-4) || "root"
-          } not found. Aborting move.`
-        );
+      if (
+        !targetContainerResult.success ||
+        !targetContainerResult.targetContainer
+      ) {
         return;
       }
-      const targetContainer = targetSearchResult.targetContainer; // This is a direct reference to an array *within* workingElementsCopy
-      console.log(
-        `Store: Found target container for parent ${
-          targetSearchResult.targetParent?.id.slice(-4) || "root"
-        }. Container items: ${targetContainer.length}`
-      );
 
-      // 4. Insert the extracted element into the identified target container at the correct position.
-      // The 'toPosition' is the visual index.
+      // Schritt 3: Element in Ziel-Container einfügen
       this._insertElementIntoContainer(
-        targetContainer,
-        elementToMove,
+        targetContainerResult.targetContainer,
+        extractResult.extractedElement,
         toPosition
       );
-      console.log(
-        `Store: Inserted ${elementToMove.id.slice(
-          -4
-        )} into target container. New container items: ${
-          targetContainer.length
-        }`
+
+      // Schritt 4: Alle Ordnungszahlen rekursiv neu zuweisen
+      this._reorderAllElementsRecursive(extractResult.remainingElements);
+
+      // Schritt 5: Arbeitsversion zurück ins Store setzen
+      this.setFormElementsAndSelect(
+        extractResult.remainingElements,
+        extractResult.extractedElement.dataId
       );
-
-      // 5. Reorder all elements in the entire modified workingElementsCopy (this will update 'order' properties).
-      this._reorderAllElementsRecursive(workingElementsCopy);
-      console.log("Store: Reordered all elements in the working copy.");
-
-      // 6. If all steps were successful, update the main store's elements with the fully processed workingElementsCopy.
-      // setFormElements handles deep copying and syncing with activeForm.
-      this.setFormElements(workingElementsCopy);
-      console.log(
-        `Store: Move successful. Updated main store elements. Root elements count: ${this.elements.length}`
-      );
-
-      // Ensure the moved element is selected
-      this.selectElement(elementId);
     },
 
     findElementWithParent(elementId: string): FoundElementInfo | null {
@@ -894,7 +820,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       ): FoundElementInfo | null => {
         for (let i = 0; i < elements.length; i++) {
           const currentElement = elements[i];
-          if (currentElement.id === elementId) {
+          if (currentElement.dataId === elementId) {
             return {
               element: currentElement,
               parent: currentParent,
@@ -926,7 +852,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
 
     createElement(elementType: string): FormElement {
       const commonFields = {
-        id: uuidv4(),
+        dataId: uuidv4(),
         required: false,
         order: 0,
         x: 0,

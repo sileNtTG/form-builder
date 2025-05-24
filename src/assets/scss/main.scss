@@ -10,6 +10,9 @@
 @use "abstracts" as *;
 @use "base/base"; // Imports global resets, HTML element styles, base form styles
 
+// Theme system - automatically generates CSS custom properties
+@use "themes/css-properties";
+
 // Global component styles (styles that are truly global and not component-specific)
 @use "components/form-elements"; // Styles for .builder-form-element on the canvas
 

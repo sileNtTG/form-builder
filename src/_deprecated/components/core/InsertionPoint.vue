@@ -19,6 +19,10 @@ function handleClick() {
     fieldsetId: props.fieldsetId,
   });
 }
+
+console.log("%cInsertionPoint", "color: deepink; font-weight: bold;");
+console.log("InsertionPoint", props.index);
+console.log("%cInsertionPoint", "color: deepink; font-weight: bold;");
 </script>
 
 <template>
@@ -47,7 +51,7 @@ function handleClick() {
   position: relative;
   width: 100%;
   pointer-events: all;
-  opacity: 0;
+  opacity: 0; /* Standardmäßig unsichtbar */
   transition: opacity 0.2s ease;
 
   /* Nur bei Hover sichtbar, AUSSER beim Dragging */

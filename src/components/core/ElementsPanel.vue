@@ -4,8 +4,10 @@ import { v4 as uuidv4 } from "uuid";
 import { useFormBuilderStore } from "@/stores/formBuilder";
 import type { FormElement } from "@/models/FormElement";
 import { SvgIcon, ElementIcon } from "@/components/common";
+import { useDragAndDrop } from "@/composables/useDragAndDrop";
 
 const formBuilderStore = useFormBuilderStore();
+const { startExternalDrag, endDrag } = useDragAndDrop();
 const searchQuery = ref("");
 const activeCategory = ref("all");
 
@@ -90,7 +92,7 @@ const filteredElements = computed(() => {
 function insertElement(elementType: string) {
   // Create the element
   const baseElementProps = {
-    id: uuidv4(),
+    dataId: uuidv4(),
     label: `Neues ${
       elementType.charAt(0).toUpperCase() + elementType.slice(1)
     }`,
@@ -182,14 +184,22 @@ function insertElement(elementType: string) {
     // Add the element
     formBuilderStore.addElement(newElement);
     // Select the new element
-    formBuilderStore.selectElement(newElement.id);
+    formBuilderStore.selectElement(newElement.dataId);
   }
 }
 
 // Start drag for an element
 function startDrag(event: DragEvent, elementType: string) {
+  // console.log(`%c##### File: ElementsPanel.vue | Line 193 ####`, 'color: deeppink;');
+  // console.log(`startDrag ||  ||`, elementType);
+  // console.log(`startDrag ||  ||`, event);
+  // console.log(`startDrag ||  ||`, event.dataTransfer);
+  // console.log(`%c#####################################`, 'color: deeppink;');
   if (event.dataTransfer) {
+    // WICHTIG: Synchronisiere beide Drag-State-Systeme!
     formBuilderStore.setDragging(true);
+    startExternalDrag(elementType); // Verwende useDragAndDrop State
+
     // Setze die Drag-Operation
     event.dataTransfer.effectAllowed = "copy";
 
@@ -202,7 +212,7 @@ function startDrag(event: DragEvent, elementType: string) {
       event.dataTransfer.setData("application/element-type", elementType);
       event.dataTransfer.setData("text", elementType);
     } catch (e) {
-      console.error("Fehler beim Setzen der Drag-Daten:", e);
+      // console.error("Fehler beim Setzen der Drag-Daten:", e);
       // Einfacher Fallback
       event.dataTransfer.setData("text", elementType);
     }
@@ -238,6 +248,7 @@ function startDrag(event: DragEvent, elementType: string) {
       const handleDragEnd = () => {
         elementCard.classList.remove("dragging");
         formBuilderStore.setDragging(false);
+        endDrag(); // Synchronisiere useDragAndDrop State
         document.removeEventListener("dragend", handleDragEnd);
       };
 
@@ -513,31 +524,11 @@ function startDrag(event: DragEvent, elementType: string) {
   position: relative;
   overflow: hidden;
 
-  &::after {
-    content: "Hinzufügen";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: rgba(26, 188, 156, 0.9);
-    color: white;
-    font-weight: 500;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-  }
-
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     border-color: var(--theme-primary, #1abc9c);
-
-    &::after {
-      opacity: 1;
-    }
+    background-color: rgba(26, 188, 156, 0.1);
   }
 
   &:active {

@@ -1,148 +1,127 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { useDragAndDrop } from "@/composables/useDragAndDrop";
 
-const props = defineProps<{
+interface Props {
   position: "before" | "after";
   siblingId?: string;
-  parentId?: string; // For fieldset drops
-  isDragging?: boolean; // Global dragging state from parent
-}>();
-
-const emit = defineEmits<{
-  drop: [
-    data: {
-      position: "before" | "after";
-      siblingId?: string;
-      parentId?: string;
-      elementId?: string;
-      elementType?: string;
-    }
-  ];
-}>();
-
-const isDragOver = ref(false);
-
-function handleDragEnter(e: DragEvent) {
-  e.preventDefault();
-  e.stopPropagation();
-  isDragOver.value = true;
+  parentId?: string;
 }
 
-function handleDragOver(e: DragEvent) {
-  e.preventDefault();
-  e.stopPropagation();
-  if (e.dataTransfer) {
-    e.dataTransfer.dropEffect = "move";
+const props = defineProps<Props>();
+const { isDragging, handleDrop } = useDragAndDrop();
+
+// Local state for this specific drop zone
+const isHovering = ref(false);
+
+const onDragEnter = (event: DragEvent) => {
+  event.preventDefault();
+  event.dataTransfer!.dropEffect = "copy";
+  isHovering.value = true;
+};
+
+const onDragLeave = (event: DragEvent) => {
+  event.preventDefault();
+  isHovering.value = false;
+};
+
+const onDrop = (event: DragEvent) => {
+  event.preventDefault();
+  isHovering.value = false; // Reset hover state on drop
+
+  if (!isDragging.value) {
+    return;
   }
-}
 
-function handleDragLeave(e: DragEvent) {
-  // Only reset if actually leaving the drop zone
-  const relatedTarget = e.relatedTarget as HTMLElement;
-  const currentTarget = e.currentTarget as HTMLElement;
+  const elementType = event.dataTransfer?.getData("text/plain");
+  const elementId = event.dataTransfer?.getData("application/x-element-id");
 
-  if (!relatedTarget || !currentTarget.contains(relatedTarget)) {
-    isDragOver.value = false;
+  // Prevent element from being dropped into itself (e.g., fieldset into its own children)
+  if (elementId && elementId === props.parentId) {
+    return;
   }
-}
 
-function handleDrop(e: DragEvent) {
-  e.preventDefault();
-  e.stopPropagation();
-  e.stopImmediatePropagation();
+  const dropData = {
+    position: props.position,
+    siblingId: props.siblingId,
+    parentId: props.parentId,
+    elementId: elementId || undefined,
+    elementType: elementType || undefined,
+  };
 
-  isDragOver.value = false;
-
-  if (e.dataTransfer) {
-    const elementId =
-      e.dataTransfer.getData("application/element-id") ||
-      e.dataTransfer.getData("text/plain");
-    const elementType = e.dataTransfer.getData("application/element-type");
-
-    console.log(
-      `🎯 DROP ZONE: ${elementId?.slice(-8) || elementType} ${props.position} ${
-        props.siblingId?.slice(-8) || "end"
-      } parentId: ${props.parentId?.slice(-8) || "none"}`
-    );
-
-    emit("drop", {
-      position: props.position,
-      siblingId: props.siblingId,
-      parentId: props.parentId,
-      elementId: elementId || undefined,
-      elementType: elementType || undefined,
-    });
+  if (elementId) {
+    // Moving existing element
+    handleDrop(dropData);
+  } else if (elementType) {
+    // Creating new element
+    handleDrop(dropData);
   }
-}
+};
+
+const onDragOver = (event: DragEvent) => {
+  event.preventDefault();
+  event.dataTransfer!.dropEffect = "move";
+};
 </script>
 
 <template>
-  <!-- Only show drop zone when something is being dragged -->
   <div
     v-if="isDragging"
-    class="drop-zone"
+    class="drop-zone-container"
     :class="{
-      'drop-zone--active': isDragOver,
-      'drop-zone--before': position === 'before',
-      'drop-zone--after': position === 'after',
+      'drop-zone-container--hovering': isHovering,
+      [`drop-zone-container--${position}`]: position,
     }"
-    @dragenter="handleDragEnter"
-    @dragover="handleDragOver"
-    @dragleave="handleDragLeave"
-    @drop="handleDrop"
-  >
-    <!-- Zeige Drop-Indikator nur bei Hover -->
-    <div class="drop-zone__indicator">
-      <div class="drop-zone__line"></div>
-    </div>
-  </div>
+    @drop="onDrop"
+    @dragover="onDragOver"
+    @dragenter="onDragEnter"
+    @dragleave="onDragLeave"
+  ></div>
 </template>
 
 <style lang="scss" scoped>
-@use "@/assets/scss/abstracts/keyframes.scss";
-
-.drop-zone {
-  /* Always take some space when dragging */
-  height: 8px;
+.drop-zone-container {
+  height: 24px;
   width: 100%;
-  position: relative;
-  margin: 8px 0;
   display: flex;
-  justify-content: center;
   align-items: center;
-  opacity: 0;
+  justify-content: center;
+  position: relative;
+  z-index: 10;
+  pointer-events: all;
+  margin: 0;
+  padding: 0;
 
-  /* Expand clickable area beyond visual boundaries */
-  &::before {
-    content: "";
-    position: absolute;
-    left: -8px;
-    right: -8px;
-    top: -8px;
-    bottom: -8px;
+  &--hovering {
+    &::before {
+      content: "";
+      width: 90%;
+      height: 4px;
+      border: none;
+      border-radius: 2px;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        #1abc9c 20%,
+        #16a085 50%,
+        #1abc9c 80%,
+        transparent 100%
+      );
+      animation: dropPulse 1.5s ease-in-out infinite;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
   }
 
-  &--active {
-    opacity: 1;
+  &--before {
+    // Could add specific styling for before position
   }
 
-  &__indicator {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    pointer-events: none;
-  }
-
-  &__line {
-    width: 60%;
-    height: 3px;
-    background: var(--theme-primary, #1abc9c);
-    border-radius: 2px;
-    animation: dropPulse 1.5s infinite;
-    box-shadow: 0 0 8px rgba(26, 188, 156, 0.6);
-    transition: opacity 0.2s ease;
+  &--after {
+    // Could add specific styling for after position
   }
 }
 </style>

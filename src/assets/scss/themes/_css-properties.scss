@@ -1,0 +1,51 @@
+@use "sass:map";
+@use "dark" as dark;
+@use "light" as light;
+
+// ==========================================================================
+// CSS CUSTOM PROPERTIES GENERATOR
+// ==========================================================================
+// Automatically generates CSS custom properties from theme maps
+
+// Function to generate CSS custom properties from a theme map
+@mixin generate-theme-properties($theme-map) {
+  @each $key, $value in $theme-map {
+    --theme-#{$key}: #{$value};
+  }
+}
+
+// Function to add missing properties that exist in App.vue but not in SCSS maps
+@mixin generate-additional-properties($is-light: false) {
+  @if $is-light {
+    // Light theme additional properties
+    --theme-bg-primary: var(--theme-bg);
+    --theme-bg-elevated: #f1f5f9;
+    --theme-border-hover: #cbd5e1;
+    --theme-border-muted: #f1f5f9;
+    --theme-primary-hover: #047857;
+    --theme-item-hover-bg: #f8fafc;
+  } @else {
+    // Dark theme additional properties
+    --theme-bg-primary: var(--theme-bg);
+    --theme-bg-elevated: #2a303c;
+    --theme-border-hover: #4a5568;
+    --theme-border-muted: #2d3748;
+    --theme-primary-hover: #16a085;
+    --theme-item-hover-bg: rgba(255, 255, 255, 0.05);
+  }
+}
+
+// Default theme (dark)
+:root,
+.theme-dark,
+.theme-original {
+  @include generate-theme-properties(dark.$dark-theme-variables);
+  @include generate-additional-properties(false);
+}
+
+// Light theme (including backward compatibility)
+.theme-light,
+.theme-clean {
+  @include generate-theme-properties(light.$light-theme-variables);
+  @include generate-additional-properties(true);
+}

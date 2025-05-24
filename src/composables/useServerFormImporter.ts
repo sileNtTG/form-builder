@@ -124,8 +124,8 @@ function transformServerElementsRecursive(
   ): number {
     let feElement: FormElement | null = null;
     const generatedId = uuidv4();
-    const elementId =
-      node.attributes?.id || node.attributes?.name || generatedId;
+    // ALWAYS use UUID for elementId instead of taking from server attributes
+    const elementId = generatedId;
 
     let labelText = node.attributes?.label || node.attributes?.name;
     if (!labelText) {
@@ -175,11 +175,11 @@ function transformServerElementsRecursive(
     const serverFqnValue = node.fqn; // Keep original fqn for serverFqn prop
 
     const commonProps: Omit<BaseFormElement, "type" | "width" | "height"> & {
-      id: string;
+      dataId: string;
       x: number;
       y: number;
     } = {
-      id: elementId,
+      dataId: elementId,
       label: labelText,
       x: currentX,
       y: yOffset,
@@ -202,10 +202,6 @@ function transformServerElementsRecursive(
         node.attributes["_hasMultipleProcessor"] = true;
         node.attributes["_multipleProcessorData"] =
           JSON.stringify(multipleProcessor);
-        console.log(
-          "Multiple processor found in fieldset, marked for special handling",
-          multipleProcessor
-        );
       }
     }
 
@@ -352,9 +348,6 @@ function transformServerElementsRecursive(
         );
 
         if (hasMultipleProcessor) {
-          console.log(
-            "Processing fieldset with Multiple processor - ensuring single instance"
-          );
           // Wir fügen eine besondere Eigenschaft hinzu, um dieses Fieldset zu kennzeichnen
           if (!node.attributes) {
             node.attributes = {};
@@ -388,7 +381,7 @@ function transformServerElementsRecursive(
           : 0;
 
         const fieldsetElementBase: Omit<FieldsetElement, "width" | "height"> = {
-          id: commonProps.id,
+          dataId: commonProps.dataId,
           label: commonProps.label,
           x: fieldsetInitialX,
           y: fieldsetInitialY,
@@ -437,7 +430,7 @@ function transformServerElementsRecursive(
               node.children || [], // Siblings for label association (within this fieldset)
               childAbsoluteX,
               childAbsoluteY,
-              fieldsetElementBase.id // parentId is this fieldset
+              fieldsetElementBase.dataId // parentId is this fieldset
             );
 
             // Collect new elements added during processing - these are our child elements

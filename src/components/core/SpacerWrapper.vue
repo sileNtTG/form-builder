@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import InsertionPoint from "./InsertionPoint.vue";
 import DropZone from "./DropZone.vue";
+import { watch } from "vue";
 
 const props = defineProps<{
   index: number;
   fieldsetId?: string;
   isDragging?: boolean;
   siblingId?: string; // For DropZone positioning
+  position?: "before" | "after"; // Position relative to sibling
 }>();
 
 const emit = defineEmits<{
@@ -14,32 +16,30 @@ const emit = defineEmits<{
   drop: [data: any];
 }>();
 
-// Debug: Log the props to understand the positioning
-console.log(
-  `SpacerWrapper DEBUG - index: ${props.index}, siblingId: ${
-    props.siblingId?.slice(-8) || "none"
-  }, fieldsetId: ${props.fieldsetId?.slice(-8) || "none"}`
-);
+// watch(props, (newValue) => {
+//   console.log(`%c##### File: SpaceWrapper.vue | Line 24 ####`, 'color: lightblue;');
+//   console.log(`isDragging ||  ||`, newValue);
+//   console.log(`%c#####################################`, 'color: lightblue;');
+// });
 </script>
 
 <template>
   <div class="spacer-wrapper">
     <!-- When dragging: show DropZone -->
     <DropZone
-      v-if="isDragging"
-      position="before"
-      :sibling-id="siblingId"
-      :parent-id="fieldsetId"
-      :is-dragging="isDragging"
+      v-if="props.isDragging"
+      :position="props.position || 'before'"
+      :sibling-id="props.siblingId"
+      :parent-id="props.fieldsetId"
       @drop="emit('drop', $event)"
     />
 
     <!-- When not dragging: show InsertionPoint -->
     <InsertionPoint
       v-else
-      :index="index"
-      :fieldset-id="fieldsetId"
-      :is-dragging="isDragging"
+      :index="props.index"
+      :fieldset-id="props.fieldsetId"
+      :is-dragging="props.isDragging"
       @insert="emit('insert', $event)"
     />
   </div>
@@ -47,7 +47,7 @@ console.log(
 
 <style lang="scss" scoped>
 .spacer-wrapper {
-  height: 10px; /* Fixed height - no layout shift */
+  height: 24px; // Exact height - no layout shifts
   display: flex;
   align-items: center;
   justify-content: center;
