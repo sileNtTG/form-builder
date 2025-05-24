@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, computed, nextTick } from "vue";
 import FormCanvas from "../components/core/FormCanvas.vue";
-import PropertyPanel from "../components/core/PropertyPanel.vue";
+import PropertyPanelWithTabs from "../components/core/PropertyPanelWithTabs.vue";
 import JsonPreviewPanel from "../components/core/JsonPreviewPanel.vue";
 import CommandPalette from "../components/core/CommandPalette.vue";
 import ElementsPanel from "../components/core/ElementsPanel.vue";
@@ -141,7 +141,8 @@ const handleDragOver = (e: DragEvent) => {
           JSON
         </button>
       </div>
-      <PropertyPanel v-show="activeTab === 'properties'" />
+      <!-- <PropertyPanel v-show="activeTab === 'properties'" /> -->
+      <PropertyPanelWithTabs v-show="activeTab === 'properties'" />
       <JsonPreviewPanel v-show="activeTab === 'json'" />
     </div>
   </div>

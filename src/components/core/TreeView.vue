@@ -149,7 +149,7 @@ function hasChildren(node: TreeNode): boolean {
   }
 
   &__title {
-    @include text-base;
+    @include text-small;
     font-weight: 600;
     margin: 0;
     color: var(--theme-text);
