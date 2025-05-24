@@ -163,18 +163,51 @@
       />
     </div>
   </div>
+
+  <!-- Wlad Warning Modal -->
+  <Modal
+    :show="showWladWarning"
+    @close="showWladWarning = false"
+    size="md"
+    title="⚠️ WARNUNG"
+  >
+    <div class="wlad-warning">
+      <div class="warning-icon">🚫</div>
+      <h2>FINGER WEG WLAD!</h2>
+      <p>Diese Funktion ist noch nicht fertig implementiert.</p>
+      <p>
+        Bitte habe etwas Geduld, während wir an der "Formular testen"
+        Funktionalität arbeiten.
+      </p>
+      <div class="warning-emoji">😅</div>
+    </div>
+
+    <template #footer>
+      <button @click="showWladWarning = false" class="wlad-ok-btn">
+        OK, ich verstehe! 😄
+      </button>
+    </template>
+  </Modal>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useFormBuilderStore } from "@/stores";
-import { SvgIcon, PublishStatus, PublishActions } from "@/components/common";
+import { useToastStore } from "@/stores/toast";
+import {
+  SvgIcon,
+  PublishStatus,
+  PublishActions,
+  Modal,
+} from "@/components/common";
 import { useFormPersistenceIntegration } from "@/examples/useFormPersistenceExample";
 
 const formBuilderStore = useFormBuilderStore();
+const toastStore = useToastStore();
 const persistence = useFormPersistenceIntegration();
 const isOpen = ref(false);
 const isPublishing = ref(false);
+const showWladWarning = ref(false);
 
 const forms = computed(() => formBuilderStore.forms);
 const activeFormId = computed(() => formBuilderStore.activeFormId);
@@ -194,7 +227,12 @@ const createNewForm = () => {
 };
 
 const saveForm = async () => {
-  await persistence.saveCurrentForm();
+  try {
+    await persistence.saveCurrentForm();
+    toastStore.showSuccess("Formular erfolgreich gespeichert!");
+  } catch (error) {
+    toastStore.showError("Fehler beim Speichern des Formulars");
+  }
 };
 
 const duplicateForm = () => {
@@ -207,7 +245,7 @@ const duplicateForm = () => {
 };
 
 const testForm = () => {
-  // Test form logic
+  showWladWarning.value = true;
 };
 
 const handlePublish = async () => {
@@ -514,6 +552,54 @@ onUnmounted(() => {
 
   .dropdown-icon {
     color: #64748b;
+  }
+}
+
+// Wlad Warning Styles
+.wlad-warning {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.warning-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.wlad-warning h2 {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #ff4444;
+  margin-bottom: 1.5rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.wlad-warning p {
+  font-size: 1.1rem;
+  margin: 0.5rem 0;
+  color: var(--theme-text-muted);
+  line-height: 1.6;
+}
+
+.warning-emoji {
+  font-size: 3rem;
+  margin-top: 1.5rem;
+}
+
+.wlad-ok-btn {
+  padding: 0.75rem 1.5rem;
+  background: var(--theme-primary, #1abc9c);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--theme-primary-hover, #16a085);
+    transform: translateY(-1px);
   }
 }
 </style>

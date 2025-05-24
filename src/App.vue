@@ -1,9 +1,10 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { useRouter, useRoute } from "vue-router";
 import { computed } from "vue";
 import ThemeSwitcher from "./components/ui/ThemeSwitcher.vue";
 import UserMenu from "./components/ui/UserMenu.vue";
 import FormSelector from "./components/ui/FormSelector.vue";
+import { ToastsWrapper } from "./components/common";
 
 const router = useRouter();
 const route = useRoute();
@@ -22,6 +23,7 @@ const showFormSelector = computed(() => {
   return formRoutes.some((path) => route.path.startsWith(path));
 });
 </script>
+
 <template>
   <div class="app">
     <!-- Main Header -->
@@ -42,14 +44,19 @@ const showFormSelector = computed(() => {
         </div>
       </div>
     </header>
+
     <!-- Secondary Navigation (conditional) -->
     <div v-if="showFormSelector" class="app-secondary-nav">
       <FormSelector />
     </div>
+
     <!-- Router View -->
     <div class="app-main">
       <router-view />
     </div>
+
+    <!-- Global Toasts -->
+    <ToastsWrapper />
   </div>
 </template>
 
