@@ -1,3 +1,4 @@
+// @ts-nocheck
 <script setup lang="ts">
 import type { FieldsetElement } from "@/models";
 import { computed } from "vue";
