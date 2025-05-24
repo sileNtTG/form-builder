@@ -219,6 +219,7 @@ import PublishActions from "@/components/common/PublishActions.vue";
 import EditableTitle from "@/components/common/EditableTitle.vue";
 import OrangeIndicator from "@/components/common/OrangeIndicator.vue";
 import { useFormPersistenceIntegration } from "@/examples/useFormPersistenceExample";
+import { v4 as uuidv4 } from "uuid";
 
 const formBuilderStore = useFormBuilderStore();
 const toastStore = useToastStore();
@@ -255,12 +256,43 @@ const saveForm = async () => {
   }
 };
 
-const duplicateForm = () => {
-  if (activeForm.value) {
-    const newId = formBuilderStore.createBlankForm(
-      `${activeForm.value.name} (Kopie)`
-    );
-    formBuilderStore.setActiveForm(newId);
+const duplicateForm = async () => {
+  if (!activeForm.value) return;
+
+  try {
+    // Automatically save the current form if it has unsaved changes
+    if (formBuilderStore.hasUnsavedChanges) {
+      await persistence.saveCurrentForm();
+      formBuilderStore.markFormAsClean();
+      toastStore.showInfo("Original-Formular automatisch gespeichert");
+    }
+
+    // Create a proper duplicate with all elements from the current form
+    const originalForm = activeForm.value;
+    const duplicatedForm = {
+      id: uuidv4(),
+      name: `${originalForm.name} (Kopie)`,
+      rawServerData: JSON.parse(JSON.stringify(originalForm.rawServerData)),
+      visualElements: JSON.parse(JSON.stringify(originalForm.visualElements)),
+      createdAt: new Date().toISOString(),
+      lastModified: new Date().toISOString(),
+      published: false, // New duplicates should start as unpublished
+      publishedAt: undefined,
+    };
+
+    // Update the duplicated form's server data name
+    duplicatedForm.rawServerData.attributes.name = duplicatedForm.name;
+
+    // Add the duplicated form to the store
+    formBuilderStore.forms.push(duplicatedForm);
+
+    // Switch to the duplicated form
+    formBuilderStore.setActiveForm(duplicatedForm.id);
+
+    toastStore.showSuccess(`Formular dupliziert: "${duplicatedForm.name}"`);
+  } catch (error) {
+    toastStore.showError("Fehler beim Duplizieren des Formulars");
+    console.error("Duplicate form error:", error);
   }
 };
 
