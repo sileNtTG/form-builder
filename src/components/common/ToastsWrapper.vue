@@ -22,7 +22,7 @@ const { toasts, removeToast } = toastStore;
 <style lang="scss" scoped>
 .toasts-wrapper {
   position: fixed;
-  top: 1rem;
+  bottom: 1rem;
   right: 1rem;
   z-index: 9999;
   pointer-events: none;

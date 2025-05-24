@@ -1,8 +1,5 @@
 <template>
   <div class="toast" :class="[`toast--${type}`]">
-    <div class="toast__icon">
-      <SvgIcon :name="iconName" :size="20" />
-    </div>
     <div class="toast__content">
       <p class="toast__text">
         <strong v-if="title" class="toast__title">{{ title }}</strong>
@@ -16,7 +13,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
 import { SvgIcon } from "@/components/common";
 
 interface Props {
@@ -35,21 +31,6 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   close: [];
 }>();
-
-const iconName = computed(() => {
-  switch (props.type) {
-    case "success":
-      return "check-circle";
-    case "error":
-      return "x";
-    case "warning":
-      return "info";
-    case "info":
-      return "info";
-    default:
-      return "info";
-  }
-});
 
 // Auto-dismiss after duration
 if (props.duration > 0) {
@@ -81,9 +62,6 @@ if (props.duration > 0) {
       rgba(16, 185, 129, 0.1),
       rgba(16, 185, 129, 0.05)
     );
-    .toast__icon {
-      color: #10b981;
-    }
   }
 
   &--error {
@@ -93,9 +71,6 @@ if (props.duration > 0) {
       rgba(239, 68, 68, 0.1),
       rgba(239, 68, 68, 0.05)
     );
-    .toast__icon {
-      color: #ef4444;
-    }
   }
 
   &--warning {
@@ -105,9 +80,6 @@ if (props.duration > 0) {
       rgba(245, 158, 11, 0.1),
       rgba(245, 158, 11, 0.05)
     );
-    .toast__icon {
-      color: #f59e0b;
-    }
   }
 
   &--info {
@@ -117,20 +89,6 @@ if (props.duration > 0) {
       rgba(59, 130, 246, 0.1),
       rgba(59, 130, 246, 0.05)
     );
-    .toast__icon {
-      color: #3b82f6;
-    }
-  }
-
-  &__icon {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1);
   }
 
   &__content {

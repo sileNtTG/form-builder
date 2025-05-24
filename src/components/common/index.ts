@@ -13,6 +13,8 @@ export { default as PublishActions } from "./PublishActions.vue";
 export { default as Modal } from "./Modal.vue";
 export { default as Toast } from "./Toast.vue";
 export { default as ToastsWrapper } from "./ToastsWrapper.vue";
+export { default as EditableTitle } from "./EditableTitle.vue";
+export { default as UnsavedChangesIndicator } from "./UnsavedChangesIndicator.vue";
 
 // Form Nodes - Re-export all nodes
 export * from "./nodes";

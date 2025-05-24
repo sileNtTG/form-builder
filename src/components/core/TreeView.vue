@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { useFormBuilderStore } from "@/stores/formBuilder";
+import { useToastStore } from "@/stores/toast";
 import { useCanvasNavigation } from "@/composables/useCanvasNavigation";
 import type { FormElement, FieldsetElement } from "@/models/FormElement";
-import { SvgIcon, ElementIcon } from "@/components/common";
+import { SvgIcon, ElementIcon, EditableTitle } from "@/components/common";
 import TreeNode from "./TreeNode.vue";
 
 const formBuilderStore = useFormBuilderStore();
+const toastStore = useToastStore();
 const { scrollToElement, scrollToElementById } = useCanvasNavigation();
 
 // Track which nodes are expanded
@@ -109,14 +111,23 @@ function getElementIcon(elementType: string): string {
 function hasChildren(node: TreeNode): boolean {
   return node.children.length > 0;
 }
+
+function handleFormNameUpdate(newName: string) {
+  formBuilderStore.updateActiveFormName(newName);
+  toastStore.showInfo("Formular wurde geändert. Vergiss nicht zu speichern!");
+}
 </script>
 
 <template>
   <div class="tree-view">
     <div class="tree-view__header">
-      <h3 class="tree-view__title">
-        {{ formBuilderStore.activeForm?.name || "No Form Selected" }}
-      </h3>
+      <EditableTitle
+        :value="formBuilderStore.activeForm?.name || 'No Form Selected'"
+        placeholder="Neues Formular"
+        edit-tooltip="Formularnamen bearbeiten"
+        @update="handleFormNameUpdate"
+        class="tree-view__title-editable"
+      />
     </div>
 
     <div class="tree-view__content">
@@ -192,14 +203,17 @@ function hasChildren(node: TreeNode): boolean {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background-color: var(--theme-bg-surface);
+  background: var(--theme-bg-surface);
 
   &__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: $spacing-sm $spacing-md;
+    padding: $spacing-md $spacing-lg;
     border-bottom: 1px solid var(--theme-border);
+    background: var(--theme-bg-elevated);
+    @include transition(all, $transition-fast);
+  }
+
+  &__title-editable {
+    width: 100%;
   }
 
   &__title {

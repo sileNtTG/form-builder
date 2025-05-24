@@ -4,10 +4,14 @@ import { computed } from "vue";
 import ThemeSwitcher from "./components/ui/ThemeSwitcher.vue";
 import UserMenu from "./components/ui/UserMenu.vue";
 import FormSelector from "./components/ui/FormSelector.vue";
-import { ToastsWrapper } from "./components/common";
+import { ToastsWrapper, UnsavedChangesIndicator } from "./components/common";
+import { useFormBuilderStore } from "./stores/formBuilder";
+import { useToastStore } from "./stores/toast";
 
 const router = useRouter();
 const route = useRoute();
+const formBuilderStore = useFormBuilderStore();
+const toastStore = useToastStore();
 
 const goToFieldsetTest = () => {
   router.push("/fieldset-test");
@@ -22,6 +26,36 @@ const showFormSelector = computed(() => {
   const formRoutes = ["/", "/builder", "/preview"];
   return formRoutes.some((path) => route.path.startsWith(path));
 });
+
+// Unsaved changes handling
+const hasUnsavedChanges = computed(() => formBuilderStore.hasUnsavedChanges);
+
+const handleSave = async () => {
+  try {
+    await formBuilderStore.saveForm();
+    toastStore.addToast({
+      type: "success",
+      text: "Formular wurde erfolgreich gespeichert!",
+    });
+  } catch (error) {
+    toastStore.addToast({
+      type: "error",
+      text: "Fehler beim Speichern des Formulars",
+    });
+  }
+};
+
+const handleDiscardChanges = () => {
+  // Reset to last saved state
+  if (formBuilderStore.activeFormId) {
+    const currentFormId = formBuilderStore.activeFormId;
+    formBuilderStore.setActiveForm(currentFormId); // This reloads from saved state
+    toastStore.addToast({
+      type: "info",
+      text: "Änderungen wurden verworfen",
+    });
+  }
+};
 </script>
 
 <template>
@@ -44,6 +78,13 @@ const showFormSelector = computed(() => {
         </div>
       </div>
     </header>
+
+    <!-- Unsaved Changes Indicator -->
+    <UnsavedChangesIndicator
+      :has-unsaved-changes="hasUnsavedChanges"
+      @save="handleSave"
+      @discard="handleDiscardChanges"
+    />
 
     <!-- Secondary Navigation (conditional) -->
     <div v-if="showFormSelector" class="app-secondary-nav">

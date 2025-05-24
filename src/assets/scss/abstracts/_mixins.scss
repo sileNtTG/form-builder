@@ -129,6 +129,13 @@ $breakpoints: (
   border: 0;
 }
 
+// Text ellipsis for overflow
+@mixin text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 // --------------------------------------------------------------------------
 // #COMPONENT STYLES MIXINS (use with care, prefer utility classes or BEM)
 // --------------------------------------------------------------------------
