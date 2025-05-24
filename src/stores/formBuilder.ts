@@ -371,6 +371,8 @@ export const useFormBuilderStore = defineStore("formBuilder", {
     },
 
     addElement(element: FormElement) {
+      // Set the order property to place it at the end
+      element.order = this.elements.length;
       this.elements.push(element);
       this.syncActiveFormVisualsFromCanvas();
       this.markElementAsChanged(element.dataId); // Track the new element as changed
@@ -598,6 +600,19 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       // TODO: Implement actual save logic
       // For now, just log all forms
       console.log("Current forms:", this.forms);
+
+      // Clear unsaved changes for the active form
+      if (this.activeFormId) {
+        this.markFormAsCleanById(this.activeFormId);
+
+        // Also clear all individual element changes for this form
+        const formChanges = this.unsavedFormChanges.get(this.activeFormId);
+        if (formChanges) {
+          formChanges.changedElements.clear();
+          formChanges.nameChanged = false;
+        }
+      }
+
       this.markFormAsClean(); // Mark as clean after successful save
     },
 

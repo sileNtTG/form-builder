@@ -43,7 +43,12 @@ interface TreeNode {
 }
 
 function buildTreeStructure(elements: FormElement[], level = 0): TreeNode[] {
-  return elements.map((element) => {
+  // Sort elements by their order property before building tree structure
+  const sortedElements = [...elements].sort(
+    (a, b) => (a.order || 0) - (b.order || 0)
+  );
+
+  return sortedElements.map((element) => {
     let children: TreeNode[] = [];
 
     // Check for different types of containers that can have children
