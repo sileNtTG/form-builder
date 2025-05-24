@@ -292,7 +292,7 @@ function deleteElement() {
 
   &__label {
     display: block;
-    @include text-xs;
+    @include text-small;
     color: var(--theme-text-muted);
     margin-bottom: $spacing-xs;
   }

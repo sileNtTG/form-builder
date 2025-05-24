@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, computed, nextTick } from "vue";
 import FormCanvas from "../components/core/FormCanvas.vue";
-import PropertyPanelWithTabs from "../components/core/PropertyPanelWithTabs.vue";
+import PropertyPanel from "../components/core/PropertyPanel.vue";
 import JsonPreviewPanel from "../components/core/JsonPreviewPanel.vue";
+import TreeView from "../components/core/TreeView.vue";
 import CommandPalette from "../components/core/CommandPalette.vue";
 import ElementsPanel from "../components/core/ElementsPanel.vue";
 import { useFormBuilderStore } from "../stores/formBuilder";
@@ -10,7 +11,7 @@ import { useRouter } from "vue-router";
 
 const formBuilderStore = useFormBuilderStore();
 const router = useRouter();
-const activeTab = ref("properties"); // 'properties' oder 'json'
+const activeTab = ref("properties"); // 'properties', 'json', oder 'structure'
 const activeSidebarTab = ref("forms"); // 'forms' oder 'elements'
 
 // Formularübersicht (aus Sidebar.vue)
@@ -140,10 +141,18 @@ const handleDragOver = (e: DragEvent) => {
         >
           JSON
         </button>
+        <button
+          class="tab"
+          :class="{ active: activeTab === 'structure' }"
+          @click="activeTab = 'structure'"
+        >
+          Structure
+        </button>
       </div>
       <!-- <PropertyPanel v-show="activeTab === 'properties'" /> -->
-      <PropertyPanelWithTabs v-show="activeTab === 'properties'" />
+      <PropertyPanel v-show="activeTab === 'properties'" />
       <JsonPreviewPanel v-show="activeTab === 'json'" />
+      <TreeView v-show="activeTab === 'structure'" />
     </div>
   </div>
 </template>

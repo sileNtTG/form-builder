@@ -211,7 +211,7 @@ function handleSelect() {
   }
 
   &__type {
-    @include text-xs;
+    @include text-small;
     background-color: var(--theme-bg-alt);
     color: var(--theme-text-muted);
     padding: $spacing-xs $spacing-sm;
