@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { FormElement } from "@/models/FormElement";
-import { SvgIcon, ElementIcon, OrangeIndicator } from "@/components/common";
+import { SvgIcon, ElementIcon } from "@/components/common";
+import OrangeIndicator from "@/components/common/OrangeIndicator.vue";
 import { useFormBuilderStore } from "@/stores/formBuilder";
 
 interface TreeNode {

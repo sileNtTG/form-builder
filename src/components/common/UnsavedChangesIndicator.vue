@@ -4,13 +4,23 @@
       <div class="indicator-content">
         <SvgIcon name="info" :size="16" />
         <span class="indicator-text">Ungespeicherte Änderungen</span>
-        <button @click="$emit('save')" class="save-btn">Speichern</button>
+        <div class="indicator-actions">
+          <button @click="$emit('save')" class="action-btn action-btn--primary">
+            Speichern
+          </button>
+          <button
+            @click="$emit('discard')"
+            class="action-btn action-btn--danger"
+          >
+            Änderungen verwerfen
+          </button>
+        </div>
         <button
           @click="$emit('discard')"
-          class="discard-btn"
+          class="close-btn"
           title="Änderungen verwerfen"
         >
-          <SvgIcon name="x" :size="14" />
+          <SvgIcon name="x" :size="16" />
         </button>
       </div>
     </div>
@@ -35,62 +45,84 @@ defineEmits<{
 <style lang="scss" scoped>
 .unsaved-changes-indicator {
   position: fixed;
-  top: 60px; // Below the main header
+  bottom: 20px; // 20px from bottom
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  color: white;
-  border-radius: 0 0 8px 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  min-width: 300px;
+  background: var(--theme-bg-surface);
+  border: 2px solid #f59e0b;
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+  min-width: 400px;
+  max-width: 500px;
+  background: linear-gradient(
+    135deg,
+    rgba(245, 158, 11, 0.1),
+    rgba(245, 158, 11, 0.05)
+  );
 }
 
 .indicator-content {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem 1rem;
+  padding: 1rem;
 }
 
 .indicator-text {
   flex: 1;
   font-weight: 500;
   font-size: 0.9rem;
+  color: var(--theme-text);
 }
 
-.save-btn {
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: white;
-  padding: 0.4rem 0.8rem;
+.indicator-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.action-btn {
+  padding: 0.375rem 0.75rem;
+  border: none;
   border-radius: 4px;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
 
-  &:hover {
-    background: rgba(255, 255, 255, 0.3);
-    border-color: rgba(255, 255, 255, 0.5);
+  &--primary {
+    background: var(--theme-primary, #1abc9c);
+    color: white;
+
+    &:hover {
+      background: var(--theme-primary-hover, #16a085);
+    }
+  }
+
+  &--danger {
+    background: #ef4444;
+    color: white;
+
+    &:hover {
+      background: #dc2626;
+    }
   }
 }
 
-.discard-btn {
+.close-btn {
+  flex-shrink: 0;
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--theme-text-muted);
+  cursor: pointer;
   padding: 0.25rem;
   border-radius: 4px;
-  cursor: pointer;
   transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--theme-text);
   }
 }
 
@@ -102,11 +134,11 @@ defineEmits<{
 
 .slide-down-enter-from {
   opacity: 0;
-  transform: translateX(-50%) translateY(-100%);
+  transform: translateX(-50%) translateY(100%);
 }
 
 .slide-down-leave-to {
   opacity: 0;
-  transform: translateX(-50%) translateY(-100%);
+  transform: translateX(-50%) translateY(100%);
 }
 </style>

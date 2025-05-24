@@ -2,6 +2,12 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import { v4 as uuidv4 } from "uuid";
 
+export interface ToastAction {
+  label: string;
+  action: () => void;
+  style?: "primary" | "secondary" | "danger";
+}
+
 export interface Toast {
   id: string;
   title?: string;
@@ -9,6 +15,7 @@ export interface Toast {
   type: "success" | "error" | "warning" | "info";
   duration?: number;
   closable?: boolean;
+  actions?: ToastAction[];
 }
 
 export const useToastStore = defineStore("toast", () => {

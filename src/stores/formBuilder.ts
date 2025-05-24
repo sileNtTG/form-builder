@@ -80,6 +80,14 @@ export const useFormBuilderStore = defineStore("formBuilder", {
         lastModified: number; // Timestamp of last modification
       }
     >(),
+    // NEW: Store original form state for rollback
+    originalFormStates: new Map<
+      string,
+      {
+        name: string;
+        visualElements: FormElement[];
+      }
+    >(),
     canvasConfig: {
       // Flagged for potential unused state
       width: 1200,
@@ -281,6 +289,9 @@ export const useFormBuilderStore = defineStore("formBuilder", {
 
     updateActiveFormName(newName: string) {
       if (this.activeFormId) {
+        // Create backup before changing name
+        this.createBackupIfNeeded(this.activeFormId);
+
         const activeForm = this.forms.find((f) => f.id === this.activeFormId);
         if (activeForm) {
           activeForm.name = newName;
@@ -371,6 +382,11 @@ export const useFormBuilderStore = defineStore("formBuilder", {
     },
 
     addElement(element: FormElement) {
+      // Create backup before adding element
+      if (this.activeFormId) {
+        this.createBackupIfNeeded(this.activeFormId);
+      }
+
       // Set the order property to place it at the end
       element.order = this.elements.length;
       this.elements.push(element);
@@ -501,6 +517,11 @@ export const useFormBuilderStore = defineStore("formBuilder", {
     },
 
     updateElement(elementId: string, updates: Partial<FormElement>) {
+      // Create backup before updating element
+      if (this.activeFormId) {
+        this.createBackupIfNeeded(this.activeFormId);
+      }
+
       const updateElementRecursive = (elements: FormElement[]): boolean => {
         for (const element of elements) {
           if (element.dataId === elementId) {
@@ -666,6 +687,11 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       position: number,
       parentId: string | null = null
     ) {
+      // Create backup before adding element
+      if (this.activeFormId) {
+        this.createBackupIfNeeded(this.activeFormId);
+      }
+
       console.log("addElementAtPosition called:", {
         elementId: element.dataId,
         elementType: element.type,
@@ -1020,8 +1046,25 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       }
     },
 
+    // NEW: Create backup before making any changes
+    createBackupIfNeeded(formId: string) {
+      // Only create backup if this is the first change (no existing backup)
+      if (!this.originalFormStates.has(formId)) {
+        const form = this.forms.find((f) => f.id === formId);
+        if (form) {
+          this.originalFormStates.set(formId, {
+            name: form.name,
+            visualElements: JSON.parse(JSON.stringify(form.visualElements)),
+          });
+        }
+      }
+    },
+
     // NEW: Enhanced unsaved changes tracking methods
     markFormAsDirtyById(formId: string, elementId?: string) {
+      // Create backup BEFORE making any changes
+      this.createBackupIfNeeded(formId);
+
       const existingChanges = this.unsavedFormChanges.get(formId);
 
       if (existingChanges) {
@@ -1108,6 +1151,39 @@ export const useFormBuilderStore = defineStore("formBuilder", {
           }
         }
       }
+    },
+
+    // NEW: Restore original form state
+    restoreOriginalFormState(formId: string) {
+      const originalState = this.originalFormStates.get(formId);
+      const form = this.forms.find((f) => f.id === formId);
+
+      if (originalState && form) {
+        // Restore form name
+        form.name = originalState.name;
+        form.rawServerData.attributes.name = originalState.name;
+
+        // Restore visual elements
+        form.visualElements = JSON.parse(
+          JSON.stringify(originalState.visualElements)
+        );
+
+        // If this is the active form, update the canvas elements
+        if (formId === this.activeFormId) {
+          this.elements = JSON.parse(
+            JSON.stringify(originalState.visualElements)
+          );
+          this.selectedElementId = null;
+        }
+
+        // Clear the backup and unsaved changes
+        this.originalFormStates.delete(formId);
+        this.markFormAsCleanById(formId);
+
+        return true;
+      }
+
+      return false;
     },
   },
 });

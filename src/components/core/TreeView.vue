@@ -4,12 +4,9 @@ import { useFormBuilderStore } from "@/stores/formBuilder";
 import { useToastStore } from "@/stores/toast";
 import { useCanvasNavigation } from "@/composables/useCanvasNavigation";
 import type { FormElement, FieldsetElement } from "@/models/FormElement";
-import {
-  SvgIcon,
-  ElementIcon,
-  EditableTitle,
-  OrangeIndicator,
-} from "@/components/common";
+import { SvgIcon, ElementIcon } from "@/components/common";
+import EditableTitle from "@/components/common/EditableTitle.vue";
+import OrangeIndicator from "@/components/common/OrangeIndicator.vue";
 import TreeNode from "./TreeNode.vue";
 
 const formBuilderStore = useFormBuilderStore();

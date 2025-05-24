@@ -5,6 +5,17 @@
         <strong v-if="title" class="toast__title">{{ title }}</strong>
         {{ text }}
       </p>
+      <div v-if="actions && actions.length > 0" class="toast__actions">
+        <button
+          v-for="action in actions"
+          :key="action.label"
+          class="toast__action-btn"
+          :class="[`toast__action-btn--${action.style || 'secondary'}`]"
+          @click="handleActionClick(action)"
+        >
+          {{ action.label }}
+        </button>
+      </div>
     </div>
     <button v-if="closable" class="toast__close" @click="$emit('close')">
       <SvgIcon name="x" :size="16" />
@@ -14,6 +25,7 @@
 
 <script setup lang="ts">
 import { SvgIcon } from "@/components/common";
+import type { ToastAction } from "@/stores/toast";
 
 interface Props {
   title?: string;
@@ -21,6 +33,7 @@ interface Props {
   type: "success" | "error" | "warning" | "info";
   closable?: boolean;
   duration?: number;
+  actions?: ToastAction[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -32,12 +45,17 @@ const emit = defineEmits<{
   close: [];
 }>();
 
-// Auto-dismiss after duration
-if (props.duration > 0) {
+// Auto-dismiss after duration (only if no actions)
+if (props.duration > 0 && (!props.actions || props.actions.length === 0)) {
   setTimeout(() => {
     emit("close");
   }, props.duration);
 }
+
+const handleActionClick = (action: ToastAction) => {
+  action.action();
+  emit("close"); // Close toast after action
+};
 </script>
 
 <style lang="scss" scoped>
@@ -121,6 +139,49 @@ if (props.duration > 0) {
     &:hover {
       background: rgba(255, 255, 255, 0.1);
       color: var(--theme-text);
+    }
+  }
+
+  &__actions {
+    margin-top: 0.5rem;
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  &__action-btn {
+    padding: 0.375rem 0.75rem;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &--secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--theme-text);
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+    }
+
+    &--primary {
+      background: var(--theme-primary, #1abc9c);
+      color: white;
+
+      &:hover {
+        background: var(--theme-primary-hover, #16a085);
+      }
+    }
+
+    &--danger {
+      background: #ef4444;
+      color: white;
+
+      &:hover {
+        background: #dc2626;
+      }
     }
   }
 }
