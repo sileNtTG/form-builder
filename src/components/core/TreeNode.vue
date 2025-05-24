@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { FormElement } from "@/models/FormElement";
-import { SvgIcon, ElementIcon, OrangeIndicator } from "@/components/common";
+import { SvgIcon, ElementIcon } from "@/components/common";
+import OrangeIndicator from "@/components/common/OrangeIndicator.vue";
 import { useFormBuilderStore } from "@/stores/formBuilder";
 
 interface TreeNode {
@@ -105,10 +106,12 @@ function handleSelect() {
       <!-- Element Label -->
       <span class="tree-node__label">{{ nodeLabel }}</span>
 
-      <!-- Orange Indicator for unsaved changes -->
-      <OrangeIndicator
-        :show="formBuilderStore.elementHasUnsavedChanges(node.element.dataId)"
-      />
+      <!-- Orange Indicator for unsaved changes - positioned on the far right -->
+      <div class="tree-node__indicator">
+        <OrangeIndicator
+          :show="formBuilderStore.elementHasUnsavedChanges(node.element.dataId)"
+        />
+      </div>
 
       <!-- Element Type Badge -->
       <!-- <span class="tree-node__type">{{ node.element.type }}</span> -->
@@ -232,6 +235,13 @@ function handleSelect() {
     text-overflow: ellipsis;
     white-space: nowrap;
     margin-left: 4px;
+  }
+
+  &__indicator {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    padding-left: $spacing-xs;
   }
 
   &__children {

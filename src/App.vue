@@ -7,11 +7,15 @@ import FormSelector from "./components/ui/FormSelector.vue";
 import { ToastsWrapper, UnsavedChangesIndicator } from "./components/common";
 import { useFormBuilderStore } from "./stores/formBuilder";
 import { useToastStore } from "./stores/toast";
+import { useAutoSave } from "./composables/useAutoSave";
 
 const router = useRouter();
 const route = useRoute();
 const formBuilderStore = useFormBuilderStore();
 const toastStore = useToastStore();
+
+// Initialize auto-save functionality
+const autoSave = useAutoSave();
 
 const goToFieldsetTest = () => {
   router.push("/fieldset-test");
@@ -46,14 +50,27 @@ const handleSave = async () => {
 };
 
 const handleDiscardChanges = () => {
-  // Reset to last saved state
+  // For the orange banner - restore original state without clearing toasts
   if (formBuilderStore.activeFormId) {
-    const currentFormId = formBuilderStore.activeFormId;
-    formBuilderStore.setActiveForm(currentFormId); // This reloads from saved state
-    toastStore.addToast({
-      type: "info",
-      text: "Änderungen wurden verworfen",
-    });
+    const restored = formBuilderStore.restoreOriginalFormState(
+      formBuilderStore.activeFormId
+    );
+
+    if (restored) {
+      toastStore.addToast({
+        type: "info",
+        text: "Änderungen wurden verworfen",
+      });
+    } else {
+      // Fallback to reload from saved state
+      const currentFormId = formBuilderStore.activeFormId;
+      formBuilderStore.setActiveForm(currentFormId);
+      formBuilderStore.markFormAsClean();
+      toastStore.addToast({
+        type: "info",
+        text: "Änderungen wurden verworfen",
+      });
+    }
   }
 };
 </script>

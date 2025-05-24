@@ -80,6 +80,14 @@ export const useFormBuilderStore = defineStore("formBuilder", {
         lastModified: number; // Timestamp of last modification
       }
     >(),
+    // NEW: Store original form state for rollback
+    originalFormStates: new Map<
+      string,
+      {
+        name: string;
+        visualElements: FormElement[];
+      }
+    >(),
     canvasConfig: {
       // Flagged for potential unused state
       width: 1200,
@@ -281,6 +289,9 @@ export const useFormBuilderStore = defineStore("formBuilder", {
 
     updateActiveFormName(newName: string) {
       if (this.activeFormId) {
+        // Create backup before changing name
+        this.createBackupIfNeeded(this.activeFormId);
+
         const activeForm = this.forms.find((f) => f.id === this.activeFormId);
         if (activeForm) {
           activeForm.name = newName;
@@ -371,9 +382,16 @@ export const useFormBuilderStore = defineStore("formBuilder", {
     },
 
     addElement(element: FormElement) {
+      // Create backup before adding element
+      if (this.activeFormId) {
+        this.createBackupIfNeeded(this.activeFormId);
+      }
+
+      // Set the order property to place it at the end
+      element.order = this.elements.length;
       this.elements.push(element);
       this.syncActiveFormVisualsFromCanvas();
-      this.markElementAsChanged(element.dataId); // Track the new element as changed
+      this.markElementContentChanged(element.dataId); // Track the new element as content change
     },
 
     createAndAddElement(elementType: string, x: number, y: number) {
@@ -491,6 +509,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
         this.elements.push(newElement);
         this.syncActiveFormVisualsFromCanvas();
         this.selectElement(newElement.dataId);
+        this.markElementContentChanged(newElement.dataId); // Track new element as content change
         return newElement;
       }
 
@@ -498,12 +517,17 @@ export const useFormBuilderStore = defineStore("formBuilder", {
     },
 
     updateElement(elementId: string, updates: Partial<FormElement>) {
+      // Create backup before updating element
+      if (this.activeFormId) {
+        this.createBackupIfNeeded(this.activeFormId);
+      }
+
       const updateElementRecursive = (elements: FormElement[]): boolean => {
         for (const element of elements) {
           if (element.dataId === elementId) {
             Object.assign(element, updates);
             this.syncActiveFormVisualsFromCanvas();
-            this.markElementAsChanged(elementId); // Track specific element change
+            this.markElementContentChanged(elementId); // Track specific element content change
             return true;
           }
           if (element.type === "fieldset" && element.children) {
@@ -524,6 +548,8 @@ export const useFormBuilderStore = defineStore("formBuilder", {
         element.x = x;
         element.y = y;
         this.syncActiveFormVisualsFromCanvas();
+        // Note: Position changes are not considered content changes
+        // so we don't mark the element as changed here
       }
     },
 
@@ -598,6 +624,19 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       // TODO: Implement actual save logic
       // For now, just log all forms
       console.log("Current forms:", this.forms);
+
+      // Clear unsaved changes for the active form
+      if (this.activeFormId) {
+        this.markFormAsCleanById(this.activeFormId);
+
+        // Also clear all individual element changes for this form
+        const formChanges = this.unsavedFormChanges.get(this.activeFormId);
+        if (formChanges) {
+          formChanges.changedElements.clear();
+          formChanges.nameChanged = false;
+        }
+      }
+
       this.markFormAsClean(); // Mark as clean after successful save
     },
 
@@ -638,7 +677,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
 
       if (findAndAdd(this.elements)) {
         this.syncActiveFormVisualsFromCanvas();
-        this.markFormAsDirty(); // Track unsaved changes
+        this.markElementContentChanged(element.dataId); // Track new element as content change
       }
     },
 
@@ -648,6 +687,19 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       position: number,
       parentId: string | null = null
     ) {
+      // Create backup before adding element
+      if (this.activeFormId) {
+        this.createBackupIfNeeded(this.activeFormId);
+      }
+
+      console.log("addElementAtPosition called:", {
+        elementId: element.dataId,
+        elementType: element.type,
+        position,
+        parentId,
+        currentElementsLength: this.elements.length,
+      });
+
       if (parentId) {
         // Add to specific fieldset
         this.addElementToFieldset(parentId, element, position);
@@ -657,10 +709,40 @@ export const useFormBuilderStore = defineStore("formBuilder", {
           0,
           Math.min(position, this.elements.length)
         );
+        console.log("Inserting at root level:", {
+          clampedPosition,
+          elementsLength: this.elements.length,
+        });
+
+        // Set the order property before inserting
+        element.order = clampedPosition;
         this.elements.splice(clampedPosition, 0, element);
+
+        // Reorder all elements to ensure correct order properties
+        this.elements.forEach((el, index) => {
+          el.order = index;
+        });
+
         this.syncActiveFormVisualsFromCanvas();
       }
-      this.markFormAsDirty(); // Track unsaved changes
+      // Mark new element as content change (not organizational change)
+      this.markElementContentChanged(element.dataId);
+
+      // Automatically select the newly added element
+      this.selectElement(element.dataId);
+
+      console.log(
+        "After addElementAtPosition, elements length:",
+        this.elements.length
+      );
+      console.log(
+        "Elements order:",
+        this.elements.map((el) => ({
+          id: el.dataId,
+          order: el.order,
+          type: el.type,
+        }))
+      );
     },
 
     // --- REFACTORED HELPER FUNCTIONS FOR moveElementToPosition ---
@@ -866,7 +948,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       if (info && info.element) {
         (info.element as unknown as Record<string, unknown>)[key] = value;
         this.syncActiveFormVisualsFromCanvas();
-        this.markElementAsChanged(elementId); // Track specific element change
+        this.markElementContentChanged(elementId); // Track specific element content change
       }
     },
 
@@ -964,8 +1046,25 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       }
     },
 
+    // NEW: Create backup before making any changes
+    createBackupIfNeeded(formId: string) {
+      // Only create backup if this is the first change (no existing backup)
+      if (!this.originalFormStates.has(formId)) {
+        const form = this.forms.find((f) => f.id === formId);
+        if (form) {
+          this.originalFormStates.set(formId, {
+            name: form.name,
+            visualElements: JSON.parse(JSON.stringify(form.visualElements)),
+          });
+        }
+      }
+    },
+
     // NEW: Enhanced unsaved changes tracking methods
     markFormAsDirtyById(formId: string, elementId?: string) {
+      // Create backup BEFORE making any changes
+      this.createBackupIfNeeded(formId);
+
       const existingChanges = this.unsavedFormChanges.get(formId);
 
       if (existingChanges) {
@@ -1009,6 +1108,13 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       }
     },
 
+    // NEW: Mark only content changes, not order/position changes
+    markElementContentChanged(elementId: string) {
+      if (this.activeFormId) {
+        this.markFormAsDirtyById(this.activeFormId, elementId);
+      }
+    },
+
     markFormNameAsChanged() {
       if (this.activeFormId) {
         const existingChanges = this.unsavedFormChanges.get(this.activeFormId);
@@ -1045,6 +1151,39 @@ export const useFormBuilderStore = defineStore("formBuilder", {
           }
         }
       }
+    },
+
+    // NEW: Restore original form state
+    restoreOriginalFormState(formId: string) {
+      const originalState = this.originalFormStates.get(formId);
+      const form = this.forms.find((f) => f.id === formId);
+
+      if (originalState && form) {
+        // Restore form name
+        form.name = originalState.name;
+        form.rawServerData.attributes.name = originalState.name;
+
+        // Restore visual elements
+        form.visualElements = JSON.parse(
+          JSON.stringify(originalState.visualElements)
+        );
+
+        // If this is the active form, update the canvas elements
+        if (formId === this.activeFormId) {
+          this.elements = JSON.parse(
+            JSON.stringify(originalState.visualElements)
+          );
+          this.selectedElementId = null;
+        }
+
+        // Clear the backup and unsaved changes
+        this.originalFormStates.delete(formId);
+        this.markFormAsCleanById(formId);
+
+        return true;
+      }
+
+      return false;
     },
   },
 });

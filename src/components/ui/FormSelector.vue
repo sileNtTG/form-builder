@@ -203,14 +203,11 @@
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useFormBuilderStore } from "@/stores";
 import { useToastStore } from "@/stores/toast";
-import {
-  SvgIcon,
-  PublishStatus,
-  PublishActions,
-  Modal,
-  EditableTitle,
-  OrangeIndicator,
-} from "@/components/common";
+import { SvgIcon, Modal } from "@/components/common";
+import PublishStatus from "@/components/common/PublishStatus.vue";
+import PublishActions from "@/components/common/PublishActions.vue";
+import EditableTitle from "@/components/common/EditableTitle.vue";
+import OrangeIndicator from "@/components/common/OrangeIndicator.vue";
 import { useFormPersistenceIntegration } from "@/examples/useFormPersistenceExample";
 
 const formBuilderStore = useFormBuilderStore();

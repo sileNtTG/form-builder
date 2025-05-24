@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { PublishStatus, PublishActions } from "@/components/common";
+import PublishStatus from "@/components/common/PublishStatus.vue";
+import PublishActions from "@/components/common/PublishActions.vue";
 
 // Demo states
 const draftForm = ref({

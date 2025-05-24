@@ -11,22 +11,17 @@ export function useAutoSave() {
   const autoSaveEnabled = ref(false);
   const autoSaveInterval = ref(30000); // 30 seconds default
   const isAutoSaving = ref(false);
+  const hasShownUnsavedToast = ref(false); // Prevent duplicate toasts
   let autoSaveTimer: NodeJS.Timeout | null = null;
 
   // Watch for unsaved changes and show reminders
   watch(
     () => formBuilderStore.hasUnsavedChanges,
     (hasChanges) => {
-      if (hasChanges && !autoSaveEnabled.value) {
-        // Show reminder toast after 10 seconds of unsaved changes
-        setTimeout(() => {
-          if (formBuilderStore.hasUnsavedChanges) {
-            toastStore.showWarning(
-              "Du hast ungespeicherte Änderungen. Denk daran zu speichern!",
-              "Ungespeicherte Änderungen"
-            );
-          }
-        }, 10000);
+      // Note: Toast functionality disabled - we now use the orange banner instead
+      if (!hasChanges) {
+        // Reset the flag when changes are saved/cleared
+        hasShownUnsavedToast.value = false;
       }
     }
   );
@@ -88,9 +83,29 @@ export function useAutoSave() {
     try {
       await persistence.saveCurrentForm();
       formBuilderStore.markFormAsClean();
+      hasShownUnsavedToast.value = false; // Reset toast flag
       toastStore.showSuccess("Formular gespeichert!");
     } catch (error) {
       toastStore.showError("Fehler beim Speichern des Formulars");
+    }
+  };
+
+  const discardChanges = () => {
+    // Restore original form state
+    if (formBuilderStore.activeFormId) {
+      const restored = formBuilderStore.restoreOriginalFormState(
+        formBuilderStore.activeFormId
+      );
+
+      if (restored) {
+        hasShownUnsavedToast.value = false; // Reset toast flag
+
+        // Note: Don't clear all toasts here - let individual toasts handle their own lifecycle
+
+        toastStore.showInfo("Änderungen wurden verworfen", "Verworfen");
+      } else {
+        toastStore.showError("Fehler beim Verwerfen der Änderungen");
+      }
     }
   };
 
@@ -109,6 +124,7 @@ export function useAutoSave() {
     startAutoSave,
     stopAutoSave,
     saveNow,
+    discardChanges,
     showUnsavedWarning,
     hasUnsavedChanges: () => formBuilderStore.hasUnsavedChanges,
   };
