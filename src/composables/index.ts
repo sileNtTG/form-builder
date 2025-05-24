@@ -18,3 +18,5 @@ export { useLocalStorage } from "./useLocalStorage";
 export { useCanvasNavigation } from "./useCanvasNavigation";
 
 export { useFormPersistence } from "./useFormPersistence";
+
+export { useAutoSave } from "./useAutoSave";

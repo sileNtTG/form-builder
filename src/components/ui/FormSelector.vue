@@ -19,9 +19,13 @@
             <line x1="16" y1="17" x2="8" y2="17" />
             <polyline points="10,9 9,9 8,9" />
           </svg>
-          <span class="form-name">{{
-            activeForm?.name || "Kein Formular ausgewählt"
-          }}</span>
+          <EditableTitle
+            :value="activeForm?.name || 'Kein Formular ausgewählt'"
+            placeholder="Neues Formular"
+            edit-tooltip="Formularnamen bearbeiten"
+            @update="handleNameUpdate"
+            class="form-name-editable"
+          />
           <svg
             class="dropdown-icon"
             :class="{ open: isOpen }"
@@ -199,6 +203,7 @@ import {
   PublishStatus,
   PublishActions,
   Modal,
+  EditableTitle,
 } from "@/components/common";
 import { useFormPersistenceIntegration } from "@/examples/useFormPersistenceExample";
 
@@ -214,6 +219,7 @@ const activeFormId = computed(() => formBuilderStore.activeFormId);
 const activeForm = computed(() =>
   forms.value.find((f) => f.id === activeFormId.value)
 );
+const hasUnsavedChanges = computed(() => formBuilderStore.hasUnsavedChanges);
 
 const selectForm = (formId: string) => {
   formBuilderStore.setActiveForm(formId);
@@ -229,6 +235,7 @@ const createNewForm = () => {
 const saveForm = async () => {
   try {
     await persistence.saveCurrentForm();
+    formBuilderStore.markFormAsClean();
     toastStore.showSuccess("Formular erfolgreich gespeichert!");
   } catch (error) {
     toastStore.showError("Fehler beim Speichern des Formulars");
@@ -260,6 +267,13 @@ const handlePublish = async () => {
     }
   } finally {
     isPublishing.value = false;
+  }
+};
+
+const handleNameUpdate = (newName: string) => {
+  if (activeForm.value) {
+    formBuilderStore.updateActiveFormName(newName);
+    toastStore.showInfo("Formular wurde geändert. Vergiss nicht zu speichern!");
   }
 };
 
@@ -601,5 +615,10 @@ onUnmounted(() => {
     background: var(--theme-primary-hover, #16a085);
     transform: translateY(-1px);
   }
+}
+
+.form-name-editable {
+  flex: 1;
+  min-width: 0;
 }
 </style>

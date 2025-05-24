@@ -387,23 +387,6 @@ function handleInputKeydown(event: KeyboardEvent) {
 
 <template>
   <div>
-    <!-- Trigger button -->
-    <button
-      class="command-palette-trigger"
-      @click="openCommandPalette"
-      title="Add element (Press / or Ctrl+K)"
-    >
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-      >
-        <circle cx="12" cy="12" r="10" />
-        <path d="M12 8v8M8 12h8" />
-      </svg>
-    </button>
-
     <!-- Command palette overlay -->
     <div
       v-if="isVisible"
@@ -523,35 +506,6 @@ function handleInputKeydown(event: KeyboardEvent) {
 
 <style lang="scss" scoped>
 @use "../../assets/scss/abstracts" as *;
-
-.command-palette-trigger {
-  position: fixed;
-  right: 24px;
-  bottom: 24px;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background-color: var(--theme-primary);
-  border: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 999;
-  transition: transform 0.2s, background-color 0.2s;
-
-  &:hover {
-    transform: scale(1.05);
-    background-color: color.adjust(#1abc9c, $lightness: -5%);
-  }
-
-  svg {
-    width: 28px;
-    height: 28px;
-    stroke: white;
-  }
-}
 
 .command-palette-overlay {
   position: fixed;

@@ -69,6 +69,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
     elements: [] as FormElement[],
     selectedElementId: null as string | null,
     isDragging: false as boolean, // Global flag for active drag operation
+    hasUnsavedChanges: false, // Track if current form has unsaved changes
     canvasConfig: {
       // Flagged for potential unused state
       width: 1200,
@@ -197,28 +198,24 @@ export const useFormBuilderStore = defineStore("formBuilder", {
     },
 
     setActiveForm(formId: string | null) {
-      if (!formId) {
+      if (formId === null) {
         this.activeFormId = null;
         this.elements = [];
         this.selectedElementId = null;
+        this.markFormAsClean(); // Clean state when no form is active
         return;
       }
-      const formToActivate = this.forms.find((f) => f.id === formId);
-      if (formToActivate) {
-        this.activeFormId = formId;
-        this.elements = [...formToActivate.visualElements]; // Ensure deep copy if visualElements can be complex
-        this.selectedElementId = null;
-      } else {
-        console.warn(
-          `Store: Form with id ${formId} not found. Cannot activate.`
-        );
-        if (this.forms.length > 0) {
-          this.setActiveForm(this.forms[0].id);
-        } else {
-          this.activeFormId = null;
-          this.elements = [];
-        }
+
+      const targetForm = this.forms.find((form) => form.id === formId);
+      if (!targetForm) {
+        console.warn(`Form with id ${formId} not found.`);
+        return;
       }
+
+      this.activeFormId = formId;
+      this.elements = [...targetForm.visualElements];
+      this.selectedElementId = null;
+      this.markFormAsClean(); // Reset unsaved changes when switching forms
     },
 
     deleteForm(formId: string) {
@@ -238,41 +235,36 @@ export const useFormBuilderStore = defineStore("formBuilder", {
     },
 
     updateActiveFormName(newName: string) {
-      const form = this.activeForm;
-      if (form) {
-        form.name = newName;
-        form.rawServerData.attributes.name = newName;
-        const formIndex = this.forms.findIndex(
-          (f) => f.id === this.activeFormId
-        );
-        if (formIndex !== -1) {
-          this.forms.splice(formIndex, 1, { ...form });
+      if (this.activeFormId) {
+        const activeForm = this.forms.find((f) => f.id === this.activeFormId);
+        if (activeForm) {
+          activeForm.name = newName;
+          activeForm.rawServerData.attributes.name = newName;
+          this.markFormAsDirty(); // Track unsaved changes
         }
       }
     },
 
     updateActiveFormVisualElements(newVisualElements: FormElement[]) {
-      const form = this.activeForm;
-      if (form) {
-        form.visualElements = [...newVisualElements];
-        this.elements = [...newVisualElements];
+      if (this.activeFormId) {
+        const activeForm = this.forms.find((f) => f.id === this.activeFormId);
+        if (activeForm) {
+          activeForm.visualElements = newVisualElements;
+          this.markFormAsDirty(); // Track unsaved changes
+        }
       }
     },
 
     syncActiveFormVisualsFromCanvas() {
-      if (this.activeForm) {
-        // Tiefe Kopie erstellen, um sicherzustellen, dass die Referenzen unterschiedlich sind
-        const elementsCopy = JSON.parse(JSON.stringify(this.elements));
-
-        // Sicherstellen, dass alle Elemente korrekte Ordnungszahlen haben
-        elementsCopy.forEach((element: FormElement, index: number) => {
-          element.order = index;
-        });
-
-        // Aktives Formular aktualisieren mit der korrigierten Kopie
-        this.activeForm.visualElements = elementsCopy;
-      } else {
-        console.warn("No active form to sync visual elements to");
+      // Syncs from this.elements to the active form's visualElements
+      if (this.activeFormId) {
+        const activeForm = this.forms.find((f) => f.id === this.activeFormId);
+        if (activeForm) {
+          // Deep copy the elements to avoid shared references
+          activeForm.visualElements = JSON.parse(JSON.stringify(this.elements));
+          // Note: We don't mark as dirty here since this is a sync operation
+          // The original change (addElement, updateElement, etc.) should mark it dirty
+        }
       }
     },
 
@@ -336,6 +328,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
     addElement(element: FormElement) {
       this.elements.push(element);
       this.syncActiveFormVisualsFromCanvas();
+      this.markFormAsDirty(); // Track unsaved changes
     },
 
     createAndAddElement(elementType: string, x: number, y: number) {
@@ -460,38 +453,24 @@ export const useFormBuilderStore = defineStore("formBuilder", {
     },
 
     updateElement(elementId: string, updates: Partial<FormElement>) {
-      // Rekursiv Element finden und aktualisieren
       const updateElementRecursive = (elements: FormElement[]): boolean => {
-        // Element in aktueller Ebene suchen
-        const index = elements.findIndex((el) => el.dataId === elementId);
-        if (index !== -1) {
-          elements[index] = {
-            ...elements[index],
-            ...updates,
-          } as FormElement;
-          return true;
-        }
-
-        // In Fieldset-Kindern suchen
-        for (const el of elements) {
-          if (el.type === "fieldset" && el.children && el.children.length > 0) {
-            if (updateElementRecursive(el.children)) {
+        for (const element of elements) {
+          if (element.dataId === elementId) {
+            Object.assign(element, updates);
+            this.syncActiveFormVisualsFromCanvas();
+            this.markFormAsDirty(); // Track unsaved changes
+            return true;
+          }
+          if (element.type === "fieldset" && element.children) {
+            if (updateElementRecursive(element.children)) {
               return true;
             }
           }
         }
-
         return false;
       };
 
-      // Aktualisieren ausführen
-      const wasUpdated = updateElementRecursive(this.elements);
-
-      if (wasUpdated) {
-        this.syncActiveFormVisualsFromCanvas();
-      } else {
-        console.warn(`Element with id ${elementId} not found for update.`);
-      }
+      updateElementRecursive(this.elements);
     },
 
     updateElementPosition(elementId: string, x: number, y: number) {
@@ -504,16 +483,13 @@ export const useFormBuilderStore = defineStore("formBuilder", {
     },
 
     removeElement(elementId: string) {
-      // Funktion zum rekursiven Löschen von Elementen (auch in verschachtelten Fieldsets)
       const removeFromChildren = (elements: FormElement[]): boolean => {
-        // Direkt in diesem Array suchen
-        const directIndex = elements.findIndex((el) => el.dataId === elementId);
-        if (directIndex !== -1) {
-          elements.splice(directIndex, 1);
+        const index = elements.findIndex((el) => el.dataId === elementId);
+        if (index !== -1) {
+          elements.splice(index, 1);
           return true;
         }
 
-        // In Kindern von Fieldsets suchen
         for (const el of elements) {
           if (el.type === "fieldset" && el.children && el.children.length > 0) {
             if (removeFromChildren(el.children)) {
@@ -521,22 +497,17 @@ export const useFormBuilderStore = defineStore("formBuilder", {
             }
           }
         }
-
         return false;
       };
 
-      // Zuerst versuchen, in verschachtelten Elementen zu löschen
       const wasRemoved = removeFromChildren(this.elements);
-
-      // Falls das Element nicht in verschachtelten Fieldsets gefunden wurde,
-      // war es wahrscheinlich schon auf Root-Ebene und wurde gelöscht
-
-      // Die Auswahl zurücksetzen, wenn das gelöschte Element ausgewählt war
-      if (this.selectedElementId === elementId) {
-        this.selectedElementId = null;
+      if (wasRemoved) {
+        this.syncActiveFormVisualsFromCanvas();
+        this.markFormAsDirty(); // Track unsaved changes
+        if (this.selectedElementId === elementId) {
+          this.selectedElementId = null;
+        }
       }
-
-      this.syncActiveFormVisualsFromCanvas();
     },
 
     selectElement(elementId: string | null) {
@@ -578,11 +549,11 @@ export const useFormBuilderStore = defineStore("formBuilder", {
     },
 
     async saveForm() {
-      const activeFormData = this.getRawActiveFormData();
-      if (activeFormData) {
-      } else {
-        console.warn("No active form to save.");
-      }
+      console.log("Form saved!");
+      // TODO: Implement actual save logic
+      // For now, just log all forms
+      console.log("Current forms:", this.forms);
+      this.markFormAsClean(); // Mark as clean after successful save
     },
 
     addElementToFieldset(
@@ -590,30 +561,28 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       element: FormElement,
       atIndex: number = 0
     ) {
+      let wasAdded = false;
       function findAndAdd(elements: FormElement[]): boolean {
         for (const el of elements) {
           if (el.dataId === fieldsetId && el.type === "fieldset") {
             if (!el.children) {
               el.children = [];
             }
-
-            // Calculate safe position and insert element
             const safeIndex = Math.max(
               0,
               Math.min(atIndex, el.children.length)
             );
             el.children.splice(safeIndex, 0, element);
 
-            // Update order indices for all children
+            // Update order indices for the fieldset children
             el.children.forEach((child, index) => {
               child.order = index;
             });
 
+            wasAdded = true;
             return true;
           }
-
-          // Recursively search in nested fieldsets
-          if (el.type === "fieldset" && el.children && el.children.length > 0) {
+          if (el.type === "fieldset" && el.children) {
             if (findAndAdd(el.children)) {
               return true;
             }
@@ -622,12 +591,9 @@ export const useFormBuilderStore = defineStore("formBuilder", {
         return false;
       }
 
-      const success = findAndAdd(this.elements);
-      if (success) {
+      if (findAndAdd(this.elements)) {
         this.syncActiveFormVisualsFromCanvas();
-        this.selectElement(element.dataId);
-      } else {
-        console.error(`Fieldset with id ${fieldsetId} not found`);
+        this.markFormAsDirty(); // Track unsaved changes
       }
     },
 
@@ -638,25 +604,18 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       parentId: string | null = null
     ) {
       if (parentId) {
-        // Add to fieldset
+        // Add to specific fieldset
         this.addElementToFieldset(parentId, element, position);
       } else {
         // Add to root level
-        const elementsCopy = [...this.elements];
-
-        const safePosition = Math.max(
+        const clampedPosition = Math.max(
           0,
-          Math.min(position, elementsCopy.length)
+          Math.min(position, this.elements.length)
         );
-        elementsCopy.splice(safePosition, 0, element);
-
-        // Update order indices
-        elementsCopy.forEach((elem, index) => {
-          elem.order = index;
-        });
-
-        this.setFormElementsAndSelect(elementsCopy, element.dataId);
+        this.elements.splice(clampedPosition, 0, element);
+        this.syncActiveFormVisualsFromCanvas();
       }
+      this.markFormAsDirty(); // Track unsaved changes
     },
 
     // --- REFACTORED HELPER FUNCTIONS FOR moveElementToPosition ---
@@ -823,6 +782,8 @@ export const useFormBuilderStore = defineStore("formBuilder", {
         extractResult.remainingElements,
         extractResult.extractedElement.dataId
       );
+
+      this.markFormAsDirty(); // Track unsaved changes
     },
 
     findElementWithParent(elementId: string): FoundElementInfo | null {
@@ -860,6 +821,7 @@ export const useFormBuilderStore = defineStore("formBuilder", {
       if (info && info.element) {
         (info.element as unknown as Record<string, unknown>)[key] = value;
         this.syncActiveFormVisualsFromCanvas();
+        this.markFormAsDirty(); // Track unsaved changes
       }
     },
 
@@ -939,6 +901,14 @@ export const useFormBuilderStore = defineStore("formBuilder", {
             defaultValue: "",
           } as TextInputElement;
       }
+    },
+
+    markFormAsDirty() {
+      this.hasUnsavedChanges = true;
+    },
+
+    markFormAsClean() {
+      this.hasUnsavedChanges = false;
     },
   },
 });
