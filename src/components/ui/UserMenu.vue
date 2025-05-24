@@ -28,6 +28,9 @@
       </div>
       <div class="dropdown-divider"></div>
       <div class="dropdown-section">
+        <button @click="handleMenuItem('publish-demo')" class="dropdown-item">
+          <SvgIcon name="eye" :size="16" /> Publish Demo
+        </button>
         <button @click="handleMenuItem('logout')" class="dropdown-item danger">
           <SvgIcon name="x" :size="16" /> Abmelden
         </button>
@@ -38,9 +41,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
+import { useRouter } from "vue-router";
 import { SvgIcon } from "@/components/common";
 
 const isOpen = ref(false);
+const router = useRouter();
 
 const handleMenuItem = (action: string) => {
   // Handle action logic here
@@ -56,6 +61,9 @@ const handleMenuItem = (action: string) => {
       break;
     case "help":
       // Hilfe öffnen
+      break;
+    case "publish-demo":
+      router.push("/publish-demo");
       break;
     case "logout":
       // Logout

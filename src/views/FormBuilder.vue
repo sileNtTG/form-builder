@@ -3,14 +3,16 @@ import { onMounted, onUnmounted, ref, computed, nextTick } from "vue";
 import FormCanvas from "../components/core/FormCanvas.vue";
 import PropertyPanel from "../components/core/PropertyPanel.vue";
 import JsonPreviewPanel from "../components/core/JsonPreviewPanel.vue";
+import TreeView from "../components/core/TreeView.vue";
 import CommandPalette from "../components/core/CommandPalette.vue";
 import ElementsPanel from "../components/core/ElementsPanel.vue";
 import { useFormBuilderStore } from "../stores/formBuilder";
+import { useNavigationStore } from "../stores/navigation";
 import { useRouter } from "vue-router";
 
 const formBuilderStore = useFormBuilderStore();
+const navigationStore = useNavigationStore();
 const router = useRouter();
-const activeTab = ref("properties"); // 'properties' oder 'json'
 const activeSidebarTab = ref("forms"); // 'forms' oder 'elements'
 
 // Formularübersicht (aus Sidebar.vue)
@@ -128,21 +130,30 @@ const handleDragOver = (e: DragEvent) => {
       <div class="tabs">
         <button
           class="tab"
-          :class="{ active: activeTab === 'properties' }"
-          @click="activeTab = 'properties'"
+          :class="{ active: navigationStore.activeTab === 'properties' }"
+          @click="navigationStore.setActiveTab('properties')"
         >
           Properties
         </button>
         <button
           class="tab"
-          :class="{ active: activeTab === 'json' }"
-          @click="activeTab = 'json'"
+          :class="{ active: navigationStore.activeTab === 'json' }"
+          @click="navigationStore.setActiveTab('json')"
         >
           JSON
         </button>
+        <button
+          class="tab"
+          :class="{ active: navigationStore.activeTab === 'structure' }"
+          @click="navigationStore.setActiveTab('structure')"
+        >
+          Structure
+        </button>
       </div>
-      <PropertyPanel v-show="activeTab === 'properties'" />
-      <JsonPreviewPanel v-show="activeTab === 'json'" />
+      <!-- <PropertyPanel v-show="activeTab === 'properties'" /> -->
+      <PropertyPanel v-show="navigationStore.activeTab === 'properties'" />
+      <JsonPreviewPanel v-show="navigationStore.activeTab === 'json'" />
+      <TreeView v-show="navigationStore.activeTab === 'structure'" />
     </div>
   </div>
 </template>

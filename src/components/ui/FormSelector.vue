@@ -69,10 +69,20 @@
                 />
                 <polyline points="14,2 14,8 20,8" />
               </svg>
-              <span class="form-item-name">{{ form.name }}</span>
-              <span class="form-item-elements"
-                >{{ form.visualElements?.length || 0 }} Elemente</span
-              >
+              <div class="form-item-content">
+                <div class="form-item-header">
+                  <span class="form-item-name">{{ form.name }}</span>
+                  <PublishStatus
+                    :published="form.published || false"
+                    :published-at="form.publishedAt"
+                    size="sm"
+                    :show-text="false"
+                  />
+                </div>
+                <span class="form-item-elements"
+                  >{{ form.visualElements?.length || 0 }} Elemente</span
+                >
+              </div>
             </div>
           </div>
         </div>
@@ -118,6 +128,16 @@
     </div>
 
     <div class="form-selector-right">
+      <div v-if="activeForm" class="current-form-status">
+        <PublishStatus
+          :published="activeForm.published || false"
+          :published-at="activeForm.publishedAt"
+          size="sm"
+          :show-text="true"
+          :show-date="false"
+        />
+      </div>
+
       <button @click="testForm" class="test-btn">
         <svg
           width="16"
@@ -131,34 +151,63 @@
         </svg>
         Formular testen
       </button>
-      <button @click="testFieldset" class="test-btn">
-        <SvgIcon name="fieldset" :size="16" /> Fieldset Test
-      </button>
-      <button @click="publishForm" class="publish-btn">
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <polyline points="12,6 12,12 16,14" />
-        </svg>
-        Veröffentlichen
-      </button>
+
+      <PublishActions
+        v-if="activeForm"
+        :published="activeForm.published || false"
+        :loading="isPublishing"
+        variant="button"
+        size="md"
+        @publish="handlePublish"
+        @unpublish="handlePublish"
+      />
     </div>
   </div>
+
+  <!-- Wlad Warning Modal -->
+  <Modal
+    :show="showWladWarning"
+    @close="showWladWarning = false"
+    size="md"
+    title="⚠️ WARNUNG"
+  >
+    <div class="wlad-warning">
+      <div class="warning-icon">🚫</div>
+      <h2>FINGER WEG WLAD!</h2>
+      <p>Diese Funktion ist noch nicht fertig implementiert.</p>
+      <p>
+        Bitte habe etwas Geduld, während wir an der "Formular testen"
+        Funktionalität arbeiten.
+      </p>
+      <div class="warning-emoji">😅</div>
+    </div>
+
+    <template #footer>
+      <button @click="showWladWarning = false" class="wlad-ok-btn">
+        OK, ich verstehe! 😄
+      </button>
+    </template>
+  </Modal>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useFormBuilderStore } from "@/stores";
-import { SvgIcon } from "@/components/common";
+import { useToastStore } from "@/stores/toast";
+import {
+  SvgIcon,
+  PublishStatus,
+  PublishActions,
+  Modal,
+} from "@/components/common";
+import { useFormPersistenceIntegration } from "@/examples/useFormPersistenceExample";
 
 const formBuilderStore = useFormBuilderStore();
+const toastStore = useToastStore();
+const persistence = useFormPersistenceIntegration();
 const isOpen = ref(false);
+const isPublishing = ref(false);
+const showWladWarning = ref(false);
 
 const forms = computed(() => formBuilderStore.forms);
 const activeFormId = computed(() => formBuilderStore.activeFormId);
@@ -177,8 +226,13 @@ const createNewForm = () => {
   isOpen.value = false;
 };
 
-const saveForm = () => {
-  formBuilderStore.saveForm();
+const saveForm = async () => {
+  try {
+    await persistence.saveCurrentForm();
+    toastStore.showSuccess("Formular erfolgreich gespeichert!");
+  } catch (error) {
+    toastStore.showError("Fehler beim Speichern des Formulars");
+  }
 };
 
 const duplicateForm = () => {
@@ -191,15 +245,22 @@ const duplicateForm = () => {
 };
 
 const testForm = () => {
-  // Test form logic
+  showWladWarning.value = true;
 };
 
-const testFieldset = () => {
-  // Test fieldset logic
-};
+const handlePublish = async () => {
+  if (!activeForm.value) return;
 
-const publishForm = () => {
-  // Publish form logic
+  isPublishing.value = true;
+  try {
+    if (activeForm.value.published) {
+      await persistence.unpublishCurrentForm();
+    } else {
+      await persistence.publishCurrentForm();
+    }
+  } finally {
+    isPublishing.value = false;
+  }
 };
 
 // Close dropdown when clicking outside
@@ -212,6 +273,8 @@ const handleClickOutside = (event: Event) => {
 
 onMounted(() => {
   document.addEventListener("click", handleClickOutside);
+  // Load saved forms on mount
+  persistence.loadAllSavedForms();
 });
 
 onUnmounted(() => {
@@ -340,11 +403,25 @@ onUnmounted(() => {
   }
 }
 
-.form-item-name {
+.form-item-content {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.form-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.form-item-name {
   @include text-small;
   font-weight: $font-weight-medium;
 }
+
 .form-item-elements {
   font-size: $font-size-xs;
   color: var(--theme-text-muted);
@@ -379,8 +456,7 @@ onUnmounted(() => {
   gap: 0.75rem;
 }
 
-.test-btn,
-.publish-btn {
+.test-btn {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -391,9 +467,6 @@ onUnmounted(() => {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-}
-
-.test-btn {
   background: var(--theme-bg-elevated, #2a303c);
   color: var(--theme-text, #ffffff);
   border: 1px solid var(--theme-border, #3a3f4a);
@@ -404,13 +477,9 @@ onUnmounted(() => {
   }
 }
 
-.publish-btn {
-  background: var(--theme-primary, #1abc9c);
-  color: white;
-
-  &:hover {
-    background: var(--theme-primary-hover, #16a085);
-  }
+.current-form-status {
+  display: flex;
+  align-items: center;
 }
 
 // Clean theme styles
@@ -483,6 +552,54 @@ onUnmounted(() => {
 
   .dropdown-icon {
     color: #64748b;
+  }
+}
+
+// Wlad Warning Styles
+.wlad-warning {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.warning-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.wlad-warning h2 {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #ff4444;
+  margin-bottom: 1.5rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.wlad-warning p {
+  font-size: 1.1rem;
+  margin: 0.5rem 0;
+  color: var(--theme-text-muted);
+  line-height: 1.6;
+}
+
+.warning-emoji {
+  font-size: 3rem;
+  margin-top: 1.5rem;
+}
+
+.wlad-ok-btn {
+  padding: 0.75rem 1.5rem;
+  background: var(--theme-primary, #1abc9c);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--theme-primary-hover, #16a085);
+    transform: translateY(-1px);
   }
 }
 </style>

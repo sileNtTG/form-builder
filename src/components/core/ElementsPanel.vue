@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { v4 as uuidv4 } from "uuid";
 import { useFormBuilderStore } from "@/stores/formBuilder";
 import type { FormElement } from "@/models/FormElement";
 import { SvgIcon, ElementIcon } from "@/components/common";
@@ -87,106 +86,6 @@ const filteredElements = computed(() => {
 
   return result;
 });
-
-// Insert element directly (without drag)
-function insertElement(elementType: string) {
-  // Create the element
-  const baseElementProps = {
-    dataId: uuidv4(),
-    label: `Neues ${
-      elementType.charAt(0).toUpperCase() + elementType.slice(1)
-    }`,
-    required: false,
-    order: 0,
-    x: 20,
-    y: 20,
-  };
-
-  let newElement: FormElement | null = null;
-
-  // Create element based on type
-  switch (elementType) {
-    case "input":
-      newElement = {
-        ...baseElementProps,
-        type: "input",
-        placeholder: "Text eingeben",
-        width: 250,
-        height: 48,
-      } as FormElement;
-      break;
-    case "textarea":
-      newElement = {
-        ...baseElementProps,
-        type: "textarea",
-        placeholder: "Text eingeben",
-        rows: 4,
-        width: 300,
-        height: 120,
-      } as FormElement;
-      break;
-    case "checkbox":
-      newElement = {
-        ...baseElementProps,
-        type: "checkbox",
-        checked: false,
-        width: 200,
-        height: 40,
-      } as FormElement;
-      break;
-    case "select":
-      newElement = {
-        ...baseElementProps,
-        type: "select",
-        options: [
-          { value: "option1", label: "Option 1" },
-          { value: "option2", label: "Option 2" },
-        ],
-        multiple: false,
-        width: 250,
-        height: 48,
-      } as FormElement;
-      break;
-    case "radio":
-      newElement = {
-        ...baseElementProps,
-        type: "radio",
-        options: [
-          { value: "option1", label: "Option 1" },
-          { value: "option2", label: "Option 2" },
-        ],
-        defaultValue: "option1",
-        width: 250,
-        height: 80,
-      } as FormElement;
-      break;
-    case "fieldset":
-      newElement = {
-        ...baseElementProps,
-        type: "fieldset",
-        children: [],
-        width: 400,
-        height: 200,
-      } as FormElement;
-      break;
-    case "button":
-      newElement = {
-        ...baseElementProps,
-        type: "button",
-        buttonType: "button",
-        width: 150,
-        height: 48,
-      } as FormElement;
-      break;
-  }
-
-  if (newElement) {
-    // Add the element
-    formBuilderStore.addElement(newElement);
-    // Select the new element
-    formBuilderStore.selectElement(newElement.dataId);
-  }
-}
 
 // Start drag for an element
 function startDrag(event: DragEvent, elementType: string) {
@@ -304,7 +203,6 @@ function startDrag(event: DragEvent, elementType: string) {
         class="element-card"
         draggable="true"
         @dragstart="startDrag($event, element.type)"
-        @click="insertElement(element.type)"
       >
         <div class="element-card__icon">
           <ElementIcon :type="element.type" :size="32" />
@@ -572,16 +470,16 @@ function startDrag(event: DragEvent, elementType: string) {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 0.8rem;
-  }
+    gap: 0.5rem;
 
-  &__drag-handle {
-    cursor: move;
-    color: var(--theme-text-muted);
-    transition: color 0.2s;
+    .drag-handle {
+      cursor: move;
+      color: var(--theme-text-muted);
+      transition: color 0.2s;
 
-    &:hover {
-      color: var(--theme-text);
+      &:hover {
+        color: var(--theme-text);
+      }
     }
   }
 }

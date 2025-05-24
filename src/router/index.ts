@@ -29,7 +29,12 @@ const routes = [
   {
     path: "/fieldset-test",
     name: "FieldsetTest",
-    component: () => import("../views/FieldsetTestView.vue"),
+    component: () => import("../views/FieldsetNestingTest.vue"),
+  },
+  {
+    path: "/publish-demo",
+    name: "PublishDemo",
+    component: () => import("../components/demo/PublishStatusDemo.vue"),
   },
 ];
 

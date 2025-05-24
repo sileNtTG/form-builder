@@ -1,15 +1,14 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, defineAsyncComponent } from "vue";
 import type { FormElement } from "@/models/FormElement";
 import { useDragAndDrop } from "@/composables";
 import { useFormBuilderStore } from "@/stores/formBuilder";
-import { useNavigationStore } from "@/stores/navigation";
 import { SvgIcon } from "@/components/common";
 import SpacerWrapper from "./SpacerWrapper.vue";
 
 interface Props {
   element: FormElement;
-  isDragging?: boolean; // Global dragging state from parent
+  isDragging?: boolean;
 }
 
 const props = defineProps<Props>();
@@ -29,7 +28,6 @@ const emit = defineEmits<{
 
 const { startInternalDrag, endDrag } = useDragAndDrop();
 const formBuilderStore = useFormBuilderStore();
-const navigationStore = useNavigationStore();
 
 // Use computed property for selection state
 const isSelected = computed(() => {
@@ -43,40 +41,49 @@ const elementTitle = computed(() => {
   return `${type}${label}`;
 });
 
+// Dynamic component mapping für Node components
+const getNodeComponent = (elementType: string) => {
+  const componentMap: Record<string, () => Promise<any>> = {
+    text: () => import("@/components/common/nodes/TextInputNode.vue"),
+    password: () => import("@/components/common/nodes/PasswordInputNode.vue"),
+    email: () => import("@/components/common/nodes/EmailInputNode.vue"),
+    textarea: () => import("@/components/common/nodes/TextareaNode.vue"),
+    checkbox: () => import("@/components/common/nodes/CheckboxNode.vue"),
+    select: () => import("@/components/common/nodes/SingleSelectNode.vue"),
+    fieldset: () => import("@/components/common/nodes/FieldsetNode.vue"),
+  };
+
+  return componentMap[elementType]
+    ? defineAsyncComponent(componentMap[elementType])
+    : null;
+};
+
 function handleDragStart(event: DragEvent) {
   const elementId = props.element.dataId;
   const elementType = props.element.type;
 
-  // Stop propagation to prevent parent fieldset from handling the drag
   event.stopPropagation();
 
-  // Add dragging class to the element
   const target = event.target as HTMLElement;
   target.classList.add("dragging");
 
-  // Set drag data for compatibility
   if (event.dataTransfer) {
     event.dataTransfer.effectAllowed = "all";
     event.dataTransfer.setData("application/x-element-id", elementId);
     event.dataTransfer.setData("text/plain", elementType);
   }
 
-  // Start internal drag
   startInternalDrag(elementId, elementType);
 }
 
 function handleDragEnd(event: DragEvent) {
-  // Stop propagation to prevent parent fieldset from handling the drag end
   event.stopPropagation();
 
-  // Nur endDrag() aufrufen wenn das Event vom DIESEM Element kommt
   const target = event.target as HTMLElement;
   const elementId = target.getAttribute("data-element-id");
 
-  // Remove dragging class
   target.classList.remove("dragging");
 
-  // Nur reset wenn es UNSER Element ist
   if (elementId === props.element.dataId) {
     endDrag();
   }
@@ -86,16 +93,9 @@ function handleClick() {
   formBuilderStore.selectElement(props.element.dataId);
 }
 
-function handleElementClick(elementId: string) {
-  formBuilderStore.selectElement(elementId);
-}
-
 function handleEdit(e: Event) {
   e.stopPropagation();
   formBuilderStore.selectElement(props.element.dataId);
-
-  // Switch to Properties tab using navigation store
-  navigationStore.switchToPropertiesTab();
 }
 
 function handleDelete(e: Event) {
@@ -114,24 +114,21 @@ function handleFieldsetDropZoneDrop(data: {
   elementId?: string;
   elementType?: string;
 }) {
-  // Ensure the parentId is THIS fieldset's ID when emitting
   const eventData = {
     ...data,
-    parentId: props.element.dataId, // Override with THIS fieldset's ID
+    parentId: props.element.dataId,
   };
 
-  // Emit to parent FormCanvas to handle the actual logic
   emit("fieldset-drop", eventData);
 }
 </script>
 
 <template>
+  <!-- Regular form elements (non-fieldset) -->
   <div
     v-if="element.type !== 'fieldset'"
     class="element-card"
-    :class="{
-      selected: isSelected,
-    }"
+    :class="{ selected: isSelected }"
     draggable="true"
     :data-element-id="element.dataId"
     :data-element-type="element.type"
@@ -139,13 +136,12 @@ function handleFieldsetDropZoneDrop(data: {
     @dragend="handleDragEnd"
     @click.stop="handleClick"
   >
+    <!-- Card Header mit Drag Handle und Actions -->
     <div class="element-card__header">
       <div class="element-card__drag-handle">
         <SvgIcon name="grip-vertical" :size="16" />
       </div>
-
       <span class="element-card__title">{{ elementTitle }}</span>
-
       <div class="element-card__actions">
         <button class="icon-btn" @click.stop="handleEdit" title="Edit">
           <SvgIcon name="edit" :size="14" />
@@ -156,67 +152,13 @@ function handleFieldsetDropZoneDrop(data: {
       </div>
     </div>
 
+    <!-- Card Body mit sauberem Node-Component -->
     <div class="element-card__body">
-      <!-- Regular element rendering with original styles -->
-      <template v-if="element.type === 'input'">
-        <input type="text" :placeholder="element.placeholder" disabled />
-      </template>
-      <template v-else-if="element.type === 'textarea'">
-        <textarea
-          :placeholder="element.placeholder"
-          :rows="element.rows || 4"
-          disabled
-        ></textarea>
-      </template>
-      <template v-else-if="element.type === 'checkbox'">
-        <label class="checkbox-label">
-          <input type="checkbox" :checked="element.checked" disabled />
-          {{ element.label }}
-        </label>
-      </template>
-      <template v-else-if="element.type === 'select'">
-        <select disabled>
-          <option
-            v-for="option in element.options"
-            :key="option.value"
-            :value="option.value"
-          >
-            {{ option.label }}
-          </option>
-        </select>
-      </template>
-      <template v-else-if="element.type === 'radio'">
-        <div class="radio-group">
-          <label
-            v-for="option in element.options"
-            :key="option.value"
-            class="radio-label"
-          >
-            <input
-              type="radio"
-              :name="element.dataId"
-              :value="option.value"
-              :checked="option.value === element.defaultValue"
-              disabled
-            />
-            {{ option.label }}
-          </label>
-        </div>
-      </template>
-      <template v-else-if="element.type === 'button'">
-        <button :type="element.buttonType || 'button'" disabled>
-          {{ element.label }}
-        </button>
-      </template>
-      <template v-else-if="element.type === 'number'">
-        <input type="number" :min="element.min" :max="element.max" disabled />
-      </template>
-      <template v-else-if="element.type === 'date'">
-        <input type="date" disabled />
-      </template>
-      <template v-else>
-        <div>{{ element.label || element.type }}</div>
-      </template>
+      <component
+        :is="getNodeComponent(element.type)"
+        :element="element as any"
+        mode="preview"
+      />
     </div>
   </div>
 
@@ -229,6 +171,7 @@ function handleFieldsetDropZoneDrop(data: {
     :data-element-type="element.type"
     @click="handleClick"
   >
+    <!-- Fieldset Header -->
     <div
       class="fieldset-header"
       draggable="true"
@@ -252,9 +195,10 @@ function handleFieldsetDropZoneDrop(data: {
         </button>
       </div>
     </div>
+
+    <!-- Fieldset Content mit SpacerWrapper -->
     <div class="fieldset-content">
       <template v-if="element.children && element.children.length > 0">
-        <!-- First spacer: before first child -->
         <SpacerWrapper
           :index="0"
           :fieldset-id="element.dataId"
@@ -264,7 +208,7 @@ function handleFieldsetDropZoneDrop(data: {
           @insert="handleInsertPointClick"
           @drop="handleFieldsetDropZoneDrop"
         />
-        <!-- Child elements with spacers between them -->
+
         <template
           v-for="(child, childIndex) in element.children"
           :key="child.dataId"
@@ -275,7 +219,7 @@ function handleFieldsetDropZoneDrop(data: {
             @fieldset-drop="handleFieldsetDropZoneDrop"
             @insert="handleInsertPointClick"
           />
-          <!-- Spacer after each element (including the last) -->
+
           <SpacerWrapper
             :index="childIndex + 1"
             :fieldset-id="element.dataId"
@@ -287,7 +231,7 @@ function handleFieldsetDropZoneDrop(data: {
           />
         </template>
       </template>
-      <!-- Empty fieldset with single SpacerWrapper -->
+
       <template v-else>
         <SpacerWrapper
           :index="0"
@@ -303,24 +247,26 @@ function handleFieldsetDropZoneDrop(data: {
 </template>
 
 <style lang="scss" scoped>
+@use "../../assets/scss/abstracts" as *;
+
 .element-card {
-  background: var(--theme-bg-surface, #232834);
-  border-radius: 6px;
+  background: var(--theme-bg-surface);
+  border-radius: $border-radius;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  border: 1px solid var(--theme-border, #3a3f4a);
-  transition: all 0.2s;
+  border: 1px solid var(--theme-border);
+  @include transition(all, $transition-normal);
   width: 100%;
   overflow: hidden;
   cursor: pointer;
 
   &.selected {
-    border: 1px solid var(--theme-primary, #1abc9c);
+    border: 1px solid var(--theme-primary);
     box-shadow: 0 0 0 1px rgba(26, 188, 156, 0.4);
   }
 
   &.dragging {
     opacity: 0.5;
-    border: 1px dashed var(--theme-primary, #1abc9c);
+    border: 1px dashed var(--theme-primary);
     position: relative;
     z-index: 1;
   }
@@ -330,98 +276,39 @@ function handleFieldsetDropZoneDrop(data: {
     justify-content: space-between;
     align-items: center;
     background: linear-gradient(to right, #2c313c, #343b48);
-    padding: 0.3rem 0.6rem;
+    padding: $spacing-sm $spacing-md;
     font-weight: 500;
-    color: var(--theme-text, #fff);
+    color: var(--theme-text);
   }
 
   &__drag-handle {
     cursor: grab;
     color: #a0aec0;
-    transition: color 0.2s;
+    @include transition(color, $transition-fast);
 
     &:hover {
-      color: #1abc9c;
+      color: var(--theme-primary);
     }
   }
 
   &__title {
-    font-size: 0.85rem;
+    @include text-small;
     font-weight: 500;
     flex: 1;
-    margin-left: 0.5rem;
+    margin-left: $spacing-sm;
   }
 
   &__actions {
     display: flex;
-    gap: 0.2rem;
+    gap: $spacing-xs;
   }
 
   &__body {
-    padding: 0.6rem;
+    padding: $spacing-md;
     min-height: 40px;
     display: flex;
-    align-items: center;
-
-    // Form element styles nested inside body
-    > input,
-    > textarea,
-    > select {
-      width: 100%;
-      background: rgba(0, 0, 0, 0.15);
-      color: var(--theme-text, #fff);
-      border: 1px solid var(--theme-border, #444);
-      border-radius: 4px;
-      padding: 0.3rem 0.5rem;
-      font-size: 0.85rem;
-      margin-bottom: 0.2rem;
-
-      &:disabled {
-        opacity: 0.8;
-      }
-    }
-
-    > button {
-      width: 100%;
-      background: var(--theme-primary, #1abc9c);
-      color: #fff;
-      border: none;
-      border-radius: 4px;
-      padding: 0.3rem 0.6rem;
-      font-weight: 500;
-      font-size: 0.85rem;
-      cursor: not-allowed;
-      opacity: 0.8;
-      margin-top: 0.2rem;
-    }
-
-    > .checkbox-label,
-    > .radio-label {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      color: var(--theme-text, #fff);
-      cursor: pointer;
-      font-size: 0.9em;
-
-      > input[type="checkbox"],
-      > input[type="radio"] {
-        width: auto;
-        margin: 0;
-      }
-
-      > input[type="checkbox"] {
-        accent-color: var(--theme-primary, #1abc9c);
-        width: 0.9em;
-        height: 0.9em;
-      }
-    }
-
-    > .radio-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.2rem;
-    }
+    flex-direction: column;
+    gap: $spacing-sm;
   }
 }
 
@@ -430,25 +317,25 @@ function handleFieldsetDropZoneDrop(data: {
   border: none;
   color: #a0aec0;
   cursor: pointer;
-  padding: 0.2rem;
-  border-radius: 0.25rem;
+  padding: $spacing-xs;
+  border-radius: $border-radius-sm;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  @include transition(all, $transition-fast);
 
   &:hover {
-    color: #1abc9c;
+    color: var(--theme-primary);
     background: rgba(26, 188, 156, 0.1);
   }
 }
 
 .fieldset-container {
-  border: 1px solid var(--theme-border, #3a3f4a);
-  border-radius: 8px;
-  background: var(--theme-bg-surface, #232834);
+  border: 1px solid var(--theme-border);
+  border-radius: $border-radius-lg;
+  background: var(--theme-bg-surface);
   min-height: 100px;
-  transition: all 0.2s ease;
+  @include transition(all, $transition-normal);
   width: 100%;
   overflow: hidden;
 
@@ -457,13 +344,13 @@ function handleFieldsetDropZoneDrop(data: {
   }
 
   &.selected {
-    border: 1px solid var(--theme-primary, #1abc9c);
+    border: 1px solid var(--theme-primary);
     box-shadow: 0 0 0 1px rgba(26, 188, 156, 0.4);
   }
 
   &.dragging {
     opacity: 0.5;
-    border: 1px dashed var(--theme-primary, #1abc9c);
+    border: 1px dashed var(--theme-primary);
     position: relative;
     z-index: 1;
   }
@@ -474,10 +361,10 @@ function handleFieldsetDropZoneDrop(data: {
   justify-content: space-between;
   align-items: center;
   background: linear-gradient(to right, #2c313c, #343b48);
-  padding: 0.5rem 0.8rem;
+  padding: $spacing-sm $spacing-lg;
   font-weight: 500;
-  color: var(--theme-text, #fff);
-  border-bottom: 1px solid var(--theme-border, #3a3f4a);
+  color: var(--theme-text);
+  border-bottom: 1px solid var(--theme-border);
   cursor: grab;
 
   &:active {
@@ -488,16 +375,16 @@ function handleFieldsetDropZoneDrop(data: {
 .fieldset-drag-handle {
   cursor: grab;
   color: #a0aec0;
-  transition: color 0.2s;
-  margin-right: 0.5rem;
+  @include transition(color, $transition-fast);
+  margin-right: $spacing-sm;
 
   &:hover {
-    color: #1abc9c;
+    color: var(--theme-primary);
   }
 }
 
 .fieldset-title {
-  font-size: 0.9rem;
+  @include text-small;
   font-weight: 500;
   flex: 1;
   margin: 0;
@@ -505,7 +392,7 @@ function handleFieldsetDropZoneDrop(data: {
 
 .fieldset-actions {
   display: flex;
-  gap: 0.2rem;
+  gap: $spacing-xs;
 }
 
 .fieldset-content {
@@ -515,121 +402,28 @@ function handleFieldsetDropZoneDrop(data: {
   display: flex;
   flex-direction: column;
   gap: 0;
-  padding: 0.8rem;
-  padding-left: 1.2rem;
+  padding: $spacing-lg;
+  padding-left: $spacing-xl;
 
-  // Nesting indicator line at the left edge
   &::before {
     content: "";
     position: absolute;
     left: 8px;
-    top: 1rem;
-    bottom: 1rem;
+    top: $spacing-lg;
+    bottom: $spacing-lg;
     width: 2px;
     background: rgba(26, 188, 156, 0.3);
     border-radius: 1px;
   }
 
-  // Child elements styling with proper nesting
   > .element-card {
     margin-bottom: 0;
     margin-left: 0;
     border-left: none;
     position: relative;
 
-    // Remove any additional styling that creates visual noise
     &::before {
       display: none;
-    }
-  }
-}
-
-// Light theme styles with proper nesting
-:global(.theme-light) {
-  .element-card {
-    background: white;
-    border-color: #e2e8f0;
-
-    &.selected {
-      border-color: #059669;
-      box-shadow: 0 0 0 1px rgba(5, 150, 105, 0.4);
-    }
-
-    &__header {
-      background: linear-gradient(to right, #f8fafc, #f1f5f9);
-      color: #1e293b;
-    }
-
-    &__drag-handle {
-      color: #64748b;
-
-      &:hover {
-        color: #059669;
-      }
-    }
-
-    &__body {
-      > input,
-      > textarea,
-      > select,
-      > button {
-        background: #f8fafc;
-        border-color: #e2e8f0;
-        color: #1e293b;
-      }
-
-      > .checkbox-label,
-      > .radio-label {
-        color: #1e293b;
-      }
-    }
-  }
-
-  .icon-btn {
-    color: #64748b;
-
-    &:hover {
-      color: #059669;
-      background: rgba(5, 150, 105, 0.1);
-    }
-  }
-
-  .fieldset-container {
-    background: white;
-    border-color: #e2e8f0;
-
-    &.selected {
-      border-color: #059669;
-      box-shadow: 0 0 0 1px rgba(5, 150, 105, 0.4);
-    }
-  }
-
-  .fieldset-header {
-    background: linear-gradient(to right, #f8fafc, #f1f5f9);
-    color: #1e293b;
-    border-color: #e2e8f0;
-    cursor: grab;
-
-    &:active {
-      cursor: grabbing;
-    }
-  }
-
-  .fieldset-drag-handle {
-    color: #64748b;
-
-    &:hover {
-      color: #059669;
-    }
-  }
-
-  .fieldset-title {
-    color: #1e293b;
-  }
-
-  .fieldset-content {
-    &::before {
-      background: rgba(5, 150, 105, 0.3);
     }
   }
 }

@@ -13,6 +13,9 @@
 // Theme system - automatically generates CSS custom properties
 @use "themes/css-properties";
 
+// Global styles
+@use "globals";
+
 // Global component styles (styles that are truly global and not component-specific)
 @use "components/form-elements"; // Styles for .builder-form-element on the canvas
 

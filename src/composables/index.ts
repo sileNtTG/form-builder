@@ -14,3 +14,7 @@ export type { Theme } from "./useTheme";
 export { useUserForms } from "./useUserForms";
 
 export { useLocalStorage } from "./useLocalStorage";
+
+export { useCanvasNavigation } from "./useCanvasNavigation";
+
+export { useFormPersistence } from "./useFormPersistence";
